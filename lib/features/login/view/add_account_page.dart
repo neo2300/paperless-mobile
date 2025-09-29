@@ -72,6 +72,7 @@ class _AddAccountPageState extends State<AddAccountPage> {
       appBar: AppBar(
         title: Text(widget.titleText),
       ),
+      bottomNavigationBar: _buildFooter(context),
       body: FormBuilder(
         key: _formKey,
         child: AutofillGroup(
@@ -93,143 +94,155 @@ class _AddAccountPageState extends State<AddAccountPage> {
                   controller: _pageController,
                   allowImplicitScrolling: false,
                   children: [
-                    ListView(
-                      physics: const NeverScrollableScrollPhysics(),
-                      // mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        ServerAddressFormField(
-                          onChanged: (value) {
-                            setState(() {
-                              _reachabilityStatus = ReachabilityStatus.unknown;
-                            });
-                          },
-                        ).paddedSymmetrically(
-                          horizontal: 12,
-                          vertical: 12,
-                        ),
-                        ClientCertificateFormField(
-                          initialBytes: widget.initialClientCertificate?.bytes,
-                          initialPassphrase:
-                              widget.initialClientCertificate?.passphrase,
-                        ).padded(),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            //TODO: Move additional headers and client cert to separate page
-                            // IconButton.filledTonal(
-                            //   onPressed: () {
-                            //     Navigator.of(context).push(
-                            //       MaterialPageRoute(builder: (context) {
-                            //         return LoginSettingsPage();
-                            //       }),
-                            //     );
-                            //   },
-                            //   icon: Icon(Icons.settings),
-                            // ),
-                            const SizedBox(width: 8),
-                            FilledButton.icon(
-                              onPressed: () async {
-                                final status = await _updateReachability();
-                                if (status == ReachabilityStatus.reachable) {
-                                  Future.delayed(1.seconds, () {
-                                    _pageController.nextPage(
-                                      duration:
-                                          const Duration(milliseconds: 300),
-                                      curve: Curves.easeInOut,
-                                    );
-                                  });
-                                }
-                              },
-                              icon: _isCheckingConnection
-                                  ? SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSecondary,
-                                      ),
-                                    )
-                                  : _reachabilityStatus ==
-                                          ReachabilityStatus.reachable
-                                      ? const Icon(Icons.done)
-                                      : const Icon(Icons.arrow_forward),
-                              label: Text(S.of(context)!.continueLabel),
-                            ),
-                          ],
-                        ).paddedSymmetrically(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        _buildStatusIndicator().padded(),
-                      ],
+                    SingleChildScrollView(
+                      child: _buildServerAddressPage(context),
                     ),
-                    ListView(
-                      children: [
-                        UserCredentialsFormField(
-                          formKey: _formKey,
-                          initialUsername: widget.initialUsername,
-                          initialPassword: widget.initialPassword,
-                        ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton.icon(
-                              onPressed: () {
-                                _pageController.previousPage(
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
-                              },
-                              icon: const Icon(Icons.arrow_back),
-                              label: Text(S.of(context)!.edit),
-                            ),
-                            FilledButton(
-                              onPressed: () {
-                                _onSubmit();
-                              },
-                              child: Text(S.of(context)!.signIn),
-                            ),
-                          ],
-                        ).padded(),
-                        Text(
-                          S.of(context)!.loginRequiredPermissionsHint,
-                          style: Theme.of(context).textTheme.bodySmall?.apply(
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onBackground
-                                    .withOpacity(0.6),
-                              ),
-                        ).padded(16),
-                      ],
+                    SingleChildScrollView(
+                      child: _buildUserCredentialsPage(context),
                     ),
-                    // MFA
                   ],
                 ),
               ),
-              Text.rich(
-                TextSpan(
-                  style: Theme.of(context).textTheme.labelLarge,
-                  children: [
-                    TextSpan(text: S.of(context)!.version(packageInfo.version)),
-                    const WidgetSpan(child: SizedBox(width: 24)),
-                    TextSpan(
-                      style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary),
-                      text: S.of(context)!.appLogs(''),
-                      recognizer: TapGestureRecognizer()
-                        ..onTap = () {
-                          AppLogsRoute().push(context);
-                        },
-                    ),
-                  ],
-                ),
-              ).padded(),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildUserCredentialsPage(BuildContext context) {
+    return Column(
+      children: [
+        UserCredentialsFormField(
+          formKey: _formKey,
+          initialUsername: widget.initialUsername,
+          initialPassword: widget.initialPassword,
+        ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton.icon(
+              onPressed: () {
+                _pageController.previousPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
+              },
+              icon: const Icon(Icons.arrow_back),
+              label: Text(S.of(context)!.edit),
+            ),
+            FilledButton(
+              onPressed: () {
+                _onSubmit();
+              },
+              child: Text(S.of(context)!.signIn),
+            ),
+          ],
+        ).padded(),
+        Text(
+          S.of(context)!.loginRequiredPermissionsHint,
+          style: Theme.of(context).textTheme.bodySmall?.apply(
+                color:
+                    Theme.of(context).colorScheme.onBackground.withOpacity(0.6),
+              ),
+        ).padded(16),
+      ],
+    );
+  }
+
+  Widget _buildServerAddressPage(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        ServerAddressFormField(
+          onChanged: (value) {
+            setState(() {
+              _reachabilityStatus = ReachabilityStatus.unknown;
+            });
+          },
+        ).paddedSymmetrically(
+          horizontal: 12,
+          vertical: 12,
+        ),
+        ClientCertificateFormField(
+          initialBytes: widget.initialClientCertificate?.bytes,
+          initialPassphrase: widget.initialClientCertificate?.passphrase,
+        ).padded(),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            //TODO: Move additional headers and client cert to separate page
+            // IconButton.filledTonal(
+            //   onPressed: () {
+            //     Navigator.of(context).push(
+            //       MaterialPageRoute(builder: (context) {
+            //         return LoginSettingsPage();
+            //       }),
+            //     );
+            //   },
+            //   icon: Icon(Icons.settings),
+            // ),
+            const SizedBox(width: 8),
+            FilledButton.icon(
+              onPressed: () async {
+                final status = await _updateReachability();
+                if (status == ReachabilityStatus.reachable) {
+                  Future.delayed(1.seconds, () {
+                    _pageController.nextPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  });
+                }
+              },
+              icon: _isCheckingConnection
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Theme.of(context).colorScheme.onSecondary,
+                      ),
+                    )
+                  : _reachabilityStatus == ReachabilityStatus.reachable
+                      ? const Icon(Icons.done)
+                      : const Icon(Icons.arrow_forward),
+              label: Text(S.of(context)!.continueLabel),
+            ),
+          ],
+        ).paddedSymmetrically(
+          horizontal: 16,
+          vertical: 8,
+        ),
+        _buildStatusIndicator().padded(),
+      ],
+    );
+  }
+
+  BottomAppBar _buildFooter(BuildContext context) {
+    return BottomAppBar(
+      padding: EdgeInsets.zero,
+      elevation: 0,
+      color: Colors.transparent,
+      height: 48,
+      child: Text.rich(
+        TextSpan(
+          style: Theme.of(context).textTheme.labelLarge,
+          children: [
+            TextSpan(text: S.of(context)!.version(packageInfo.version)),
+            const WidgetSpan(child: SizedBox(width: 24)),
+            TextSpan(
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              text: S.of(context)!.appLogs(''),
+              recognizer: TapGestureRecognizer()
+                ..onTap = () {
+                  AppLogsRoute().push(context);
+                },
+            ),
+          ],
+        ),
+        textAlign: TextAlign.center,
+      ).padded(),
     );
   }
 
