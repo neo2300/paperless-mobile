@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
-import 'package:paperless_api/paperless_api.dart';
+import 'package:paperless_mobile/core/exception/paperless_api_exception.dart';
 
 class DioOfflineInterceptor extends Interceptor {
   @override

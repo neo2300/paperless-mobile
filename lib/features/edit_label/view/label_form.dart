@@ -183,7 +183,10 @@ class _LabelFormState<T extends Label> extends State<LabelForm<T>> {
       } on PaperlessApiException catch (error, stackTrace) {
         showErrorMessage(context, error, stackTrace);
       } on PaperlessFormValidationException catch (exception) {
+        print(exception);
         setState(() => _errors = exception.validationMessages);
+      } catch (error, stackTrace) {
+        showGenericError(context, error, stackTrace);
       }
     }
   }

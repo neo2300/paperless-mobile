@@ -1,4 +1,4 @@
-import 'package:paperless_api/paperless_api.dart';
+import 'package:paperless_mobile/core/exception/paperless_api_exception.dart';
 
 class InfoMessageException implements Exception {
   final ErrorCode code;

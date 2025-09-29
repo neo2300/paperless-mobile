@@ -1,5 +1,4 @@
 import 'package:hive_flutter/adapters.dart';
-import 'package:paperless_api/paperless_api.dart';
 import 'package:paperless_mobile/core/database/hive/hive_config.dart';
 import 'package:paperless_mobile/core/database/tables/local_user_settings.dart';
 
@@ -10,14 +9,11 @@ class LocalUserAccount extends HiveObject {
   @HiveField(0)
   final String serverUrl;
 
-  @HiveField(3)
+  @HiveField(1)
   final String id;
 
-  @HiveField(4)
+  @HiveField(2)
   final LocalUserSettings settings;
-
-  @HiveField(7)
-  UserModel paperlessUser;
 
   @HiveField(8, defaultValue: 2)
   int apiVersion;
@@ -26,9 +22,6 @@ class LocalUserAccount extends HiveObject {
     required this.id,
     required this.serverUrl,
     required this.settings,
-    required this.paperlessUser,
     required this.apiVersion,
   });
-
-  bool get hasMultiUserSupport => apiVersion >= 3;
 }

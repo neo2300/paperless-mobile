@@ -18,7 +18,7 @@ publish_to: "none" # Remove this line if you wish to publish to pub.dev
 version: 3.2.1+405
 
 environment:
-  sdk: ">=3.1.0 <4.0.0"
+  sdk: ">=3.4.0 <4.0.0"
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -48,7 +48,7 @@ dependencies:
   http: ^1.1.2
   flutter_cache_manager: ^3.3.0
   cached_network_image: ^3.2.1
-  shimmer: ^3.0.0 
+  shimmer: ^3.0.0
   flutter_bloc: ^8.1.1
   equatable: ^2.0.5
   flutter_form_builder: ^9.1.1
@@ -62,8 +62,8 @@ dependencies:
   uuid: ^4.1.0
   flutter_typeahead: ^5.0.1
   fluttertoast: ^8.1.1
-  paperless_api:
-    path: packages/paperless_api
+  # paperless_api:
+  #   path: packages/paperless_api
   hive: ^2.2.3
   rxdart: ^0.27.7
   badges: ^3.1.2
@@ -103,8 +103,8 @@ dependencies:
   # camerawesome: ^2.0.0-dev.1
   pdfx:
     git:
-      url: 'https://github.com/ScerIO/packages.flutter'
-      ref: 'd637108a2a6e3e97a70304f00f1eda9511fb4f92'
+      url: "https://github.com/ScerIO/packages.flutter"
+      ref: "d637108a2a6e3e97a70304f00f1eda9511fb4f92"
       path: packages/pdfx
   markdown: ^7.1.1
   diacritic: ^0.1.5
@@ -114,7 +114,10 @@ dependencies:
   sliver_snap: ^1.2.0
   path: ^1.8.3
   dio_smart_retry: ^6.0.0
-  # pdfrx: 
+  paperless_ngx_api_v9:
+    path: packages/paperless_ngx_api_v9
+  jiffy: ^6.4.3
+  # pdfrx:
   #   git:
   #     url: https://github.com/astubenbord/pdfrx
   #     ref: master
@@ -154,7 +157,6 @@ flutter_gen:
   integrations:
     flutter_svg: true
 
-
 flutter:
   generate: true
   # The following line ensures that the Material Icons font is
@@ -178,8 +180,6 @@ flutter:
     - family: RobotoMono
       fonts:
         - asset: assets/fonts/RobotoMono-Regular.ttf
-
-
 
 flutter_native_splash:
   image: assets/logos/paperless_logo_green.png

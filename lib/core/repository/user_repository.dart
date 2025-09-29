@@ -1,54 +1,93 @@
-import 'package:equatable/equatable.dart';
-import 'package:paperless_api/paperless_api.dart';
-import 'package:paperless_mobile/core/repository/persistent_repository.dart';
-import 'package:paperless_mobile/features/logging/data/logger.dart';
+import 'package:paperless_mobile/core/repository/remote_data_cache.dart';
+import 'package:paperless_ngx_api_v9/paperless_ngx_api_v9.dart';
 
-part 'user_repository_state.dart';
+const defaultUsersPageSize = 100000;
 
-class UserRepository extends PersistentRepository<UserRepositoryState> {
-  final PaperlessUserApi _userApi;
+class UserRepository {
+  final RemoteDataCache _staticDataRepository;
+  final PaperlessNgxApiV9 _api;
 
-  UserRepository(this._userApi) : super(const UserRepositoryState());
+  const UserRepository(this._staticDataRepository, this._api);
 
-  Future<void> initialize() async {
-    await findAll();
-  }
-
-  Future<Iterable<UserModel>> findAll() async {
-    if (_userApi is PaperlessUserApiV3Impl) {
-      final users = await (_userApi as PaperlessUserApiV3Impl).findAll();
-      emit(state.copyWith(users: {for (var e in users) e.id: e}));
-      return users;
+  Future<User?> findAll({
+    String? ordering,
+    int? page,
+    int? pageSize,
+  }) async {
+    try {
+      final response = await _api.getUsersApi().usersList(
+            ordering: ordering,
+            page: page,
+            pageSize: pageSize ?? defaultUsersPageSize,
+          );
+      if (response.data?.results != null && response.data!.results.isNotEmpty) {
+        for (final user in response.data!.results) {
+          _staticDataRepository.users[user.id] = user;
+        }
+        _staticDataRepository.update(
+          users: Map.fromEntries(
+            response.data!.results.map(
+              (u) => MapEntry(u.id, u),
+            ),
+          ),
+        );
+        return response.data!.results.first;
+      }
+    } catch (e) {
+      // Handle error appropriately, e.g., log it or rethrow
     }
-    logger.fw(
-      "Tried to access API v3 features while using an older API version.",
-      className: 'UserRepository',
-      methodName: 'findAll',
-    );
-    return [];
-  }
-
-  Future<UserModel?> find(int id) async {
-    if (_userApi is PaperlessUserApiV3Impl) {
-      final user = await (_userApi as PaperlessUserApiV3Impl).find(id);
-      emit(state.copyWith(users: state.users..[id] = user));
-      return user;
-    }
-    logger.fw(
-      "Tried to access API v3 features while using an older API version.",
-      className: 'UserRepository',
-      methodName: 'findAll',
-    );
     return null;
   }
 
-  // @override
-  // UserRepositoryState? fromJson(Map<String, dynamic> json) {
-  //   return UserRepositoryState.fromJson(json);
-  // }
+  Future<User?> find({
+    required int id,
+  }) async {
+    final response = await _api.getUsersApi().usersRetrieve(id: id);
+    if (response.data != null) {
+      final existing = _staticDataRepository.users;
+      _staticDataRepository.update(
+        users: {...existing, response.data!.id: response.data!},
+      );
+    }
+    return response.data!;
+  }
 
-  // @override
-  // Map<String, dynamic>? toJson(UserRepositoryState state) {
-  //   return state.toJson();
-  // }
+  Future<User> create({
+    required UserRequest userRequest,
+  }) async {
+    final response = await _api.getUsersApi().usersCreate(
+          userRequest: userRequest,
+        );
+    if (response.data != null) {
+      final existing = _staticDataRepository.users;
+      _staticDataRepository.update(
+        users: {...existing, response.data!.id: response.data!},
+      );
+    }
+    return response.data!;
+  }
+
+  Future<User> update({
+    required int id,
+    required UserRequest userRequest,
+  }) async {
+    final response = await _api.getUsersApi().usersUpdate(
+          id: id,
+          userRequest: userRequest,
+        );
+    if (response.data != null) {
+      final existing = _staticDataRepository.users;
+      _staticDataRepository.update(
+        users: {...existing, response.data!.id: response.data!},
+      );
+    }
+    return response.data!;
+  }
+
+  Future<void> delete({required int id}) async {
+    await _api.getUsersApi().usersDestroy(id: id);
+    final existing = _staticDataRepository.users;
+    existing.remove(id);
+    _staticDataRepository.update(users: existing);
+  }
 }

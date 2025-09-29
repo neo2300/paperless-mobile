@@ -27,8 +27,6 @@ import 'package:paperless_mobile/core/database/hive/hive_config.dart';
 import 'package:paperless_mobile/core/database/hive/hive_extensions.dart';
 import 'package:paperless_mobile/core/database/hive/hive_initialization.dart';
 import 'package:paperless_mobile/core/exception/server_message_exception.dart';
-import 'package:paperless_mobile/core/factory/paperless_api_factory.dart';
-import 'package:paperless_mobile/core/factory/paperless_api_factory_impl.dart';
 import 'package:paperless_mobile/core/interceptor/language_header.interceptor.dart';
 import 'package:paperless_mobile/core/interceptor/paperless_version_interceptor.dart';
 import 'package:paperless_mobile/core/notifier/document_changed_notifier.dart';
@@ -56,6 +54,7 @@ import 'package:paperless_mobile/routing/routes/login_route.dart';
 import 'package:paperless_mobile/routing/routes/preview_route.dart';
 import 'package:paperless_mobile/routing/routes/shells/authenticated_route.dart';
 import 'package:paperless_mobile/theme.dart';
+import 'package:paperless_ngx_api_v9/paperless_ngx_api_v9.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 import 'package:provider/provider.dart';
@@ -175,23 +174,24 @@ void main() async {
 
     final localNotificationService = LocalNotificationService();
     await localNotificationService.initialize();
+    final api = PaperlessNgxApiV9(dio: sessionManager.client);
 
-    final apiFactory = PaperlessApiFactoryImpl(sessionManager);
     final authenticationCubit = AuthenticationCubit(
       localAuthService,
-      apiFactory,
+      api,
       sessionManager,
-      connectivityStatusService,
       localNotificationService,
     );
     runApp(
-      AppEntrypoint(
-        sessionManager: sessionManager,
-        apiFactory: apiFactory,
-        authenticationCubit: authenticationCubit,
-        connectivityStatusService: connectivityStatusService,
-        localNotificationService: localNotificationService,
-        localAuthService: localAuthService,
+      Provider.value(
+        value: api,
+        child: AppEntrypoint(
+          sessionManager: sessionManager,
+          authenticationCubit: authenticationCubit,
+          connectivityStatusService: connectivityStatusService,
+          localNotificationService: localNotificationService,
+          localAuthService: localAuthService,
+        ),
       ),
     );
   }, (error, stackTrace) {
@@ -224,7 +224,6 @@ void main() async {
 }
 
 class AppEntrypoint extends StatelessWidget {
-  final PaperlessApiFactory apiFactory;
   final AuthenticationCubit authenticationCubit;
   final ConnectivityStatusService connectivityStatusService;
   final LocalNotificationService localNotificationService;
@@ -233,7 +232,6 @@ class AppEntrypoint extends StatelessWidget {
 
   const AppEntrypoint({
     super.key,
-    required this.apiFactory,
     required this.authenticationCubit,
     required this.connectivityStatusService,
     required this.localNotificationService,
@@ -255,19 +253,14 @@ class AppEntrypoint extends StatelessWidget {
         Provider.value(value: localNotificationService),
         Provider.value(value: localAuthService),
       ],
-      child: GoRouterShell(
-        apiFactory: apiFactory,
-      ),
+      child: const GoRouterShell(),
     );
   }
 }
 
 class GoRouterShell extends StatefulWidget {
-  final PaperlessApiFactory apiFactory;
-
   const GoRouterShell({
     super.key,
-    required this.apiFactory,
   });
 
   @override
@@ -314,48 +307,44 @@ class _GoRouterShellState extends State<GoRouterShell> {
         pageBuilder: (context, state, child) {
           return accessiblePlatformPage(
             child: Scaffold(
-              body: Provider.value(
-                value: widget.apiFactory,
-                child: BlocListener<AuthenticationCubit, AuthenticationState>(
-                  listener: (context, state) {
-                    switch (state) {
-                      case UnauthenticatedState(
-                          redirectToAccountSelection: var shouldRedirect
-                        ):
-                        if (shouldRedirect) {
-                          const LoginToExistingAccountRoute().go(context);
-                        } else {
-                          const LoginRoute().go(context);
-                        }
-                        break;
-                      case RestoringSessionState():
-                        const RestoringSessionRoute().go(context);
-                        break;
-                      case VerifyIdentityState(userId: var userId):
-                        VerifyIdentityRoute(userId: userId).go(context);
-                        break;
-                      case SwitchingAccountsState():
-                        const SwitchingAccountsRoute().go(context);
-                        break;
-                      case AuthenticatedState():
-                        const LandingRoute().go(context);
-                        break;
-                      case AuthenticatingState state:
-                        AuthenticatingRoute(state.currentStage.name)
-                            .go(context);
-                        break;
-                      case LoggingOutState():
-                        const LoggingOutRoute().go(context);
-                        break;
-                      case AuthenticationErrorState():
-                        if (context.canPop()) {
-                          context.pop();
-                        }
-                        break;
-                    }
-                  },
-                  child: child,
-                ),
+              body: BlocListener<AuthenticationCubit, AuthenticationState>(
+                listener: (context, state) {
+                  switch (state) {
+                    case UnauthenticatedState(
+                        redirectToAccountSelection: var shouldRedirect
+                      ):
+                      if (shouldRedirect) {
+                        const LoginToExistingAccountRoute().go(context);
+                      } else {
+                        const LoginRoute().go(context);
+                      }
+                      break;
+                    case RestoringSessionState():
+                      const RestoringSessionRoute().go(context);
+                      break;
+                    case VerifyIdentityState(userId: var userId):
+                      VerifyIdentityRoute(userId: userId).go(context);
+                      break;
+                    case SwitchingAccountsState():
+                      const SwitchingAccountsRoute().go(context);
+                      break;
+                    case AuthenticatedState():
+                      const LandingRoute().go(context);
+                      break;
+                    case AuthenticatingState state:
+                      AuthenticatingRoute(state.currentStage.name).go(context);
+                      break;
+                    case LoggingOutState():
+                      const LoggingOutRoute().go(context);
+                      break;
+                    case AuthenticationErrorState():
+                      if (context.canPop()) {
+                        context.pop();
+                      }
+                      break;
+                  }
+                },
+                child: child,
               ),
             ),
           );

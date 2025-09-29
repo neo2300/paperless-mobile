@@ -8,10 +8,10 @@ import 'package:paperless_api/paperless_api.dart';
 import 'package:paperless_mobile/core/bloc/base_state.dart';
 import 'package:paperless_mobile/core/bloc/loading_status.dart';
 import 'package:paperless_mobile/core/bloc/transient_error.dart';
-import 'package:paperless_mobile/core/repository/label_repository.dart';
 import 'package:paperless_mobile/core/service/file_service.dart';
 import 'package:paperless_mobile/features/logging/data/logger.dart';
 import 'package:paperless_mobile/features/notifications/services/local_notification_service.dart';
+import 'package:paperless_ngx_api_v9/paperless_ngx_api_v9.dart';
 import 'package:path/path.dart' as p;
 import 'package:printing/printing.dart';
 import 'package:share_plus/share_plus.dart';
@@ -21,14 +21,12 @@ part 'document_details_state.dart';
 
 class DocumentDetailsCubit extends Cubit<DocumentDetailsState> {
   final int id;
-  final PaperlessDocumentsApi _api;
-  final LabelRepository _labelRepository;
+  final PaperlessNgxApiV9 _api;
   final LocalNotificationService _notificationService;
 
   DocumentDetailsCubit(
     this._api,
-    this._notificationService,
-    this._labelRepository, {
+    this._notificationService, {
     required this.id,
   }) : super(const DocumentDetailsState());
 
@@ -40,18 +38,55 @@ class DocumentDetailsCubit extends Cubit<DocumentDetailsState> {
     );
     emit(const DocumentDetailsState(status: LoadingStatus.loading));
     try {
-      final (document, metaData, nextAsn, fieldSuggestions) =
-          await Future.wait([
-        _api.find(id),
-        _api.getMetaData(id),
-        _api.findNextAsn(),
-        _api.findSuggestions(id),
+      final (
+        document,
+        metaData,
+        nextAsn,
+        fieldSuggestions,
+        correspondents,
+        documentTypes,
+        tags,
+        storagePaths
+      ) = await Future.wait([
+        _api
+            .getDocumentsApi()
+            .documentsRetrieve(id: id)
+            .then((value) => value.data),
+        _api
+            .getDocumentsApi()
+            .documentsMetadataRetrieve(id: id)
+            .then((value) => value.data),
+        _api
+            .getDocumentsApi()
+            .documentsNextAsnRetrieve()
+            .then((value) => value.data),
+        _api
+            .getDocumentsApi()
+            .documentsSuggestionsRetrieve(id: id)
+            .then((value) => value.data),
+        _api
+            .getCorrespondentsApi()
+            .correspondentsList()
+            .then((value) => value.data?.results ?? []),
+        _api
+            .getDocumentTypesApi()
+            .documentTypesList()
+            .then((value) => value.data?.results ?? []),
+        _api.getTagsApi().tagsList().then((value) => value.data?.results ?? []),
+        _api
+            .getStoragePathsApi()
+            .storagePathsList()
+            .then((value) => value.data?.results ?? []),
       ]).then(
         (value) => (
-          value[0] as DocumentModel,
-          value[1] as DocumentMetaData,
-          value[2] as int,
-          value[3] as FieldSuggestions,
+          value[0] as Document?,
+          value[1] as Metadata?,
+          value[2] as int?,
+          value[3] as Suggestions?,
+          value[4] as List<Correspondent>,
+          value[5] as List<DocumentType>,
+          value[6] as List<Tag>,
+          value[7] as List<StoragePath>,
         ),
       );
       logger.fd(
@@ -61,13 +96,17 @@ class DocumentDetailsCubit extends Cubit<DocumentDetailsState> {
       );
       emit(DocumentDetailsState.loaded(
         DocumentDetailsData(
-          document: document,
-          metaData: metaData,
-          nextAsn: nextAsn,
-          fieldSuggestions: fieldSuggestions,
+          document: document!,
+          metaData: metaData!,
+          nextAsn: nextAsn!,
+          fieldSuggestions: fieldSuggestions!,
+          correspondents: correspondents,
+          documentTypes: documentTypes,
+          tags: tags,
+          storagePaths: storagePaths,
         ),
       ));
-    } on PaperlessApiException catch (error, stackTrace) {
+    } catch (error, stackTrace) {
       logger.fe(
         "Could not load data for document $id.",
         className: runtimeType.toString(),
@@ -79,20 +118,20 @@ class DocumentDetailsCubit extends Cubit<DocumentDetailsState> {
     }
   }
 
-  Future<void> delete(DocumentModel document) async {
+  Future<void> delete(Document document) async {
     logger.fd(
       "Deleting document ${document.id}...",
       className: runtimeType.toString(),
       methodName: "delete",
     );
     try {
-      await _api.delete(document);
+      await _api.getDocumentsApi().documentsDestroy(id: document.id);
       logger.fd(
         "Document ${document.id} successfully deleted.",
         className: runtimeType.toString(),
         methodName: "delete",
       );
-    } on PaperlessApiException catch (error, stackTrace) {
+    } on Exception catch (error, stackTrace) {
       logger.fe(
         "Could not delete document ${document.id}.",
         className: runtimeType.toString(),

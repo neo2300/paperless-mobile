@@ -17,7 +17,6 @@ import 'package:paperless_mobile/features/login/model/reachability_status.dart';
 import 'package:paperless_mobile/features/login/view/widgets/form_fields/client_certificate_form_field.dart';
 import 'package:paperless_mobile/features/login/view/widgets/form_fields/server_address_form_field.dart';
 import 'package:paperless_mobile/features/login/view/widgets/form_fields/user_credentials_form_field.dart';
-import 'package:paperless_mobile/generated/assets.gen.dart';
 import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
 import 'package:paperless_mobile/helpers/message_helpers.dart';
 import 'package:paperless_mobile/routing/routes/app_logs_route.dart';
@@ -69,7 +68,7 @@ class _AddAccountPageState extends State<AddAccountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         title: Text(widget.titleText),
       ),
@@ -94,8 +93,9 @@ class _AddAccountPageState extends State<AddAccountPage> {
                   controller: _pageController,
                   allowImplicitScrolling: false,
                   children: [
-                    Column(
-                      mainAxisAlignment: MainAxisAlignment.start,
+                    ListView(
+                      physics: const NeverScrollableScrollPhysics(),
+                      // mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         ServerAddressFormField(
                           onChanged: (value) {
@@ -165,7 +165,7 @@ class _AddAccountPageState extends State<AddAccountPage> {
                         _buildStatusIndicator().padded(),
                       ],
                     ),
-                    Column(
+                    ListView(
                       children: [
                         UserCredentialsFormField(
                           formKey: _formKey,
@@ -204,6 +204,7 @@ class _AddAccountPageState extends State<AddAccountPage> {
                         ).padded(16),
                       ],
                     ),
+                    // MFA
                   ],
                 ),
               ),

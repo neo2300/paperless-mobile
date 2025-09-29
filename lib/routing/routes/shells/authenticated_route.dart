@@ -4,12 +4,10 @@ import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hive_flutter/adapters.dart';
-import 'package:paperless_api/paperless_api.dart';
 import 'package:paperless_mobile/accessibility/accessible_page.dart';
 import 'package:paperless_mobile/core/database/hive/hive_config.dart';
 import 'package:paperless_mobile/core/database/tables/global_settings.dart';
 import 'package:paperless_mobile/core/database/tables/local_user_account.dart';
-import 'package:paperless_mobile/core/factory/paperless_api_factory.dart';
 import 'package:paperless_mobile/features/home/view/home_shell_widget.dart';
 import 'package:paperless_mobile/features/sharing/cubit/receive_share_cubit.dart';
 import 'package:paperless_mobile/features/sharing/view/widgets/event_listener_shell.dart';
@@ -24,6 +22,7 @@ import 'package:paperless_mobile/routing/routes/scanner_route.dart';
 import 'package:paperless_mobile/routing/routes/upload_queue_route.dart';
 import 'package:paperless_mobile/routing/routes/shells/scaffold_shell_route.dart';
 import 'package:paperless_mobile/routing/routes/settings_route.dart';
+import 'package:paperless_ngx_api_v9/paperless_ngx_api_v9.dart';
 import 'package:provider/provider.dart';
 
 /// Key used to access
@@ -158,11 +157,9 @@ class AuthenticatedRoute extends ShellRouteData {
               Hive.box<LocalUserAccount>(HiveBoxes.localUserAccount).get(
             currentUserId,
           )!;
-          final apiFactory = context.read<PaperlessApiFactory>();
           return HomeShellWidget(
+            paperlessApi: context.read(),
             localUserId: authenticatedUser.id,
-            paperlessApiVersion: authenticatedUser.apiVersion,
-            paperlessProviderFactory: apiFactory,
             child: ChangeNotifierProvider(
               create: (context) => ConsumptionChangeNotifier()
                 ..loadFromConsumptionDirectory(userId: currentUserId),

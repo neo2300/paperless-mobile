@@ -34,10 +34,6 @@ android/key.properties
 .pub-cache/
 .pub/
 /build/
-.fvm/flutter_sdk
-.fvm/versions
-.fvm/release
-.fvm/version
 
 # Fastlane related
 android/fastlane/report.xml
@@ -62,8 +58,6 @@ lib/**/*.freezed.dart
 packages/**/*.g.dart
 packages/**/*.freezed.dart
 
-
-
 # mockito generated files
 *.mocks.dart
 
@@ -80,3 +74,6 @@ crowdin_credentials.yml
 
 # Changelogs
 assets/changelogs/*.md
+
+# FVM Version Cache
+.fvm/

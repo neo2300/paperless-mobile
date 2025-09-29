@@ -1,5 +1,5 @@
-import 'package:flutter/material.dart';
-import 'package:paperless_api/paperless_api.dart';
+import 'package:flutter/widgets.dart';
+import 'package:paperless_mobile/core/model/sort_field.dart';
 import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
 
 String translateSortField(BuildContext context, SortField? sortField) {
@@ -18,7 +18,13 @@ String translateSortField(BuildContext context, SortField? sortField) {
       return S.of(context)!.addedAt;
     case SortField.modified:
       return S.of(context)!.modifiedAt;
-    default:
+    case SortField.notes:
+      return ''; //TODO: Intl S.of(context)!.notes;
+    case SortField.owner:
+      return ''; //TODO: Intl S.of(context)!.owner;
+    case SortField.page:
+      return ''; //TODO: Intl S.of(context)!.pages;
+    case null:
       return '';
   }
 }

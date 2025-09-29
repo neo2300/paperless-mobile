@@ -1,6 +1,14 @@
 targets:
   $default:
+    sources:
+      - lib/**
+      - specs/**
     builders:
+      swagger_dart_code_generator:
+        options:
+          input_folder: "specs"
+          output_folder: "lib/generated/api"
+          with_base_url: false
       mockito|mockBuilder:
         generate_for:
           - lib/**.dart

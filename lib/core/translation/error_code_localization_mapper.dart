@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:paperless_api/paperless_api.dart';
+import 'package:paperless_mobile/core/exception/exceptions.dart';
 import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
 
 String translateError(BuildContext context, ErrorCode code) {
@@ -82,9 +82,15 @@ String translateError(BuildContext context, ErrorCode code) {
       'Could not load custom field.', //TODO: INTL
     ErrorCode.customFieldDeleteFailed =>
       'Could not delete custom field, please try again.', //TODO: INTL
-    ErrorCode.deleteNoteFailed => 'Could not delete note, please try again.',
-    ErrorCode.addNoteFailed => 'Could not create note, please try again.',
-    ErrorCode.downloadFailed => "Download failed, please try again.",
-    ErrorCode.documnetMetaDataLoadFailed => "Could not load document metadata.",
+    ErrorCode.deleteNoteFailed =>
+      'Could not delete note, please try again.', //TODO: INTL
+    ErrorCode.addNoteFailed =>
+      'Could not create note, please try again.', //TODO: INTL
+    ErrorCode.downloadFailed =>
+      "Download failed, please try again.", //TODO: INTL
+    ErrorCode.documentMetaDataLoadFailed =>
+      "Could not load document metadata.", //TODO: INTL
+    ErrorCode.totpRequired =>
+      'Could not authenticate, TOTP is missing.', //TODO: INTL
   };
 }

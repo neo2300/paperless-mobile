@@ -131,7 +131,7 @@ class DocumentGridItem extends DocumentItem {
                             ),
                             if (document.archiveSerialNumber != null)
                               Text(
-                                '#' + document.archiveSerialNumber!.toString(),
+                                '#${document.archiveSerialNumber!}',
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall

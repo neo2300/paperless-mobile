@@ -12,38 +12,36 @@ import 'package:paperless_mobile/core/database/tables/local_user_account.dart';
 import 'package:paperless_mobile/core/database/tables/local_user_app_state.dart';
 import 'package:paperless_mobile/core/database/tables/local_user_settings.dart';
 import 'package:paperless_mobile/core/database/tables/user_credentials.dart';
-import 'package:paperless_mobile/core/factory/paperless_api_factory.dart';
 import 'package:paperless_mobile/core/interceptor/language_header.interceptor.dart';
 import 'package:paperless_mobile/core/model/info_message_exception.dart';
 import 'package:paperless_mobile/core/security/session_manager.dart';
 import 'package:paperless_mobile/core/security/session_manager_impl.dart';
-import 'package:paperless_mobile/core/service/connectivity_status_service.dart';
 import 'package:paperless_mobile/core/service/file_service.dart';
 import 'package:paperless_mobile/features/logging/data/logger.dart';
 import 'package:paperless_mobile/features/logging/utils/redaction_utils.dart';
 import 'package:paperless_mobile/features/login/model/client_certificate.dart';
 import 'package:paperless_mobile/features/login/model/login_form_credentials.dart';
-import 'package:paperless_mobile/features/login/model/reachability_status.dart';
 import 'package:paperless_mobile/features/login/services/authentication_service.dart';
 import 'package:paperless_mobile/features/notifications/services/local_notification_service.dart';
 import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
+import 'package:paperless_ngx_api_v9/paperless_ngx_api_v9.dart';
 
 part 'authentication_state.dart';
+
+const _mfaRequiredMessage = "Invalid MFA code";
 
 typedef _FutureVoidCallback = Future<void> Function();
 
 class AuthenticationCubit extends Cubit<AuthenticationState> {
   final LocalAuthenticationService _localAuthService;
-  final PaperlessApiFactory _apiFactory;
+  final PaperlessNgxApiV9 _api;
   final SessionManager _sessionManager;
-  final ConnectivityStatusService _connectivityService;
   final LocalNotificationService _notificationService;
 
   AuthenticationCubit(
     this._localAuthService,
-    this._apiFactory,
+    this._api,
     this._sessionManager,
-    this._connectivityService,
     this._notificationService,
   ) : super(const UnauthenticatedState());
 
@@ -179,15 +177,6 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
 
       globalSettings.loggedInUserId = localUserId;
       await globalSettings.save();
-
-      final apiVersion = await _getApiVersion(_sessionManager.client);
-
-      await _updateRemoteUser(
-        _sessionManager,
-        Hive.box<LocalUserAccount>(HiveBoxes.localUserAccount)
-            .get(localUserId)!,
-        apiVersion,
-      );
 
       emit(AuthenticatedState(localUserId: localUserId));
     });
@@ -340,38 +329,6 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       className: runtimeType.toString(),
       methodName: 'restoreSession',
     );
-    final isPaperlessServerReachable =
-        await _connectivityService.isPaperlessServerReachable(
-              localUserAccount.serverUrl,
-              authentication.clientCertificate,
-            ) ==
-            ReachabilityStatus.reachable;
-    logger.fd(
-      "Trying to update remote paperless user...",
-      className: runtimeType.toString(),
-      methodName: 'restoreSession',
-    );
-    if (isPaperlessServerReachable) {
-      final apiVersion = await _getApiVersion(_sessionManager.client,
-          timeout: Duration(seconds: 5));
-      await _updateRemoteUser(
-        _sessionManager,
-        localUserAccount,
-        apiVersion,
-      );
-      logger.fd(
-        "Successfully updated remote paperless user.",
-        className: runtimeType.toString(),
-        methodName: 'restoreSession',
-      );
-    } else {
-      logger.fw(
-        "Could not update remote paperless user - "
-        "Server could not be reached. The app might behave unexpected!",
-        className: runtimeType.toString(),
-        methodName: 'restoreSession',
-      );
-    }
     globalSettings.loggedInUserId = restoreSessionForUser;
     await globalSettings.save();
     emit(AuthenticatedState(localUserId: restoreSessionForUser));
@@ -462,7 +419,7 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       clientCertificate: clientCert,
     );
 
-    final authApi = _apiFactory.createAuthenticationApi(sessionManager.client);
+    final tokenApi = _api.getTokenApi();
 
     await onPerformLogin?.call();
     logger.fd(
@@ -470,11 +427,34 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       className: runtimeType.toString(),
       methodName: '_addUser',
     );
-    final token = await authApi.login(
-      username: credentials.username!,
-      password: credentials.password!,
-    );
 
+    late String token;
+    try {
+      final resp = await tokenApi.tokenCreate(
+        username: credentials.username!,
+        password: credentials.password!,
+      );
+
+      if (resp.data?.token == null) {
+        logger.fw(
+          "Could not retrieve bearer token for user $redactedId.",
+          className: runtimeType.toString(),
+          methodName: '_addUser',
+        );
+        throw InfoMessageException(code: ErrorCode.authenticationFailed);
+      }
+      token = resp.data!.token;
+    } on DioException catch (error) {
+      if ((error.response?.data['non_field_errors'] as String) ==
+          _mfaRequiredMessage) {
+        logger.fw(
+          "MFA required for user $redactedId.",
+          className: runtimeType.toString(),
+          methodName: '_addUser',
+        );
+        throw InfoMessageException(code: ErrorCode.totpRequired);
+      }
+    }
     logger.fd(
       "Bearer token successfully retrieved.",
       className: runtimeType.toString(),
@@ -499,22 +479,16 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       );
       throw InfoMessageException(code: ErrorCode.userAlreadyExists);
     }
-    await onFetchUserInformation?.call();
-    final apiVersion = await _getApiVersion(sessionManager.client);
-    logger.fd(
-      "Trying to fetch remote paperless user for $redactedId.",
-      className: runtimeType.toString(),
-      methodName: '_addUser',
-    );
 
-    late UserModel serverUser;
+    await onFetchUserInformation?.call();
+    late User serverUser;
+
     try {
-      serverUser = await _apiFactory
-          .createUserApi(
-            sessionManager.client,
-            apiVersion: apiVersion,
-          )
-          .findCurrentUser();
+      final uiSettings = await _api.getUiSettingsApi().uiSettingsRetrieve();
+      final userId = uiSettings.data!.user!.id!;
+
+      final userResponse = await _api.getUsersApi().usersRetrieve(id: userId);
+      serverUser = userResponse.data!;
     } on DioException catch (error, stackTrace) {
       logger.fe(
         "An error occurred while fetching the remote paperless user.",
@@ -539,6 +513,7 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
     );
 
     await onPersistLocalUserData?.call();
+    final apiVersion = await _getApiVersion(_sessionManager.client);
 
     // Create user account
     await userAccountBox.put(
@@ -547,7 +522,6 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
         id: localUserId,
         settings: LocalUserSettings(),
         serverUrl: serverUrl,
-        paperlessUser: serverUser,
         apiVersion: apiVersion,
       ),
     );
@@ -648,29 +622,5 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       );
       return defaultValue;
     }
-  }
-
-  /// Fetches possibly updated (permissions, name, updated server version and thus new user model, ...) remote user data.
-  Future<void> _updateRemoteUser(
-    SessionManager sessionManager,
-    LocalUserAccount localUserAccount,
-    int apiVersion,
-  ) async {
-    logger.fd(
-      "Trying to update remote user object...",
-      className: runtimeType.toString(),
-      methodName: '_updateRemoteUser',
-    );
-    final updatedPaperlessUser = await _apiFactory
-        .createUserApi(sessionManager.client, apiVersion: apiVersion)
-        .findCurrentUser();
-
-    localUserAccount.paperlessUser = updatedPaperlessUser;
-    await localUserAccount.save();
-    logger.fd(
-      "Successfully updated remote user object.",
-      className: runtimeType.toString(),
-      methodName: '_updateRemoteUser',
-    );
   }
 }
