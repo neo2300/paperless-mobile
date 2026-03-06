@@ -326,15 +326,16 @@ class _InboxPageState extends State<InboxPage> {
 
   Map<String, List<Document>> _groupByDate(Iterable<Document> documents) {
     return groupBy<Document, String>(documents, (doc) {
-      if (doc.added.isToday) {
+      if (doc.added == null) return '-';
+      if (doc.added!.isToday) {
         return S.of(context)!.today;
       }
-      if (doc.added.isYesterday) {
+      if (doc.added!.isYesterday) {
         return S.of(context)!.yesterday;
       }
       return DateFormat.yMMMMd(
         Localizations.localeOf(context).toString(),
-      ).format(doc.added);
+      ).format(doc.added!);
     });
   }
 }
