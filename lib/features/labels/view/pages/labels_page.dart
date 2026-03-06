@@ -83,7 +83,7 @@ class _LabelsPageState extends State<LabelsPage>
             floatingActionButton: ConnectivityAwareActionWrapper(
               offlineBuilder: (context, child) => const SizedBox.shrink(),
               child: FloatingActionButton.extended(
-                heroTag: "inbox_page_fab",
+                heroTag: "labels_page_fab",
                 label: Text(fabLabel),
                 icon: Icon(Icons.add),
                 onPressed: [
