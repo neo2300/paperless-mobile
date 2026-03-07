@@ -124,6 +124,7 @@ class EditLabelForm<T extends Label, TRequest extends LabelRequest>
     if ((initialValue.documentCount ?? 0) > 0) {
       final shouldDelete =
           await showDialog<bool>(
+            useRootNavigator: false,
             context: context,
             builder: (context) => AlertDialog(
               title: Text(S.of(context)!.confirmDeletion),

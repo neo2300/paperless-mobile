@@ -14,12 +14,20 @@ import 'package:paperless_mobile/features/documents/view/widgets/adaptive_docume
 import 'package:paperless_mobile/features/documents/view/widgets/selection/view_type_selection_widget.dart';
 import 'package:paperless_mobile/features/settings/model/view_type.dart';
 import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
-import 'package:paperless_mobile/routing/routes/documents_route.dart';
 
 enum SearchView { suggestions, results }
 
 class DocumentSearchPage extends StatefulWidget {
-  const DocumentSearchPage({super.key});
+  final VoidCallback close;
+  final void Function(BuildContext context, Document document) onItemSelected;
+  final List<int> disabledIds;
+
+  const DocumentSearchPage({
+    super.key,
+    required this.onItemSelected,
+    required this.close,
+    this.disabledIds = const [],
+  });
 
   @override
   State<DocumentSearchPage> createState() => _DocumentSearchPageState();
@@ -64,7 +72,22 @@ class _DocumentSearchPageState extends State<DocumentSearchPage> {
       appBar: AppBar(
         backgroundColor: theme.colorScheme.surfaceContainerHighest,
         toolbarHeight: 72 - progressIndicatorHeight,
-        leading: BackButton(color: theme.colorScheme.onSurfaceVariant),
+        leading: BackButton(
+          color: theme.colorScheme.onSurfaceVariant,
+          onPressed: () {
+            if (_searchView == SearchView.results) {
+              setState(() {
+                _searchView = SearchView.suggestions;
+              });
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _queryController.clear();
+                _queryFocusNode.requestFocus();
+              });
+            } else {
+              widget.close();
+            }
+          },
+        ),
         title: Hero(
           tag: "search_hero_tag",
           child: TextField(
@@ -81,20 +104,7 @@ class _DocumentSearchPageState extends State<DocumentSearchPage> {
             controller: _queryController,
             textInputAction: TextInputAction.search,
             onSubmitted: (query) {
-              FocusScope.of(context).unfocus();
-              _debounceTimer?.cancel();
-              context.localStore.updateLoggedInUserAppState(
-                (state) => state.copyWith(
-                  documentSearchHistory: [
-                    ...state.documentSearchHistory.whereNot((e) => e == query),
-                    query,
-                  ],
-                ),
-              );
-              setState(() {
-                _searchTerm = query;
-                _searchView = SearchView.results;
-              });
+              _onSubmit(context, query);
             },
           ),
         ),
@@ -133,6 +143,23 @@ class _DocumentSearchPageState extends State<DocumentSearchPage> {
         ],
       ),
     );
+  }
+
+  void _onSubmit(BuildContext context, String query) {
+    FocusScope.of(context).unfocus();
+    _debounceTimer?.cancel();
+    context.localStore.updateLoggedInUserAppState(
+      (state) => state.copyWith(
+        documentSearchHistory: [
+          ...state.documentSearchHistory.whereNot((e) => e == query),
+          query,
+        ],
+      ),
+    );
+    setState(() {
+      _searchTerm = query;
+      _searchView = SearchView.results;
+    });
   }
 
   Widget _buildSuggestionsView() {
@@ -206,6 +233,7 @@ class _DocumentSearchPageState extends State<DocumentSearchPage> {
   void _onDeleteHistoryEntry(String entry) async {
     final shouldRemove =
         await showDialog<bool>(
+          useRootNavigator: false,
           context: context,
           builder: (context) => RemoveHistoryEntryDialog(entry: entry),
         ) ??
@@ -283,15 +311,9 @@ class _DocumentSearchPageState extends State<DocumentSearchPage> {
                 isLoading: state.isLoading,
                 hasLoaded: state.isSuccess,
                 enableHeroAnimation: false,
+                disabledIds: widget.disabledIds,
                 onTap: (document) {
-                  DocumentDetailsRoute(
-                    title: document.title,
-                    documentId: document.id,
-                    isLabelClickable: false,
-                    thumbnailUrl: context.documentRepository.getThumbnailUrl(
-                      document.id,
-                    ),
-                  ).push(context);
+                  widget.onItemSelected(context, document);
                 },
               ),
           ],
@@ -302,6 +324,6 @@ class _DocumentSearchPageState extends State<DocumentSearchPage> {
 
   void _selectSuggestion(String suggestion) {
     _queryController.text = suggestion;
-    FocusScope.of(context).unfocus();
+    _onSubmit(context, suggestion);
   }
 }

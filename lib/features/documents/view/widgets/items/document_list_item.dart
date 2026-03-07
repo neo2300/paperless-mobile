@@ -23,11 +23,16 @@ class DocumentListItem extends DocumentItem {
     super.onTagSelected,
     super.onTap,
     super.enableHeroAnimation = true,
+    super.isEnabled,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
+    return Opacity(
+      opacity: isEnabled ? 1.0 : 0.38,
+      child: IgnorePointer(
+        ignoring: !isEnabled,
+        child: ListTile(
       tileColor: backgroundColor,
       dense: true,
       selected: isSelected,
@@ -88,6 +93,8 @@ class DocumentListItem extends DocumentItem {
         ),
       ),
       contentPadding: const EdgeInsets.all(8.0),
+    ),
+      ),
     );
   }
 

@@ -278,6 +278,7 @@ class _InboxPageState extends State<InboxPage> {
   Future<void> _onMarkAllAsSeen() async {
     final isActionConfirmed =
         await showDialog(
+          useRootNavigator: false,
           context: context,
           builder: (context) => AlertDialog(
             title: Text(S.of(context)!.markAllAsSeen),

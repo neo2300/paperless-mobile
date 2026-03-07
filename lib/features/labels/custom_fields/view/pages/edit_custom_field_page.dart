@@ -90,6 +90,7 @@ class _EditCustomFieldForm extends StatelessWidget {
     if (customField.documentCount > 0) {
       final shouldDelete =
           await showDialog<bool>(
+            useRootNavigator: false,
             context: context,
             builder: (context) => AlertDialog(
               title: Text(S.of(context)!.confirmDeletion),

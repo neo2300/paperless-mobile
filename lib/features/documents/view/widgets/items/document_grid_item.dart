@@ -23,12 +23,17 @@ class DocumentGridItem extends DocumentItem {
     super.onTagSelected,
     super.onTap,
     required super.enableHeroAnimation,
+    super.isEnabled,
   });
 
   @override
   Widget build(BuildContext context) {
     var currentUser = context.loggedInUser$.paperlessUser;
-    return Stack(
+    return Opacity(
+      opacity: isEnabled ? 1.0 : 0.38,
+      child: IgnorePointer(
+        ignoring: !isEnabled,
+        child: Stack(
       children: [
         Card(
           elevation: 1.0,
@@ -149,6 +154,8 @@ class DocumentGridItem extends DocumentItem {
           ),
         ),
       ],
+    ),
+      ),
     );
   }
 

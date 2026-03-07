@@ -28,6 +28,7 @@ class DocumentDetailedItem extends DocumentItem {
     super.onStoragePathSelected,
     super.onTagSelected,
     super.onTap,
+    super.isEnabled,
   });
 
   @override
@@ -52,7 +53,11 @@ class DocumentDetailedItem extends DocumentItem {
     final maxHeight = highlights != null
         ? min(600.0, availableHeight)
         : min(500.0, availableHeight);
-    return Card(
+    return Opacity(
+      opacity: isEnabled ? 1.0 : 0.38,
+      child: IgnorePointer(
+        ignoring: !isEnabled,
+        child: Card(
       color: isSelected ? Theme.of(context).colorScheme.inversePrimary : null,
       child: InkWell(
         enableFeedback: true,
@@ -139,6 +144,8 @@ class DocumentDetailedItem extends DocumentItem {
               ).padded(),
           ],
         ),
+      ),
+    ),
       ),
     ).padded();
   }
