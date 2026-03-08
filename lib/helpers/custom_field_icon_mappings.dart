@@ -4,11 +4,11 @@ import 'package:paperless_mobile/api/models/models.dart';
 IconData getCustomFieldIcon(DataTypeEnum dataType) {
   return switch (dataType) {
     DataTypeEnum.string => Icons.text_fields,
-    DataTypeEnum.integer => IconData(
+    DataTypeEnum.integer => const IconData(
       0x2115,
       fontFamily: 'MaterialIcons',
     ), //Natural numbers
-    DataTypeEnum.float => IconData(
+    DataTypeEnum.float => const IconData(
       0x211D,
       fontFamily: 'MaterialIcons',
     ), //Real numbers
