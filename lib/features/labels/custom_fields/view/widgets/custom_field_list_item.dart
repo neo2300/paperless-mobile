@@ -10,9 +10,19 @@ class CustomFieldListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final defaultSubtitle = _dataTypeDisplayName(field.dataType);
+    final subtitle = switch (field.dataType) {
+      DataTypeEnum.monetary =>
+        field.extraData is Map
+            ? (field.extraData as Map)['default_currency'] != null
+                  ? '$defaultSubtitle (${(field.extraData as Map)['default_currency']})'
+                  : defaultSubtitle
+            : defaultSubtitle,
+      _ => defaultSubtitle,
+    };
     return ListTile(
       title: Text(field.name),
-      subtitle: Text(_dataTypeDisplayName(field.dataType)),
+      subtitle: Text(subtitle),
       leading: CircleAvatar(child: Icon(_dataTypeIcon(field.dataType))),
       trailing: Text(
         formatMaxCount(field.documentCount),

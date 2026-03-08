@@ -46,6 +46,10 @@ class _MonetaryFieldExtraFields extends StatelessWidget {
     return FormBuilderTextField(
       name: 'default_currency',
       initialValue: initialCurrency,
+      valueTransformer: (value) {
+        final trimmed = value?.trim();
+        return (trimmed != null && trimmed.isNotEmpty) ? trimmed : null;
+      },
       decoration: InputDecoration(
         labelText: S.of(context)!.customFieldMonetaryDefaultCurrencyLabel,
         hintText: 'EUR',

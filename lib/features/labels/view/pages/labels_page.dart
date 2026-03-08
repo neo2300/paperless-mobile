@@ -275,6 +275,7 @@ class _LabelsPageState extends State<LabelsPage>
           onAddNew: () =>
               CreateLabelRoute(LabelType.correspondent).push(context),
         ),
+        SliverToBoxAdapter(child: SizedBox(height: 80)),
       ],
     );
   }
@@ -299,6 +300,7 @@ class _LabelsPageState extends State<LabelsPage>
           onAddNew: () =>
               CreateLabelRoute(LabelType.documentType).push(context),
         ),
+        SliverToBoxAdapter(child: SizedBox(height: 80)),
       ],
     );
   }
@@ -325,6 +327,7 @@ class _LabelsPageState extends State<LabelsPage>
           emptyStateDescription: S.of(context)!.noTagsSetUp,
           onAddNew: () => CreateLabelRoute(LabelType.tag).push(context),
         ),
+        SliverToBoxAdapter(child: SizedBox(height: 80)),
       ],
     );
   }
@@ -349,6 +352,7 @@ class _LabelsPageState extends State<LabelsPage>
           emptyStateDescription: S.of(context)!.noStoragePathsSetUp,
           onAddNew: () => CreateLabelRoute(LabelType.storagePath).push(context),
         ),
+        SliverToBoxAdapter(child: SizedBox(height: 80)),
       ],
     );
   }
@@ -369,6 +373,7 @@ class _LabelsPageState extends State<LabelsPage>
           emptyStateDescription: S.of(context)!.noCustomFieldsSetUp,
           onAddNew: () => CreateCustomFieldRoute().push(context),
         ),
+        SliverToBoxAdapter(child: SizedBox(height: 80)),
       ],
     );
   }
