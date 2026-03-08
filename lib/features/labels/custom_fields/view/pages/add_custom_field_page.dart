@@ -6,6 +6,7 @@ import 'package:paperless_mobile/api/paperless_api.dart';
 import 'package:paperless_mobile/core/extensions/flutter_extensions.dart';
 import 'package:paperless_mobile/core/widgets/icon_loading_widget.dart';
 import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
+import 'package:paperless_mobile/features/labels/custom_fields/view/custom_field_conditional_form_fields.dart';
 import 'package:paperless_mobile/helpers/custom_field_icon_mappings.dart';
 import 'package:paperless_mobile/helpers/message_helpers.dart';
 
@@ -53,6 +54,7 @@ class _CustomFieldForm extends StatefulWidget {
 class _CustomFieldFormState extends State<_CustomFieldForm> {
   final _formKey = GlobalKey<FormBuilderState>();
   Map<String, String> _errors = {};
+  DataTypeEnum? _selectedDataType;
 
   @override
   Widget build(BuildContext context) {
@@ -103,7 +105,10 @@ class _CustomFieldFormState extends State<_CustomFieldForm> {
                 }
                 return null;
               },
-              onChanged: (val) => setState(() => _errors = {}),
+              onChanged: (val) => setState(() {
+                _errors = {};
+                _selectedDataType = val;
+              }),
               items: DataTypeEnum.values
                   .map(
                     (type) => DropdownMenuItem<DataTypeEnum>(
@@ -120,6 +125,7 @@ class _CustomFieldFormState extends State<_CustomFieldForm> {
                   )
                   .toList(),
             ),
+            CustomFieldConditionalFormFields(dataType: _selectedDataType),
           ].padded(),
         ),
       ),
@@ -130,9 +136,17 @@ class _CustomFieldFormState extends State<_CustomFieldForm> {
     if (_formKey.currentState?.saveAndValidate() ?? false) {
       try {
         final formState = _formKey.currentState!;
+        final selectOptions =
+            formState.value['select_options'] as List<Map<String, dynamic>>?;
+        final defaultCurrency = formState.value['default_currency'] as String?;
+        final extraData = <String, dynamic>{
+          'select_options': selectOptions ?? [],
+          'default_currency': defaultCurrency,
+        };
         final request = CustomFieldRequest(
           name: formState.value['name'] as String,
           dataType: formState.value['data_type'] as DataTypeEnum,
+          extraData: extraData,
         );
         final mutationResult = await widget.mutation.mutate(request);
         if (mutationResult is MutationError) {
@@ -142,6 +156,12 @@ class _CustomFieldFormState extends State<_CustomFieldForm> {
       } on PaperlessApiException catch (error, stackTrace) {
         if (mounted) showErrorMessage(context, error, stackTrace);
       } on PaperlessFormValidationException catch (exception) {
+        if (exception.hasUnspecificErrorMessage()) {
+          if (mounted) {
+            showGenericError(context, exception, null);
+          }
+          return;
+        }
         setState(() => _errors = exception.validationMessages);
       } catch (error, stackTrace) {
         if (mounted) {

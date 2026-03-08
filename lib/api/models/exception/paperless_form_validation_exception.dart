@@ -8,11 +8,13 @@ class PaperlessFormValidationException implements Exception {
   }
 
   bool hasUnspecificErrorMessage() {
-    return validationMessages.containsKey("non_field_errors");
+    return validationMessages.containsKey("non_field_errors") ||
+        validationMessages.containsKey("error");
   }
 
   String? unspecificErrorMessage() {
-    return validationMessages["non_field_errors"];
+    return validationMessages["non_field_errors"] ??
+        validationMessages["error"];
   }
 
   String? messageForField(String formKey) {

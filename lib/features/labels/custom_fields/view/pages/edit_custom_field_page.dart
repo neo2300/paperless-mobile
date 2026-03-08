@@ -10,6 +10,7 @@ import 'package:paperless_mobile/core/widgets/dialog_utils/dialog_cancel_button.
 import 'package:paperless_mobile/core/widgets/dialog_utils/dialog_confirm_button.dart';
 import 'package:paperless_mobile/core/widgets/dialog_utils/pop_with_unsaved_changes.dart';
 import 'package:paperless_mobile/core/widgets/icon_loading_widget.dart';
+import 'package:paperless_mobile/features/labels/custom_fields/view/custom_field_conditional_form_fields.dart';
 import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
 import 'package:paperless_mobile/helpers/custom_field_icon_mappings.dart';
 import 'package:paperless_mobile/helpers/message_helpers.dart';
@@ -210,6 +211,10 @@ class _CustomFieldEditFormState extends State<_CustomFieldEditForm> {
                   )
                   .toList(),
             ),
+            CustomFieldConditionalFormFields(
+              dataType: widget.customField.dataType,
+              extraData: widget.customField.extraData as Map<String, dynamic>?,
+            ),
           ].padded(),
         ),
       ),
@@ -220,9 +225,17 @@ class _CustomFieldEditFormState extends State<_CustomFieldEditForm> {
     if (widget.formKey.currentState?.saveAndValidate() ?? false) {
       try {
         final formState = widget.formKey.currentState!;
+        final selectOptions =
+            formState.value['select_options'] as List<Map<String, dynamic>>?;
+        final defaultCurrency = formState.value['default_currency'] as String?;
+        final extraData = <String, dynamic>{
+          'select_options': selectOptions ?? [],
+          'default_currency': defaultCurrency,
+        };
         final request = CustomFieldRequest(
           name: formState.value['name'] as String,
           dataType: formState.value['data_type'] as DataTypeEnum,
+          extraData: extraData,
         );
         final mutationResult = await widget.editMutation.mutate(request);
         if (mutationResult is MutationError) {
@@ -232,6 +245,12 @@ class _CustomFieldEditFormState extends State<_CustomFieldEditForm> {
       } on PaperlessApiException catch (error, stackTrace) {
         if (mounted) showErrorMessage(context, error, stackTrace);
       } on PaperlessFormValidationException catch (exception) {
+        if (exception.hasUnspecificErrorMessage()) {
+          if (mounted) {
+            showGenericError(context, exception.unspecificErrorMessage() ?? "");
+          }
+          return;
+        }
         setState(() => _errors = exception.validationMessages);
       } catch (error, stackTrace) {
         if (mounted) {

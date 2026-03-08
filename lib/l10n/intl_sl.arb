@@ -376,10 +376,39 @@
   "@customFieldDataType": {},
   "customFieldDeletedSuccessfully": "Custom field deleted successfully.",
   "@customFieldDeletedSuccessfully": {},
+  "customFieldMonetaryDefaultCurrencyHelperText": "Enter the default currency (e.g., USD, EUR, GBP)",
+  "@customFieldMonetaryDefaultCurrencyHelperText": {
+    "description": "Helper text for the default currency field in a custom monetary field"
+  },
+  "customFieldMonetaryDefaultCurrencyHintText": "Refer to the default ISO currency code of your region (USD, EUR, GBP, ...)",
+  "@customFieldMonetaryDefaultCurrencyHintText": {
+    "description": "Hint text for the default currency field in a custom monetary field"
+  },
+  "customFieldMonetaryDefaultCurrencyLabel": "Default Currency",
+  "@customFieldMonetaryDefaultCurrencyLabel": {
+    "description": "Label for the default currency field in a custom monetary field"
+  },
   "customFieldName": "Field Name",
   "@customFieldName": {},
   "customFields": "Custom Fields",
   "@customFields": {},
+  "customFieldSelectAddOption": "Add option",
+  "@customFieldSelectAddOption": {
+    "description": "Label for the button to add a new option to a custom field with select data type"
+  },
+  "customFieldSelectOptionHintText": "Option {index}",
+  "@customFieldSelectOptionHintText": {
+    "description": "Hint text for the text field to add or edit an option of a custom field with select data type",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "customFieldSelectOptions": "Options",
+  "@customFieldSelectOptions": {
+    "description": "Label shown above the options of a custom field with select data type"
+  },
   "customFieldUpdatedSuccessfully": "Custom field updated successfully.",
   "@customFieldUpdatedSuccessfully": {},
   "dark": "Temna",
