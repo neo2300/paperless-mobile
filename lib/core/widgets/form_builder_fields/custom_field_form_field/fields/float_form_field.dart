@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'package:paperless_mobile/api/models/data_type_enum.dart';
+import 'package:paperless_mobile/helpers/custom_field_icon_mappings.dart';
 
 /// A form field for editing a float custom field value.
 class FloatFormField extends StatefulWidget {
@@ -127,6 +129,7 @@ class _FloatFormFieldState extends State<FloatFormField> {
         }),
       ],
       decoration: InputDecoration(
+        prefixIcon: Icon(getCustomFieldIcon(DataTypeEnum.float)),
         labelText: widget.labelText,
         errorText: widget.errorText,
         isDense: true,

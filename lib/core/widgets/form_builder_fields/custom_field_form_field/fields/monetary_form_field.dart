@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:paperless_mobile/api/models/data_type_enum.dart';
+import 'package:paperless_mobile/helpers/custom_field_icon_mappings.dart';
 
 /// A form field for editing a monetary custom field value.
 ///
@@ -81,7 +83,7 @@ class _MonetaryFormFieldState extends State<MonetaryFormField> {
         labelText: widget.labelText,
         errorText: widget.errorText,
         isDense: true,
-        prefixIcon: const Icon(Icons.attach_money),
+        prefixIcon: Icon(getCustomFieldIcon(DataTypeEnum.monetary)),
       ),
     );
   }

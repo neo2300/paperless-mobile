@@ -66,6 +66,17 @@ void showGenericError(
     showErrorMessage(context, error, stackTrace);
     return;
   }
+
+  if (error is PaperlessFormValidationException) {
+    showGenericError(
+      context,
+      error.validationMessages.entries
+          .map((e) => "${e.key}: ${e.value}")
+          .join("\n"),
+      stackTrace,
+    );
+    return;
+  }
   if (error is PaperlessUnauthorizedException) {
     showLocalizedError(
       context,

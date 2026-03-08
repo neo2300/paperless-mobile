@@ -25,6 +25,9 @@
   "@addCorrespondent": {
     "description": "Title when adding a new correspondent"
   },
+  "addCustomField": "New Custom Field",
+  "@addCustomField": {},
+  "addCustomFieldToDocument": "Add custom field",
   "addDocumentType": "نوع مستند جديد",
   "@addDocumentType": {
     "description": "Title when adding a new document type"
@@ -34,6 +37,8 @@
   "additionalHeaders": "Additional Headers",
   "addNewCorrespondent": "إضافة مراسل جديد",
   "@addNewCorrespondent": {},
+  "addNewCustomField": "Add new custom field",
+  "@addNewCustomField": {},
   "addNewDocumentType": "إضافة نوع مستند جديد",
   "@addNewDocumentType": {},
   "addNewStoragePath": "إضافة مسار تخزين جديد",
@@ -365,6 +370,18 @@
   "@createsASavedViewBasedOnTheCurrentFilterCriteria": {},
   "createViewsToQuicklyFilterYourDocuments": "إنشاء مشاهدات لفلترة مستنداتك بسرعة.",
   "@createViewsToQuicklyFilterYourDocuments": {},
+  "customFieldCreatedSuccessfully": "Custom field created successfully.",
+  "@customFieldCreatedSuccessfully": {},
+  "customFieldDataType": "Data Type",
+  "@customFieldDataType": {},
+  "customFieldDeletedSuccessfully": "Custom field deleted successfully.",
+  "@customFieldDeletedSuccessfully": {},
+  "customFieldName": "Field Name",
+  "@customFieldName": {},
+  "customFields": "Custom Fields",
+  "@customFields": {},
+  "customFieldUpdatedSuccessfully": "Custom field updated successfully.",
+  "@customFieldUpdatedSuccessfully": {},
   "dark": "داكن",
   "@dark": {},
   "darkTheme": "المظهر الداكن",
@@ -401,6 +418,8 @@
   "@delete": {},
   "deleteAllScans": "حذف كل الممسوحات ضوئياً",
   "@deleteAllScans": {},
+  "deleteCustomFieldWarningText": "This custom field contains references to other documents. By deleting this label, all references will be removed. Continue?",
+  "@deleteCustomFieldWarningText": {},
   "deleteDocument": "حذف المستند",
   "@deleteDocument": {
     "description": "Used as an action label on each inbox item"
@@ -500,6 +519,8 @@
   "@dynamicColorScheme": {},
   "edit": "تحرير",
   "@edit": {},
+  "editCustomField": "Edit Custom Field",
+  "@editCustomField": {},
   "editDocument": "تحرير المستند",
   "@editDocument": {},
   "editDocumentTooltip": "تحرير",
@@ -746,6 +767,8 @@
   "@noAppToDisplayPDFFilesFound": {},
   "noCorrespondentsSetUp": "يبدو أنه لم تتم تهيئة أي مراسلين لديك.",
   "@noCorrespondentsSetUp": {},
+  "noCustomFieldsSetUp": "You don't seem to have any custom fields set up.",
+  "@noCustomFieldsSetUp": {},
   "noDocumentsFound": "لم يتم العثور على أيّ مستندات.",
   "@noDocumentsFound": {
     "description": "Message shown when no documents were found."
@@ -1103,6 +1126,7 @@
   "youDoNotHaveUnseenDocuments": "ليس لديك مستندات غير مقروءة.",
   "@youDoNotHaveUnseenDocuments": {},
   "youHaveNoViewsOnYourDashboardYet": "You have not added any views to your dashboard yet.",
+  "@youHaveNoViewsOnYourDashboardYet": {},
   "youreOffline": "أنت غير متصل بالإنترنت.",
   "@youreOffline": {}
 }

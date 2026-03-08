@@ -25,6 +25,9 @@
   "@addCorrespondent": {
     "description": "Title when adding a new correspondent"
   },
+  "addCustomField": "New Custom Field",
+  "@addCustomField": {},
+  "addCustomFieldToDocument": "Add custom field",
   "addDocumentType": "New Document Type",
   "@addDocumentType": {
     "description": "Title when adding a new document type"
@@ -34,6 +37,8 @@
   "additionalHeaders": "Additional Headers",
   "addNewCorrespondent": "Add new correspondent",
   "@addNewCorrespondent": {},
+  "addNewCustomField": "Add new custom field",
+  "@addNewCustomField": {},
   "addNewDocumentType": "Add new document type",
   "@addNewDocumentType": {},
   "addNewStoragePath": "Add new storage path",
@@ -365,6 +370,18 @@
   "@createsASavedViewBasedOnTheCurrentFilterCriteria": {},
   "createViewsToQuicklyFilterYourDocuments": "Create views to quickly filter your documents.",
   "@createViewsToQuicklyFilterYourDocuments": {},
+  "customFieldCreatedSuccessfully": "Custom field created successfully.",
+  "@customFieldCreatedSuccessfully": {},
+  "customFieldDataType": "Data Type",
+  "@customFieldDataType": {},
+  "customFieldDeletedSuccessfully": "Custom field deleted successfully.",
+  "@customFieldDeletedSuccessfully": {},
+  "customFieldName": "Field Name",
+  "@customFieldName": {},
+  "customFields": "Custom Fields",
+  "@customFields": {},
+  "customFieldUpdatedSuccessfully": "Custom field updated successfully.",
+  "@customFieldUpdatedSuccessfully": {},
   "dark": "Dark",
   "@dark": {},
   "darkTheme": "Dark Theme",
@@ -401,6 +418,8 @@
   "@delete": {},
   "deleteAllScans": "Delete all scans",
   "@deleteAllScans": {},
+  "deleteCustomFieldWarningText": "This custom field contains references to other documents. By deleting this label, all references will be removed. Continue?",
+  "@deleteCustomFieldWarningText": {},
   "deleteDocument": "Delete document",
   "@deleteDocument": {
     "description": "Used as an action label on each inbox item"
@@ -500,6 +519,8 @@
   "@dynamicColorScheme": {},
   "edit": "Edit",
   "@edit": {},
+  "editCustomField": "Edit Custom Field",
+  "@editCustomField": {},
   "editDocument": "Edit Document",
   "@editDocument": {},
   "editDocumentTooltip": "Edit",
@@ -746,6 +767,8 @@
   "@noAppToDisplayPDFFilesFound": {},
   "noCorrespondentsSetUp": "You don't seem to have any correspondents set up.",
   "@noCorrespondentsSetUp": {},
+  "noCustomFieldsSetUp": "You don't seem to have any custom fields set up.",
+  "@noCustomFieldsSetUp": {},
   "noDocumentsFound": "No documents found.",
   "@noDocumentsFound": {
     "description": "Message shown when no documents were found."
@@ -1103,6 +1126,7 @@
   "youDoNotHaveUnseenDocuments": "You do not have unseen documents.",
   "@youDoNotHaveUnseenDocuments": {},
   "youHaveNoViewsOnYourDashboardYet": "You have not added any views to your dashboard yet.",
+  "@youHaveNoViewsOnYourDashboardYet": {},
   "youreOffline": "You're offline.",
   "@youreOffline": {}
 }

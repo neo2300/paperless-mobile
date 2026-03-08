@@ -33,67 +33,67 @@ class DocumentListItem extends DocumentItem {
       child: IgnorePointer(
         ignoring: !isEnabled,
         child: ListTile(
-      tileColor: backgroundColor,
-      dense: true,
-      selected: isSelected,
-      onTap: () => _onTap(),
-      selectedTileColor: Theme.of(context).colorScheme.inversePrimary,
-      onLongPress: onSelected != null ? () => onSelected!(document) : null,
-      title: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          Row(
+          tileColor: backgroundColor,
+          dense: true,
+          selected: isSelected,
+          onTap: () => _onTap(),
+          selectedTileColor: Theme.of(context).colorScheme.inversePrimary,
+          onLongPress: onSelected != null ? () => onSelected!(document) : null,
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
-              Flexible(
-                child: AbsorbPointer(
-                  absorbing: isSelectionActive,
-                  child: CorrespondentWidget(
-                    id: document.correspondent,
-                    isClickable: isLabelClickable,
-                    onSelected: onCorrespondentSelected,
+              Row(
+                children: [
+                  Flexible(
+                    child: AbsorbPointer(
+                      absorbing: isSelectionActive,
+                      child: CorrespondentWidget(
+                        id: document.correspondent,
+                        isClickable: isLabelClickable,
+                        onSelected: onCorrespondentSelected,
+                      ),
+                    ),
                   ),
+                ],
+              ),
+              Text(
+                document.title?.isNotEmpty ?? false ? document.title! : '-',
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+              AbsorbPointer(
+                absorbing: isSelectionActive,
+                child: TagsWidget(
+                  tagIds: document.tags,
+                  isClickable: isLabelClickable,
+                  onTagSelected: (id) => onTagSelected?.call(id),
                 ),
               ),
             ],
           ),
-          Text(
-            document.title?.isNotEmpty ?? false ? document.title! : '-',
-            overflow: TextOverflow.ellipsis,
-            maxLines: 1,
-          ),
-          AbsorbPointer(
-            absorbing: isSelectionActive,
-            child: TagsWidget(
-              tagIds: document.tags,
-              isClickable: isLabelClickable,
-              onTagSelected: (id) => onTagSelected?.call(id),
+          subtitle: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: DateAndDocumentTypeLabelWidget(
+              document: document,
+              onDocumentTypeSelected: onDocumentTypeSelected,
             ),
           ),
-        ],
-      ),
-      subtitle: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: DateAndDocumentTypeLabelWidget(
-          document: document,
-          onDocumentTypeSelected: onDocumentTypeSelected,
-        ),
-      ),
-      isThreeLine: document.tags.isNotEmpty,
-      leading: AspectRatio(
-        aspectRatio: _a4AspectRatio,
-        child: GestureDetector(
-          child: DocumentPreview(
-            documentId: document.id,
-            title: document.title,
-            fit: BoxFit.cover,
-            alignment: Alignment.topCenter,
-            enableHero: enableHeroAnimation,
+          isThreeLine: document.tags.isNotEmpty,
+          leading: AspectRatio(
+            aspectRatio: _a4AspectRatio,
+            child: GestureDetector(
+              child: DocumentPreview(
+                documentId: document.id,
+                title: document.title,
+                fit: BoxFit.cover,
+                alignment: Alignment.topCenter,
+                enableHero: enableHeroAnimation,
+              ),
+            ),
           ),
+          contentPadding: const EdgeInsets.all(8.0),
         ),
-      ),
-      contentPadding: const EdgeInsets.all(8.0),
-    ),
       ),
     );
   }

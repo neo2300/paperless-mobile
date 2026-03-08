@@ -17,7 +17,7 @@ class BooleanFieldValue extends StatelessWidget {
     if (value == null) return placeholder;
     final checked = value == true || value == 'true';
     return Icon(
-      checked ? Icons.check_circle : Icons.cancel,
+      checked ? Icons.check_box : Icons.check_box_outline_blank_rounded,
       color: checked
           ? Theme.of(context).colorScheme.primary
           : Theme.of(context).colorScheme.outline,

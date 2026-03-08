@@ -25,6 +25,9 @@
   "@addCorrespondent": {
     "description": "Title when adding a new correspondent"
   },
+  "addCustomField": "New Custom Field",
+  "@addCustomField": {},
+  "addCustomFieldToDocument": "Add custom field",
   "addDocumentType": "Nowy rodzaj dokumentu",
   "@addDocumentType": {
     "description": "Title when adding a new document type"
@@ -34,6 +37,8 @@
   "additionalHeaders": "Additional Headers",
   "addNewCorrespondent": "Dodaj nowego korespondenta",
   "@addNewCorrespondent": {},
+  "addNewCustomField": "Add new custom field",
+  "@addNewCustomField": {},
   "addNewDocumentType": "Dodaj nowy rodzaj dokumentu",
   "@addNewDocumentType": {},
   "addNewStoragePath": "Dodaj nową ścieżkę zapisu",
@@ -365,6 +370,18 @@
   "@createsASavedViewBasedOnTheCurrentFilterCriteria": {},
   "createViewsToQuicklyFilterYourDocuments": "Utwórz widoki by szybko filtrować dokumenty.",
   "@createViewsToQuicklyFilterYourDocuments": {},
+  "customFieldCreatedSuccessfully": "Custom field created successfully.",
+  "@customFieldCreatedSuccessfully": {},
+  "customFieldDataType": "Data Type",
+  "@customFieldDataType": {},
+  "customFieldDeletedSuccessfully": "Custom field deleted successfully.",
+  "@customFieldDeletedSuccessfully": {},
+  "customFieldName": "Field Name",
+  "@customFieldName": {},
+  "customFields": "Custom Fields",
+  "@customFields": {},
+  "customFieldUpdatedSuccessfully": "Custom field updated successfully.",
+  "@customFieldUpdatedSuccessfully": {},
   "dark": "Ciemny",
   "@dark": {},
   "darkTheme": "Motyw ciemny",
@@ -401,6 +418,8 @@
   "@delete": {},
   "deleteAllScans": "Usuń wszystkie skany",
   "@deleteAllScans": {},
+  "deleteCustomFieldWarningText": "This custom field contains references to other documents. By deleting this label, all references will be removed. Continue?",
+  "@deleteCustomFieldWarningText": {},
   "deleteDocument": "Usuń dokument",
   "@deleteDocument": {
     "description": "Used as an action label on each inbox item"
@@ -500,6 +519,8 @@
   "@dynamicColorScheme": {},
   "edit": "Edytuj",
   "@edit": {},
+  "editCustomField": "Edit Custom Field",
+  "@editCustomField": {},
   "editDocument": "Edytuj Dokument",
   "@editDocument": {},
   "editDocumentTooltip": "Edytuj",
@@ -746,6 +767,8 @@
   "@noAppToDisplayPDFFilesFound": {},
   "noCorrespondentsSetUp": "Nie masz żadnych ustawionych korespondentów.",
   "@noCorrespondentsSetUp": {},
+  "noCustomFieldsSetUp": "You don't seem to have any custom fields set up.",
+  "@noCustomFieldsSetUp": {},
   "noDocumentsFound": "Nie znaleziono dokumentów.",
   "@noDocumentsFound": {
     "description": "Message shown when no documents were found."
@@ -1103,6 +1126,7 @@
   "youDoNotHaveUnseenDocuments": "Nie masz nieprzeczytanych dokumentów.",
   "@youDoNotHaveUnseenDocuments": {},
   "youHaveNoViewsOnYourDashboardYet": "You have not added any views to your dashboard yet.",
+  "@youHaveNoViewsOnYourDashboardYet": {},
   "youreOffline": "Jesteście w trybie offline.",
   "@youreOffline": {}
 }

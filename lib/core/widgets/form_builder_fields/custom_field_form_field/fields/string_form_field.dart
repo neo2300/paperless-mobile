@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:paperless_mobile/api/paperless_api.dart';
+import 'package:paperless_mobile/helpers/custom_field_icon_mappings.dart';
 
 /// A form field for editing a string custom field value.
 class StringFormField extends StatefulWidget {
@@ -59,6 +61,7 @@ class _StringFormFieldState extends State<StringFormField> {
       controller: _controller,
       enabled: widget.enabled,
       decoration: InputDecoration(
+        prefixIcon: Icon(getCustomFieldIcon(DataTypeEnum.string)),
         labelText: widget.labelText,
         errorText: widget.errorText,
         isDense: true,

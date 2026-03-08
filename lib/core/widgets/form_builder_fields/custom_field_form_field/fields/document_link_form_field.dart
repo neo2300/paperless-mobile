@@ -3,6 +3,7 @@ import 'package:cached_query_flutter/cached_query_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
 import 'package:paperless_mobile/core/extensions/context_extensions.dart';
+import 'package:paperless_mobile/core/extensions/flutter_extensions.dart';
 import 'package:paperless_mobile/features/document_search/view/document_search_page.dart';
 
 /// A form field for editing a document link custom field value.
@@ -49,10 +50,12 @@ class DocumentLinkFormField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ids = _parseIds();
-    final chips = ids.map((id) => _DocumentLinkChip(
-          documentId: id,
-          onDeleted: enabled ? () => _removeId(id) : null,
-        ));
+    final chips = ids.map(
+      (id) => _DocumentLinkChip(
+        documentId: id,
+        onDeleted: enabled ? () => _removeId(id) : null,
+      ),
+    );
 
     return OpenContainer<Document>(
       middleColor: Theme.of(context).colorScheme.surface,
@@ -63,31 +66,28 @@ class DocumentLinkFormField extends StatelessWidget {
       closedElevation: 0,
       tappable: enabled,
       closedBuilder: (context, openSearch) {
-        return Container(
-          margin: const EdgeInsets.only(top: 6),
-          child: GestureDetector(
-            onTap: openSearch,
-            child: InputDecorator(
-              isEmpty: chips.isEmpty,
-              decoration: InputDecoration(
-                contentPadding: const EdgeInsets.all(12),
-                prefixIcon: const Icon(Icons.link),
-                enabled: enabled,
-                labelText: labelText,
-                errorText: errorText,
-              ),
-              child: SizedBox(
-                height: 32,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  separatorBuilder: (_, __) => const SizedBox(width: 4),
-                  itemBuilder: (context, index) => chips.elementAt(index),
-                  itemCount: chips.length,
-                ),
+        return GestureDetector(
+          onTap: openSearch,
+          child: InputDecorator(
+            isEmpty: chips.isEmpty,
+            decoration: InputDecoration(
+              contentPadding: const EdgeInsets.all(12),
+              prefixIcon: const Icon(Icons.link),
+              enabled: enabled,
+              labelText: labelText,
+              errorText: errorText,
+            ),
+            child: SizedBox(
+              height: 32,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                separatorBuilder: (_, __) => const SizedBox(width: 4),
+                itemBuilder: (context, index) => chips.elementAt(index),
+                itemCount: chips.length,
               ),
             ),
           ),
-        );
+        ).paddedOnly(top: 4);
       },
       openBuilder: (context, closeContainer) {
         return DocumentSearchPage(
@@ -112,10 +112,7 @@ class _DocumentLinkChip extends StatelessWidget {
   final int documentId;
   final VoidCallback? onDeleted;
 
-  const _DocumentLinkChip({
-    required this.documentId,
-    this.onDeleted,
-  });
+  const _DocumentLinkChip({required this.documentId, this.onDeleted});
 
   @override
   Widget build(BuildContext context) {
@@ -127,10 +124,7 @@ class _DocumentLinkChip extends StatelessWidget {
       builder: (context, state) {
         final title = state.data?.title ?? '#$documentId';
         return Chip(
-          label: Text(
-            title,
-            overflow: TextOverflow.ellipsis,
-          ),
+          label: Text(title, overflow: TextOverflow.ellipsis),
           deleteIcon: const Icon(Icons.close, size: 18),
           onDeleted: onDeleted,
           materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,

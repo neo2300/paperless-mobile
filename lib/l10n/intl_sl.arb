@@ -25,6 +25,9 @@
   "@addCorrespondent": {
     "description": "Title when adding a new correspondent"
   },
+  "addCustomField": "New Custom Field",
+  "@addCustomField": {},
+  "addCustomFieldToDocument": "Add custom field",
   "addDocumentType": "Novi tip dokumenta",
   "@addDocumentType": {
     "description": "Title when adding a new document type"
@@ -34,6 +37,8 @@
   "additionalHeaders": "Dodatne glave",
   "addNewCorrespondent": "Dodaj novega dopisnika",
   "@addNewCorrespondent": {},
+  "addNewCustomField": "Add new custom field",
+  "@addNewCustomField": {},
   "addNewDocumentType": "Dodaj nov tip dokumenta",
   "@addNewDocumentType": {},
   "addNewStoragePath": "Dodaj novo mesto shranjevanja",
@@ -365,6 +370,18 @@
   "@createsASavedViewBasedOnTheCurrentFilterCriteria": {},
   "createViewsToQuicklyFilterYourDocuments": "Ustvari poglede za hitrejše filtriranje dokumentov.",
   "@createViewsToQuicklyFilterYourDocuments": {},
+  "customFieldCreatedSuccessfully": "Custom field created successfully.",
+  "@customFieldCreatedSuccessfully": {},
+  "customFieldDataType": "Data Type",
+  "@customFieldDataType": {},
+  "customFieldDeletedSuccessfully": "Custom field deleted successfully.",
+  "@customFieldDeletedSuccessfully": {},
+  "customFieldName": "Field Name",
+  "@customFieldName": {},
+  "customFields": "Custom Fields",
+  "@customFields": {},
+  "customFieldUpdatedSuccessfully": "Custom field updated successfully.",
+  "@customFieldUpdatedSuccessfully": {},
   "dark": "Temna",
   "@dark": {},
   "darkTheme": "Temna tema",
@@ -401,6 +418,8 @@
   "@delete": {},
   "deleteAllScans": "Izbriši vse skene",
   "@deleteAllScans": {},
+  "deleteCustomFieldWarningText": "This custom field contains references to other documents. By deleting this label, all references will be removed. Continue?",
+  "@deleteCustomFieldWarningText": {},
   "deleteDocument": "Izbriši dokument",
   "@deleteDocument": {
     "description": "Used as an action label on each inbox item"
@@ -500,6 +519,8 @@
   "@dynamicColorScheme": {},
   "edit": "Uredi",
   "@edit": {},
+  "editCustomField": "Edit Custom Field",
+  "@editCustomField": {},
   "editDocument": "Uredi dokument",
   "@editDocument": {},
   "editDocumentTooltip": "Uredi",
@@ -746,6 +767,8 @@
   "@noAppToDisplayPDFFilesFound": {},
   "noCorrespondentsSetUp": "Ni nastavljenih dopisnikov.",
   "@noCorrespondentsSetUp": {},
+  "noCustomFieldsSetUp": "You don't seem to have any custom fields set up.",
+  "@noCustomFieldsSetUp": {},
   "noDocumentsFound": "Ni najdenih dokumentov.",
   "@noDocumentsFound": {
     "description": "Message shown when no documents were found."
@@ -1103,6 +1126,7 @@
   "youDoNotHaveUnseenDocuments": "Nimaš nepregledanih dokumentov.",
   "@youDoNotHaveUnseenDocuments": {},
   "youHaveNoViewsOnYourDashboardYet": "Na nadzorno ploščo še niste dodali nobenega pogleda.",
+  "@youHaveNoViewsOnYourDashboardYet": {},
   "youreOffline": "Ni povezave.",
   "@youreOffline": {}
 }

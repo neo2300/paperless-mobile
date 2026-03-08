@@ -11,6 +11,7 @@ import 'package:paperless_mobile/core/widgets/dialog_utils/dialog_confirm_button
 import 'package:paperless_mobile/core/widgets/dialog_utils/pop_with_unsaved_changes.dart';
 import 'package:paperless_mobile/core/widgets/icon_loading_widget.dart';
 import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
+import 'package:paperless_mobile/helpers/custom_field_icon_mappings.dart';
 import 'package:paperless_mobile/helpers/message_helpers.dart';
 
 class EditCustomFieldPage extends StatelessWidget {
@@ -72,7 +73,7 @@ class _EditCustomFieldForm extends StatelessWidget {
                   icon: state.isLoading
                       ? const IconLoadingWidget()
                       : Icon(Icons.delete),
-                );
+                ).paddedOnly(right: 8);
               },
             ),
           ],
@@ -196,7 +197,15 @@ class _CustomFieldEditFormState extends State<_CustomFieldEditForm> {
                   .map(
                     (type) => DropdownMenuItem<DataTypeEnum>(
                       value: type,
-                      child: Text(_dataTypeDisplayName(type)),
+
+                      child: Row(
+                        spacing: 4,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(getCustomFieldIcon(type)),
+                          Text(_dataTypeDisplayName(type)),
+                        ],
+                      ),
                     ),
                   )
                   .toList(),

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:paperless_mobile/api/models/data_type_enum.dart';
+import 'package:paperless_mobile/helpers/custom_field_icon_mappings.dart';
 
 /// A form field for editing an integer custom field value.
 class IntegerFormField extends StatefulWidget {
@@ -73,6 +75,7 @@ class _IntegerFormFieldState extends State<IntegerFormField> {
       ),
       inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'^-?\d*'))],
       decoration: InputDecoration(
+        prefixIcon: Icon(getCustomFieldIcon(DataTypeEnum.integer)),
         labelText: widget.labelText,
         errorText: widget.errorText,
         isDense: true,

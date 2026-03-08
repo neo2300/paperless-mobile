@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cached_query_flutter/cached_query_flutter.dart';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:go_router/go_router.dart';
@@ -12,8 +13,9 @@ import 'package:paperless_mobile/core/extensions/context_extensions.dart';
 import 'package:paperless_mobile/core/extensions/flutter_extensions.dart';
 import 'package:paperless_mobile/core/repository/document_repository.dart';
 import 'package:paperless_mobile/core/widgets/dialog_utils/pop_with_unsaved_changes.dart';
-import 'package:paperless_mobile/core/widgets/form_builder_fields/custom_field_form_field/form_builder_custom_field_value.dart';
+import 'package:paperless_mobile/core/widgets/form_builder_fields/custom_field_form_field/form_builder_custom_fields_field.dart';
 import 'package:paperless_mobile/core/widgets/form_builder_fields/form_builder_localized_date_picker.dart';
+import 'package:paperless_mobile/features/document_edit/view/custom_field_selection_page.dart';
 import 'package:paperless_mobile/features/documents/view/pages/document_view.dart';
 import 'package:paperless_mobile/features/labels/tags/view/widgets/tags_form_field.dart';
 import 'package:paperless_mobile/features/labels/view/widgets/single_label_form_field.dart';
@@ -40,7 +42,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
   static const fkCreatedDate = "createdAtDate";
   static const fkStoragePath = 'storagePath';
   static const fkContent = 'content';
-  static const fkCustomFieldPrefix = 'customField_';
+  static const fkCustomFields = 'customFields';
 
   final _formKey = GlobalKey<FormBuilderState>();
 
@@ -48,8 +50,6 @@ class _DocumentEditPageState extends State<DocumentEditPage>
   int _selectedTabIndex = 0;
 
   late final TabController _tabController;
-  late final AnimationController _animationController;
-  late final Animation<double> _animation;
 
   @override
   void didChangeDependencies() {
@@ -62,20 +62,11 @@ class _DocumentEditPageState extends State<DocumentEditPage>
         });
       }
     });
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 150),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInCubic,
-    ).drive(Tween<double>(begin: 0, end: 1));
   }
 
   @override
   void dispose() {
     _tabController.dispose();
-    _animationController.dispose();
     super.dispose();
   }
 
@@ -115,12 +106,6 @@ class _DocumentEditPageState extends State<DocumentEditPage>
             ) = _currentValues;
             final isContentTouched =
                 _formKey.currentState?.fields[fkContent]?.isDirty ?? false;
-            // Check if any custom field form value is dirty
-            final hasCustomFieldChanges =
-                _formKey.currentState?.fields.entries
-                    .where((e) => e.key.startsWith(fkCustomFieldPrefix))
-                    .any((e) => e.value.isDirty) ??
-                false;
             return doc.title != title ||
                 doc.correspondent != correspondent ||
                 doc.documentType != documentType ||
@@ -128,7 +113,10 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                 !const UnorderedIterableEquality().equals(doc.tags, tags) ||
                 doc.created != createdAt ||
                 (doc.content != content && isContentTouched) ||
-                hasCustomFieldChanges;
+                !const ListEquality<CustomFieldInstance>().equals(
+                  doc.customFields ?? [],
+                  customFields,
+                );
           },
           child: FormBuilder(
             key: _formKey,
@@ -140,9 +128,8 @@ class _DocumentEditPageState extends State<DocumentEditPage>
               fkTags: IdsTagsQuery(include: state.data!.tags),
               fkCreatedDate: state.data!.created,
               fkContent: state.data!.content,
-              if (state.data!.customFields != null)
-                for (final cf in state.data!.customFields!)
-                  '$fkCustomFieldPrefix${cf.field}': cf.value,
+              fkCustomFields:
+                  state.data!.customFields ?? <CustomFieldInstance>[],
             },
             child: Scaffold(
               appBar: AppBar(
@@ -153,29 +140,17 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                         ? S.of(context)!.hidePdf
                         : S.of(context)!.showPdf,
                     padding: EdgeInsets.all(12),
-                    icon: AnimatedCrossFade(
-                      duration: _animationController.duration!,
-                      reverseDuration: _animationController.reverseDuration,
-                      crossFadeState: _isShowingPdf
-                          ? CrossFadeState.showFirst
-                          : CrossFadeState.showSecond,
-                      firstChild: Icon(Icons.visibility_off_outlined),
-                      secondChild: Icon(Icons.visibility_outlined),
+                    icon: Icon(
+                      _isShowingPdf
+                          ? Icons.visibility_off_outlined
+                          : Icons.visibility_outlined,
                     ),
                     onPressed: () {
-                      if (_isShowingPdf) {
-                        setState(() {
-                          _isShowingPdf = false;
-                        });
-                        _animationController.reverse();
-                      } else {
-                        setState(() {
-                          _isShowingPdf = true;
-                        });
-                        _animationController.forward();
-                      }
+                      setState(() {
+                        _isShowingPdf = !_isShowingPdf;
+                      });
                     },
-                  ),
+                  ).paddedOnly(right: 8),
                 ],
               ),
               body: Stack(
@@ -223,22 +198,19 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                       if (downloadState.isLoading) {
                         return SizedBox.shrink();
                       }
-                      return AnimatedBuilder(
-                        animation: _animation,
-                        builder: (context, child) {
-                          return Transform.scale(
-                            alignment: Alignment.bottomLeft,
-                            scale: _animation.value,
-                            child: DocumentView(
+                      return Visibility(
+                        visible: _isShowingPdf,
+                        child:
+                            DocumentView(
                               documentId: widget.documentId,
                               title: state.data?.title,
                               mimeType:
                                   state.data?.mimeType ?? 'application/pdf',
                               showAppBar: false,
                               showControls: false,
+                            ).animate().fadeIn(
+                              duration: const Duration(milliseconds: 100),
                             ),
-                          );
-                        },
                       );
                     },
                   ),
@@ -262,89 +234,125 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       child: IndexedStack(
         index: _selectedTabIndex,
         children: [
-          ListView(
-            children: [
-              SizedBox(height: 16),
-              _buildTitleFormField(document.title).padded(),
-              _buildCreatedAtFormField(
-                document.created,
-                fieldSuggestions,
-              ).padded(),
-              // Correspondent form field
-              if (currentUser.canViewCorrespondents)
-                SingleLabelFormField<Correspondent>(
-                  onAddLabel: currentUser.canCreateCorrespondents
-                      ? (currentInput) => CreateLabelRoute(
-                          LabelType.correspondent,
-                          name: currentInput,
-                        ).push<Correspondent>(context)
-                      : null,
-                  addLabelText: currentUser.canCreateCorrespondents
-                      ? S.of(context)!.addCorrespondent
-                      : null,
-                  labelText: S.of(context)!.correspondent,
-                  query: context.correspondentRepository.getAllQuery(),
-                  initialValue: document.correspondent,
-                  name: fkCorrespondent,
-                  prefixIcon: const Icon(Icons.person_outlined),
-                  suggestions: fieldSuggestions?.correspondents ?? [],
-                ).padded(),
-              // DocumentType form field
-              if (currentUser.canViewDocumentTypes)
-                SingleLabelFormField<DocumentType>(
-                  onAddLabel: currentUser.canCreateDocumentTypes
-                      ? (currentInput) => CreateLabelRoute(
-                          LabelType.documentType,
-                          name: currentInput,
-                        ).push<DocumentType>(context)
-                      : null,
-                  addLabelText: currentUser.canCreateDocumentTypes
-                      ? S.of(context)!.addDocumentType
-                      : null,
-                  labelText: S.of(context)!.documentType,
-                  initialValue: document.documentType,
-                  query: context.documentTypeRepository.getAllQuery(),
-                  name: _DocumentEditPageState.fkDocumentType,
-                  prefixIcon: const Icon(Icons.description_outlined),
-                  suggestions: fieldSuggestions?.documentTypes ?? [],
-                ).padded(),
-              // StoragePath form field
-              if (currentUser.canViewStoragePaths)
-                SingleLabelFormField<StoragePath>(
-                  onAddLabel: currentUser.canCreateStoragePaths
-                      ? (currentInput) => CreateLabelRoute(
-                          LabelType.storagePath,
-                          name: currentInput,
-                        ).push<StoragePath>(context)
-                      : null,
-                  addLabelText: currentUser.canCreateStoragePaths
-                      ? S.of(context)!.addStoragePath
-                      : null,
-                  labelText: S.of(context)!.storagePath,
-                  query: context.storagePathRepository.getAllQuery(),
-                  initialValue: document.storagePath,
-                  name: fkStoragePath,
-                  prefixIcon: const Icon(Icons.folder_outlined),
-                ).padded(),
-              // Tag form field
-              if (currentUser.canViewTags)
-                TagsFormField(
-                  name: fkTags,
-                  allowCreation: true,
-                  allowExclude: false,
-                  suggestions:
-                      fieldSuggestions?.tags.whereNot(document.tags.contains) ??
-                      [],
-                  initialValue: IdsTagsQuery(include: document.tags),
-                ).padded(),
-              // Custom fields
-              if (currentUser.canViewCustomFields &&
-                  document.customFields != null &&
-                  document.customFields!.isNotEmpty)
-                _buildCustomFieldsSection(document),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 8),
+            child: ListView(
+              children: [
+                SizedBox(height: 16),
+                _buildTitleFormField(document.title),
+                _buildCreatedAtFormField(document.created, fieldSuggestions),
+                // Correspondent form field
+                if (currentUser.canViewCorrespondents)
+                  SingleLabelFormField<Correspondent>(
+                    onAddLabel: currentUser.canCreateCorrespondents
+                        ? (currentInput) => CreateLabelRoute(
+                            LabelType.correspondent,
+                            name: currentInput,
+                          ).push<Correspondent>(context)
+                        : null,
+                    addLabelText: currentUser.canCreateCorrespondents
+                        ? S.of(context)!.addCorrespondent
+                        : null,
+                    labelText: S.of(context)!.correspondent,
+                    query: context.correspondentRepository.getAllQuery(),
+                    initialValue: document.correspondent,
+                    name: fkCorrespondent,
+                    prefixIcon: const Icon(Icons.person_outlined),
+                    suggestions: fieldSuggestions?.correspondents ?? [],
+                  ),
+                // DocumentType form field
+                if (currentUser.canViewDocumentTypes)
+                  SingleLabelFormField<DocumentType>(
+                    onAddLabel: currentUser.canCreateDocumentTypes
+                        ? (currentInput) => CreateLabelRoute(
+                            LabelType.documentType,
+                            name: currentInput,
+                          ).push<DocumentType>(context)
+                        : null,
+                    addLabelText: currentUser.canCreateDocumentTypes
+                        ? S.of(context)!.addDocumentType
+                        : null,
+                    labelText: S.of(context)!.documentType,
+                    initialValue: document.documentType,
+                    query: context.documentTypeRepository.getAllQuery(),
+                    name: _DocumentEditPageState.fkDocumentType,
+                    prefixIcon: const Icon(Icons.description_outlined),
+                    suggestions: fieldSuggestions?.documentTypes ?? [],
+                  ),
+                // StoragePath form field
+                if (currentUser.canViewStoragePaths)
+                  SingleLabelFormField<StoragePath>(
+                    onAddLabel: currentUser.canCreateStoragePaths
+                        ? (currentInput) => CreateLabelRoute(
+                            LabelType.storagePath,
+                            name: currentInput,
+                          ).push<StoragePath>(context)
+                        : null,
+                    addLabelText: currentUser.canCreateStoragePaths
+                        ? S.of(context)!.addStoragePath
+                        : null,
+                    labelText: S.of(context)!.storagePath,
+                    query: context.storagePathRepository.getAllQuery(),
+                    initialValue: document.storagePath,
+                    name: fkStoragePath,
+                    prefixIcon: const Icon(Icons.folder_outlined),
+                  ),
+                // Tag form field
+                if (currentUser.canViewTags)
+                  TagsFormField(
+                    name: fkTags,
+                    allowCreation: true,
+                    allowExclude: false,
+                    suggestions:
+                        fieldSuggestions?.tags.whereNot(
+                          document.tags.contains,
+                        ) ??
+                        [],
+                    initialValue: IdsTagsQuery(include: document.tags),
+                  ),
+                // Custom fields
+                if (currentUser.canViewCustomFields)
+                  FormBuilderCustomFieldsField(
+                    name: fkCustomFields,
+                    initialValue: document.customFields ?? [],
+                  ),
 
-              const SizedBox(height: 140),
-            ],
+                FilledButton.tonalIcon(
+                  label: Text(S.of(context)!.addCustomFieldToDocument),
+                  icon: Icon(Icons.tune),
+                  onPressed: () async {
+                    final currentInstances =
+                        _formKey.currentState?.fields[fkCustomFields]?.value
+                            as List<CustomFieldInstance>? ??
+                        [];
+                    final excludeFieldIds = currentInstances
+                        .map((e) => e.field)
+                        .toList();
+                    final selectedField = await Navigator.of(context)
+                        .push<CustomField?>(
+                          MaterialPageRoute(
+                            builder: (context) => CustomFieldSelectionPage(
+                              excludeFieldIds: excludeFieldIds,
+                            ),
+                          ),
+                        );
+                    if (selectedField != null) {
+                      final updated = [
+                        ...currentInstances,
+                        CustomFieldInstance(
+                          field: selectedField.id,
+                          value: null,
+                        ),
+                      ];
+                      _formKey.currentState?.fields[fkCustomFields]?.didChange(
+                        updated,
+                      );
+                    }
+                  },
+                ),
+                const SizedBox(height: 140),
+              ].expand((child) => [child, const SizedBox(height: 8)]).toList(),
+            ),
           ),
           SingleChildScrollView(
             child: Column(
@@ -373,7 +381,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
     List<int>? tags,
     DateTime? createdAt,
     String? content,
-    List<CustomFieldInstanceRequest>? customFields,
+    List<CustomFieldInstance> customFields,
   })
   get _currentValues {
     final fkState = _formKey.currentState!.fields;
@@ -389,24 +397,8 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       _ => null,
     };
     final content = fkState[fkContent]?.value as String?;
-
-    // Collect custom field values
-    final customFields = <CustomFieldInstanceRequest>[];
-    for (final entry in fkState.entries) {
-      if (entry.key.startsWith(fkCustomFieldPrefix)) {
-        final fieldId = int.tryParse(
-          entry.key.substring(fkCustomFieldPrefix.length),
-        );
-        if (fieldId != null) {
-          customFields.add(
-            CustomFieldInstanceRequest(
-              field: fieldId,
-              value: entry.value.value,
-            ),
-          );
-        }
-      }
-    }
+    final customFields =
+        fkState[fkCustomFields]?.value as List<CustomFieldInstance>? ?? [];
 
     return (
       title: title,
@@ -416,7 +408,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
       tags: tags,
       createdAt: created?.toDateTime(),
       content: content,
-      customFields: customFields.isNotEmpty ? customFields : null,
+      customFields: customFields,
     );
   }
 
@@ -433,8 +425,14 @@ class _DocumentEditPageState extends State<DocumentEditPage>
         :customFields,
       ) = _currentValues;
 
+      final customFieldRequests = customFields
+          .map(
+            (i) => CustomFieldInstanceRequest(field: i.field, value: i.value),
+          )
+          .toList();
+
       try {
-        await context
+        final result = await context
             .read<DocumentRepository>()
             .patchDocumentMutation(document.id)
             .mutate(
@@ -446,51 +444,22 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                 content: PatchedValue(content),
                 title: PatchedValue(title),
                 created: PatchedValue(createdAt),
-                customFields: PatchedValue(customFields),
+                customFields: PatchedValue(customFieldRequests),
               ),
             );
+        if (result is MutationError) {
+          throw (result as MutationError).error;
+        }
         if (mounted) {
           showSnackBar(context, S.of(context)!.documentSuccessfullyUpdated);
+          context.pop();
         }
       } on PaperlessApiException catch (error, stackTrace) {
         if (mounted) showErrorMessage(context, error, stackTrace);
-      } finally {
-        if (mounted) context.pop();
+      } catch (error, stackTrace) {
+        if (mounted) showGenericError(context, error, stackTrace);
       }
     }
-  }
-
-  Widget _buildCustomFieldsSection(Document document) {
-    return QueryBuilder(
-      query: context.customFieldRepository.getAllQuery(),
-      builder: (context, customFieldsState) {
-        final allCustomFields = customFieldsState.data;
-        if (allCustomFields == null || allCustomFields.isEmpty) {
-          return const SizedBox.shrink();
-        }
-        // Build a lookup map from field id to CustomField definition
-        final customFieldMap = {for (final cf in allCustomFields) cf.id: cf};
-        final instances = document.customFields!;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Divider(height: 16),
-            for (final instance in instances)
-              if (customFieldMap.containsKey(instance.field))
-                FormBuilderCustomFieldValue(
-                  name: '$fkCustomFieldPrefix${instance.field}',
-                  customField: customFieldMap[instance.field]!,
-                  initialValue: instance.value,
-                  decoration: InputDecoration(
-                    labelText: customFieldMap[instance.field]!.name,
-                    border: const OutlineInputBorder(),
-                  ),
-                ).padded(),
-          ],
-        );
-      },
-    );
   }
 
   Widget _buildTitleFormField(String? initialTitle) {

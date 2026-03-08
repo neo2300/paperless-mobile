@@ -25,6 +25,9 @@
   "@addCorrespondent": {
     "description": "Title when adding a new correspondent"
   },
+  "addCustomField": "Neues benutzerdefiniertes Feld",
+  "@addCustomField": {},
+  "addCustomFieldToDocument": "Benutzerdefiniertes Feld hinzufügen",
   "addDocumentType": "Neuer Dokumenttyp",
   "@addDocumentType": {
     "description": "Title when adding a new document type"
@@ -34,6 +37,8 @@
   "additionalHeaders": "Zusätzliche Header",
   "addNewCorrespondent": "Neuen Korrespondenten erstellen",
   "@addNewCorrespondent": {},
+  "addNewCustomField": "Neues benutzerdefiniertes Feld hinzufügen",
+  "@addNewCustomField": {},
   "addNewDocumentType": "Neuen Dokumenten-Typ erstellen",
   "@addNewDocumentType": {},
   "addNewStoragePath": "Neuen Speicherpfad erstellen",
@@ -365,6 +370,18 @@
   "@createsASavedViewBasedOnTheCurrentFilterCriteria": {},
   "createViewsToQuicklyFilterYourDocuments": "Lege Ansichten an, um Dokumente schneller zu finden.",
   "@createViewsToQuicklyFilterYourDocuments": {},
+  "customFieldCreatedSuccessfully": "Benutzerdefiniertes Feld erfolgreich erstellt.",
+  "@customFieldCreatedSuccessfully": {},
+  "customFieldDataType": "Datentyp",
+  "@customFieldDataType": {},
+  "customFieldDeletedSuccessfully": "Benutzerdefiniertes Feld wurde erfolgreich gelöscht.",
+  "@customFieldDeletedSuccessfully": {},
+  "customFieldName": "Name",
+  "@customFieldName": {},
+  "customFields": "Benutzerdefinierte Felder",
+  "@customFields": {},
+  "customFieldUpdatedSuccessfully": "Benutzerdefiniertes Feld erfolgreich aktualisiert.",
+  "@customFieldUpdatedSuccessfully": {},
   "dark": "Dunkel",
   "@dark": {},
   "darkTheme": "Dunkler Modus",
@@ -401,6 +418,8 @@
   "@delete": {},
   "deleteAllScans": "Alle scans löschen",
   "@deleteAllScans": {},
+  "deleteCustomFieldWarningText": "Dieses benutzerdefinierte Feld wird von Dokumenten referenziert. Durch das Löschen dieses Feldes werden alle Referenzen entfernt. Fortfahren?",
+  "@deleteCustomFieldWarningText": {},
   "deleteDocument": "Dokument löschen",
   "@deleteDocument": {
     "description": "Used as an action label on each inbox item"
@@ -409,7 +428,7 @@
   "@deleteDocumentTooltip": {
     "description": "Tooltip shown for the delete button on details page"
   },
-  "deleteLabelWarningText": "Dieser Kennzeichner wird von Dokumenten referenziert. Durch das Löschen dieses Kennzeichners werden alle Referenzen entfernt. Fortfahren?",
+  "deleteLabelWarningText": "Dieses Label wird von Dokumenten referenziert. Durch das Löschen dieses Labels werden alle Referenzen entfernt. Fortfahren?",
   "@deleteLabelWarningText": {},
   "deleteView": "Ansicht {name} löschen?",
   "@deleteView": {},
@@ -500,6 +519,8 @@
   "@dynamicColorScheme": {},
   "edit": "Bearbeiten",
   "@edit": {},
+  "editCustomField": "Benutzerdefiniertes Feld bearbeiten",
+  "@editCustomField": {},
   "editDocument": "Dokument Bearbeiten",
   "@editDocument": {},
   "editDocumentTooltip": "Bearbeiten",
@@ -746,6 +767,8 @@
   "@noAppToDisplayPDFFilesFound": {},
   "noCorrespondentsSetUp": "Es wurden noch keine Korrespondenten angelegt.",
   "@noCorrespondentsSetUp": {},
+  "noCustomFieldsSetUp": "Es wurden noch keine benutzerdefinierten Felder angelegt.",
+  "@noCustomFieldsSetUp": {},
   "noDocumentsFound": "Keine Dokumente gefunden.",
   "@noDocumentsFound": {
     "description": "Message shown when no documents were found."
@@ -1103,6 +1126,7 @@
   "youDoNotHaveUnseenDocuments": "Du hast keine ungesehenen Dokumente.",
   "@youDoNotHaveUnseenDocuments": {},
   "youHaveNoViewsOnYourDashboardYet": "Du hast noch keine Ansichten zu deinem Dashboard hinzugefügt.",
+  "@youHaveNoViewsOnYourDashboardYet": {},
   "youreOffline": "Du bist offline.",
   "@youreOffline": {}
 }

@@ -29,7 +29,7 @@ class BooleanFormField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        SwitchListTile(
+        CheckboxListTile(
           title: Text(labelText),
           value: checked,
           onChanged: enabled ? (newValue) => onChanged(newValue) : null,

@@ -11,16 +11,10 @@ import 'package:paperless_mobile/core/widgets/form_builder_fields/custom_field_f
 import 'package:paperless_mobile/core/widgets/form_builder_fields/custom_field_form_field/fields/string_form_field.dart';
 import 'package:paperless_mobile/core/widgets/form_builder_fields/custom_field_form_field/fields/url_form_field.dart';
 
-/// A form builder field that renders the appropriate edit widget for a
-/// [CustomFieldInstance] based on the [CustomField.dataType].
-///
-/// The data type cannot be changed — only the value can be edited.
-/// This widget delegates to a type-specific sub-widget for each
-/// [DataTypeEnum] value.
-class FormBuilderCustomFieldValue extends FormBuilderField<Object?> {
+class FormBuilderCustomFieldInstance extends FormBuilderField<Object?> {
   final CustomField customField;
 
-  FormBuilderCustomFieldValue({
+  FormBuilderCustomFieldInstance({
     super.key,
     required super.name,
     required this.customField,
@@ -36,9 +30,9 @@ class FormBuilderCustomFieldValue extends FormBuilderField<Object?> {
     InputDecoration decoration = const InputDecoration(),
   }) : super(
          builder: (FormFieldState<Object?> field) {
-           final state = field as FormBuilderCustomFieldValueState;
+           final state = field as FormBuilderCustomFieldInstanceState;
 
-           return _CustomFieldValueEditor(
+           return CustomFieldValueEditor(
              labelText: customField.name,
              errorText: state.errorText,
              dataType: customField.dataType,
@@ -53,16 +47,16 @@ class FormBuilderCustomFieldValue extends FormBuilderField<Object?> {
        );
 
   @override
-  FormBuilderCustomFieldValueState createState() =>
-      FormBuilderCustomFieldValueState();
+  FormBuilderCustomFieldInstanceState createState() =>
+      FormBuilderCustomFieldInstanceState();
 }
 
-class FormBuilderCustomFieldValueState
-    extends FormBuilderFieldState<FormBuilderCustomFieldValue, Object?> {}
+class FormBuilderCustomFieldInstanceState
+    extends FormBuilderFieldState<FormBuilderCustomFieldInstance, Object?> {}
 
-/// Internal widget that switches on [DataTypeEnum] and renders the appropriate
+/// Widget that switches on [DataTypeEnum] and renders the appropriate
 /// edit widget for the custom field value.
-class _CustomFieldValueEditor extends StatelessWidget {
+class CustomFieldValueEditor extends StatelessWidget {
   final DataTypeEnum dataType;
   final Object? value;
   final Object? extraData;
@@ -71,7 +65,7 @@ class _CustomFieldValueEditor extends StatelessWidget {
   final String? errorText;
   final String labelText;
 
-  const _CustomFieldValueEditor({
+  const CustomFieldValueEditor({
     required this.labelText,
     required this.dataType,
     required this.value,
@@ -108,7 +102,7 @@ class _CustomFieldValueEditor extends StatelessWidget {
       DataTypeEnum.boolean => BooleanFormField(
         errorText: errorText,
         labelText: labelText,
-        value: value,
+        value: value ?? false,
         enabled: enabled,
         onChanged: onChanged,
       ),

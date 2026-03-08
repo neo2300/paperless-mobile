@@ -34,6 +34,7 @@ class DateFormField extends StatelessWidget {
         : '';
 
     return InkWell(
+      borderRadius: BorderRadius.all(Radius.circular(16)),
       onTap: enabled
           ? () async {
               final picked = await showDatePicker(
@@ -53,22 +54,15 @@ class DateFormField extends StatelessWidget {
           labelText: labelText,
           errorText: errorText,
           isDense: true,
-          suffixIcon: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (date != null && enabled)
-                IconButton(
-                  icon: const Icon(Icons.clear, size: 20),
+          prefixIcon: const Icon(Icons.calendar_today),
+          suffixIcon: date != null && enabled
+              ? IconButton(
+                  icon: const Icon(Icons.clear),
                   onPressed: () => onChanged(null),
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                ),
-              const Padding(
-                padding: EdgeInsets.only(right: 12),
-                child: Icon(Icons.calendar_today, size: 20),
-              ),
-            ],
-          ),
+                )
+              : null,
         ),
         child: Text(displayText, style: Theme.of(context).textTheme.bodyLarge),
       ),
