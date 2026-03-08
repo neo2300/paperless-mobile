@@ -932,6 +932,7 @@
   "@scrollToTop": {},
   "search": "Ara",
   "@search": {},
+  "searchCustomFields": "Search custom fields",
   "searchDocuments": "Search documents",
   "@searchDocuments": {},
   "security": "Güvenlik",

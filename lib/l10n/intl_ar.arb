@@ -932,6 +932,7 @@
   "@scrollToTop": {},
   "search": "بحث",
   "@search": {},
+  "searchCustomFields": "Search custom fields",
   "searchDocuments": "البحث في المستندات",
   "@searchDocuments": {},
   "security": "الأمن",

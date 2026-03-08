@@ -932,6 +932,7 @@
   "@scrollToTop": {},
   "search": "Cerca",
   "@search": {},
+  "searchCustomFields": "Search custom fields",
   "searchDocuments": "Cerca documents",
   "@searchDocuments": {},
   "security": "Seguretat",

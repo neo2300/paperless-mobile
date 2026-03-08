@@ -932,6 +932,7 @@
   "@scrollToTop": {},
   "search": "Hledat",
   "@search": {},
+  "searchCustomFields": "Search custom fields",
   "searchDocuments": "Prohledat dokumenty",
   "@searchDocuments": {},
   "security": "Zabezpečení",

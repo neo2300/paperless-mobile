@@ -932,6 +932,7 @@
   "@scrollToTop": {},
   "search": "Iskanje",
   "@search": {},
+  "searchCustomFields": "Search custom fields",
   "searchDocuments": "Preišči dokumente",
   "@searchDocuments": {},
   "security": "Varnost",

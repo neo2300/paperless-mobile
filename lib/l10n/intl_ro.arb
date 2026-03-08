@@ -932,6 +932,7 @@
   "@scrollToTop": {},
   "search": "Caută",
   "@search": {},
+  "searchCustomFields": "Search custom fields",
   "searchDocuments": "Caută documente",
   "@searchDocuments": {},
   "security": "Securitate",

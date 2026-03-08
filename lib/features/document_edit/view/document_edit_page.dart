@@ -316,40 +316,9 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                     name: fkCustomFields,
                     initialValue: document.customFields ?? [],
                   ),
-
-                FilledButton.tonalIcon(
-                  label: Text(S.of(context)!.addCustomFieldToDocument),
-                  icon: Icon(Icons.tune),
-                  onPressed: () async {
-                    final currentInstances =
-                        _formKey.currentState?.fields[fkCustomFields]?.value
-                            as List<CustomFieldInstance>? ??
-                        [];
-                    final excludeFieldIds = currentInstances
-                        .map((e) => e.field)
-                        .toList();
-                    final selectedField = await Navigator.of(context)
-                        .push<CustomField?>(
-                          MaterialPageRoute(
-                            builder: (context) => CustomFieldSelectionPage(
-                              excludeFieldIds: excludeFieldIds,
-                            ),
-                          ),
-                        );
-                    if (selectedField != null) {
-                      final updated = [
-                        ...currentInstances,
-                        CustomFieldInstance(
-                          field: selectedField.id,
-                          value: null,
-                        ),
-                      ];
-                      _formKey.currentState?.fields[fkCustomFields]?.didChange(
-                        updated,
-                      );
-                    }
-                  },
-                ),
+                _buildAddCustomFieldToDocumentButton(
+                  context,
+                ).paddedOnly(top: 16),
                 const SizedBox(height: 140),
               ].expand((child) => [child, const SizedBox(height: 8)]).toList(),
             ),
@@ -370,6 +339,33 @@ class _DocumentEditPageState extends State<DocumentEditPage>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAddCustomFieldToDocumentButton(BuildContext context) {
+    return FilledButton.tonalIcon(
+      label: Text(S.of(context)!.addCustomFieldToDocument),
+      icon: Icon(Icons.tune),
+      onPressed: () async {
+        final currentInstances =
+            _formKey.currentState?.fields[fkCustomFields]?.value
+                as List<CustomFieldInstance>? ??
+            [];
+        final excludeFieldIds = currentInstances.map((e) => e.field).toList();
+        final selectedField = await Navigator.of(context).push<CustomField?>(
+          MaterialPageRoute(
+            builder: (context) =>
+                CustomFieldSelectionPage(excludeFieldIds: excludeFieldIds),
+          ),
+        );
+        if (selectedField != null) {
+          final updated = [
+            ...currentInstances,
+            CustomFieldInstance(field: selectedField.id, value: null),
+          ];
+          _formKey.currentState?.fields[fkCustomFields]?.didChange(updated);
+        }
+      },
     );
   }
 

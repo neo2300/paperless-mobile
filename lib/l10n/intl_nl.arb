@@ -932,6 +932,7 @@
   "@scrollToTop": {},
   "search": "Zoeken",
   "@search": {},
+  "searchCustomFields": "Search custom fields",
   "searchDocuments": "Documenten zoeken",
   "@searchDocuments": {},
   "security": "Beveiliging",
