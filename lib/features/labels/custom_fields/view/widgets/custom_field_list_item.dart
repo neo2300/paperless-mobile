@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
+import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
+import 'package:paperless_mobile/helpers/custom_field_icon_mappings.dart';
 import 'package:paperless_mobile/helpers/format_helpers.dart';
 
 class CustomFieldListItem extends StatelessWidget {
@@ -10,7 +12,7 @@ class CustomFieldListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final defaultSubtitle = _dataTypeDisplayName(field.dataType);
+    final defaultSubtitle = _dataTypeDisplayName(context, field.dataType);
     final subtitle = switch (field.dataType) {
       DataTypeEnum.monetary =>
         field.extraData is Map
@@ -23,7 +25,7 @@ class CustomFieldListItem extends StatelessWidget {
     return ListTile(
       title: Text(field.name),
       subtitle: Text(subtitle),
-      leading: CircleAvatar(child: Icon(_dataTypeIcon(field.dataType))),
+      leading: CircleAvatar(child: Icon(getCustomFieldIcon(field.dataType))),
       trailing: Text(
         formatMaxCount(field.documentCount),
         style: Theme.of(context).textTheme.bodySmall,
@@ -32,31 +34,20 @@ class CustomFieldListItem extends StatelessWidget {
     );
   }
 
-  static String _dataTypeDisplayName(DataTypeEnum dataType) {
+  static String _dataTypeDisplayName(
+    BuildContext context,
+    DataTypeEnum dataType,
+  ) {
     return switch (dataType) {
-      DataTypeEnum.string => 'Text',
-      DataTypeEnum.url => 'URL',
-      DataTypeEnum.date => 'Date',
-      DataTypeEnum.boolean => 'Boolean',
-      DataTypeEnum.integer => 'Integer',
-      DataTypeEnum.float => 'Float',
-      DataTypeEnum.monetary => 'Monetary',
-      DataTypeEnum.documentlink => 'Document Link',
-      DataTypeEnum.select => 'Select',
-    };
-  }
-
-  static IconData _dataTypeIcon(DataTypeEnum dataType) {
-    return switch (dataType) {
-      DataTypeEnum.string => Icons.text_fields,
-      DataTypeEnum.url => Icons.link,
-      DataTypeEnum.date => Icons.calendar_today,
-      DataTypeEnum.boolean => Icons.toggle_on_outlined,
-      DataTypeEnum.integer => Icons.numbers,
-      DataTypeEnum.float => Icons.percent,
-      DataTypeEnum.monetary => Icons.attach_money,
-      DataTypeEnum.documentlink => Icons.description_outlined,
-      DataTypeEnum.select => Icons.list,
+      DataTypeEnum.string => S.of(context)!.customFieldTypeText,
+      DataTypeEnum.url => S.of(context)!.customFieldTypeUrl,
+      DataTypeEnum.date => S.of(context)!.customFieldTypeDate,
+      DataTypeEnum.boolean => S.of(context)!.customFieldTypeBoolean,
+      DataTypeEnum.integer => S.of(context)!.customFieldTypeInteger,
+      DataTypeEnum.float => S.of(context)!.customFieldTypeFloat,
+      DataTypeEnum.monetary => S.of(context)!.customFieldTypeMonetary,
+      DataTypeEnum.documentlink => S.of(context)!.customFieldTypeDocumentLink,
+      DataTypeEnum.select => S.of(context)!.customFieldTypeSelect,
     };
   }
 }

@@ -409,6 +409,15 @@
   "@customFieldSelectOptions": {
     "description": "Label shown above the options of a custom field with select data type"
   },
+  "customFieldTypeBoolean": "Wahrheitswert",
+  "customFieldTypeDate": "Datum",
+  "customFieldTypeDocumentLink": "Dokumentenverknüpfung",
+  "customFieldTypeFloat": "Zahl",
+  "customFieldTypeInteger": "Ganzzahl",
+  "customFieldTypeMonetary": "Währung",
+  "customFieldTypeSelect": "Auswahl",
+  "customFieldTypeText": "Text",
+  "customFieldTypeUrl": "URL",
   "customFieldUpdatedSuccessfully": "Benutzerdefiniertes Feld erfolgreich aktualisiert.",
   "@customFieldUpdatedSuccessfully": {},
   "dark": "Dunkel",
