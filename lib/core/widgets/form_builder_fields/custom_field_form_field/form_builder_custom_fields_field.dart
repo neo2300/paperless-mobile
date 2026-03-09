@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
 import 'package:paperless_mobile/core/extensions/context_extensions.dart';
-import 'package:paperless_mobile/core/extensions/flutter_extensions.dart';
 import 'package:paperless_mobile/core/widgets/form_builder_fields/custom_field_form_field/form_builder_custom_field_instance.dart';
 
 /// A single [FormBuilderField] that manages a [List<CustomFieldInstance>].
@@ -14,6 +13,7 @@ import 'package:paperless_mobile/core/widgets/form_builder_fields/custom_field_f
 /// updates the list, and value changes within a field update the corresponding
 /// entry in the list.
 class FormBuilderCustomFieldsField extends StatelessWidget {
+  final int parentDocumentId;
   final String name;
   final List<CustomFieldInstance> initialValue;
 
@@ -21,6 +21,7 @@ class FormBuilderCustomFieldsField extends StatelessWidget {
     super.key,
     required this.name,
     this.initialValue = const [],
+    required this.parentDocumentId,
   });
 
   @override
@@ -51,6 +52,7 @@ class FormBuilderCustomFieldsField extends StatelessWidget {
                       children: [
                         Expanded(
                           child: CustomFieldValueEditor(
+                            parentDocumentId: parentDocumentId,
                             labelText: customFieldMap[instance.field]!.name,
                             dataType: customFieldMap[instance.field]!.dataType,
                             value: instance.value,

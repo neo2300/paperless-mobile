@@ -226,6 +226,7 @@ class _DocumentSearchPageState extends State<DocumentSearchPage> {
             );
           },
         ),
+        SliverToBoxAdapter(child: SizedBox(height: 80)),
       ],
     );
   }
@@ -303,7 +304,7 @@ class _DocumentSearchPageState extends State<DocumentSearchPage> {
                   child: Text(S.of(context)!.noDocumentsFound),
                 ).paddedOnly(top: 8),
               )
-            else
+            else ...[
               SliverAdaptiveDocumentsView(
                 viewType: _documentViewType,
                 documents: documents,
@@ -316,6 +317,8 @@ class _DocumentSearchPageState extends State<DocumentSearchPage> {
                   widget.onItemSelected(context, document);
                 },
               ),
+              SliverToBoxAdapter(child: SizedBox(height: 80)),
+            ],
           ],
         );
       },

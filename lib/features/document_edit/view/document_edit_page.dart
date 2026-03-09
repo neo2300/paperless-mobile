@@ -236,91 +236,109 @@ class _DocumentEditPageState extends State<DocumentEditPage>
         children: [
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 8),
-            child: ListView(
-              children: [
-                SizedBox(height: 16),
-                _buildTitleFormField(document.title),
-                _buildCreatedAtFormField(document.created, fieldSuggestions),
-                // Correspondent form field
-                if (currentUser.canViewCorrespondents)
-                  SingleLabelFormField<Correspondent>(
-                    onAddLabel: currentUser.canCreateCorrespondents
-                        ? (currentInput) => CreateLabelRoute(
-                            LabelType.correspondent,
-                            name: currentInput,
-                          ).push<Correspondent>(context)
-                        : null,
-                    addLabelText: currentUser.canCreateCorrespondents
-                        ? S.of(context)!.addCorrespondent
-                        : null,
-                    labelText: S.of(context)!.correspondent,
-                    query: context.correspondentRepository.getAllQuery(),
-                    initialValue: document.correspondent,
-                    name: fkCorrespondent,
-                    prefixIcon: const Icon(Icons.person_outlined),
-                    suggestions: fieldSuggestions?.correspondents ?? [],
-                  ),
-                // DocumentType form field
-                if (currentUser.canViewDocumentTypes)
-                  SingleLabelFormField<DocumentType>(
-                    onAddLabel: currentUser.canCreateDocumentTypes
-                        ? (currentInput) => CreateLabelRoute(
-                            LabelType.documentType,
-                            name: currentInput,
-                          ).push<DocumentType>(context)
-                        : null,
-                    addLabelText: currentUser.canCreateDocumentTypes
-                        ? S.of(context)!.addDocumentType
-                        : null,
-                    labelText: S.of(context)!.documentType,
-                    initialValue: document.documentType,
-                    query: context.documentTypeRepository.getAllQuery(),
-                    name: _DocumentEditPageState.fkDocumentType,
-                    prefixIcon: const Icon(Icons.description_outlined),
-                    suggestions: fieldSuggestions?.documentTypes ?? [],
-                  ),
-                // StoragePath form field
-                if (currentUser.canViewStoragePaths)
-                  SingleLabelFormField<StoragePath>(
-                    onAddLabel: currentUser.canCreateStoragePaths
-                        ? (currentInput) => CreateLabelRoute(
-                            LabelType.storagePath,
-                            name: currentInput,
-                          ).push<StoragePath>(context)
-                        : null,
-                    addLabelText: currentUser.canCreateStoragePaths
-                        ? S.of(context)!.addStoragePath
-                        : null,
-                    labelText: S.of(context)!.storagePath,
-                    query: context.storagePathRepository.getAllQuery(),
-                    initialValue: document.storagePath,
-                    name: fkStoragePath,
-                    prefixIcon: const Icon(Icons.folder_outlined),
-                  ),
-                // Tag form field
-                if (currentUser.canViewTags)
-                  TagsFormField(
-                    name: fkTags,
-                    allowCreation: true,
-                    allowExclude: false,
-                    suggestions:
-                        fieldSuggestions?.tags.whereNot(
-                          document.tags.contains,
-                        ) ??
-                        [],
-                    initialValue: IdsTagsQuery(include: document.tags),
-                  ),
-                // Custom fields
-                if (currentUser.canViewCustomFields)
-                  FormBuilderCustomFieldsField(
-                    name: fkCustomFields,
-                    initialValue: document.customFields ?? [],
-                  ),
-                _buildAddCustomFieldToDocumentButton(
-                  context,
-                ).paddedOnly(top: 16),
-                const SizedBox(height: 140),
-              ].expand((child) => [child, const SizedBox(height: 8)]).toList(),
+            child: SingleChildScrollView(
+              child: Column(
+                children:
+                    [
+                          SizedBox(height: 16),
+                          _buildTitleFormField(document.title),
+                          _buildCreatedAtFormField(
+                            document.created,
+                            fieldSuggestions,
+                          ),
+                          // Correspondent form field
+                          if (currentUser.canViewCorrespondents)
+                            SingleLabelFormField<Correspondent>(
+                              onAddLabel: currentUser.canCreateCorrespondents
+                                  ? (currentInput) => CreateLabelRoute(
+                                      LabelType.correspondent,
+                                      name: currentInput,
+                                    ).push<Correspondent>(context)
+                                  : null,
+                              addLabelText: currentUser.canCreateCorrespondents
+                                  ? S.of(context)!.addCorrespondent
+                                  : null,
+                              labelText: S.of(context)!.correspondent,
+                              query: context.correspondentRepository
+                                  .getAllQuery(),
+                              initialValue: document.correspondent,
+                              name: fkCorrespondent,
+                              prefixIcon: const Icon(Icons.person_outlined),
+                              suggestions:
+                                  fieldSuggestions?.correspondents ?? [],
+                            ),
+                          // DocumentType form field
+                          if (currentUser.canViewDocumentTypes)
+                            SingleLabelFormField<DocumentType>(
+                              onAddLabel: currentUser.canCreateDocumentTypes
+                                  ? (currentInput) => CreateLabelRoute(
+                                      LabelType.documentType,
+                                      name: currentInput,
+                                    ).push<DocumentType>(context)
+                                  : null,
+                              addLabelText: currentUser.canCreateDocumentTypes
+                                  ? S.of(context)!.addDocumentType
+                                  : null,
+                              labelText: S.of(context)!.documentType,
+                              initialValue: document.documentType,
+                              query: context.documentTypeRepository
+                                  .getAllQuery(),
+                              name: _DocumentEditPageState.fkDocumentType,
+                              prefixIcon: const Icon(
+                                Icons.description_outlined,
+                              ),
+                              suggestions:
+                                  fieldSuggestions?.documentTypes ?? [],
+                            ),
+                          // StoragePath form field
+                          if (currentUser.canViewStoragePaths)
+                            SingleLabelFormField<StoragePath>(
+                              onAddLabel: currentUser.canCreateStoragePaths
+                                  ? (currentInput) => CreateLabelRoute(
+                                      LabelType.storagePath,
+                                      name: currentInput,
+                                    ).push<StoragePath>(context)
+                                  : null,
+                              addLabelText: currentUser.canCreateStoragePaths
+                                  ? S.of(context)!.addStoragePath
+                                  : null,
+                              labelText: S.of(context)!.storagePath,
+                              query: context.storagePathRepository
+                                  .getAllQuery(),
+                              initialValue: document.storagePath,
+                              name: fkStoragePath,
+                              prefixIcon: const Icon(Icons.folder_outlined),
+                            ),
+                          // Tag form field
+                          if (currentUser.canViewTags)
+                            TagsFormField(
+                              name: fkTags,
+                              allowCreation: true,
+                              allowExclude: false,
+                              suggestions:
+                                  fieldSuggestions?.tags.whereNot(
+                                    document.tags.contains,
+                                  ) ??
+                                  [],
+                              initialValue: IdsTagsQuery(
+                                include: document.tags,
+                              ),
+                            ),
+                          // Custom fields
+                          if (currentUser.canViewCustomFields)
+                            FormBuilderCustomFieldsField(
+                              parentDocumentId: document.id,
+                              name: fkCustomFields,
+                              initialValue: document.customFields ?? [],
+                            ),
+                          _buildAddCustomFieldToDocumentButton(
+                            context,
+                          ).paddedOnly(top: 16),
+                          const SizedBox(height: 140),
+                        ]
+                        .expand((child) => [child, const SizedBox(height: 8)])
+                        .toList(),
+              ),
             ),
           ),
           SingleChildScrollView(
@@ -428,21 +446,20 @@ class _DocumentEditPageState extends State<DocumentEditPage>
           .toList();
 
       try {
+        var request = PatchedDocumentRequest(
+          correspondent: PatchedValue(correspondent),
+          documentType: PatchedValue(documentType),
+          storagePath: PatchedValue(storagePath),
+          tags: PatchedValue(tags),
+          content: PatchedValue(content),
+          title: PatchedValue(title),
+          created: PatchedValue(createdAt),
+          customFields: PatchedValue(customFieldRequests),
+        );
         final result = await context
             .read<DocumentRepository>()
             .patchDocumentMutation(document.id)
-            .mutate(
-              PatchedDocumentRequest(
-                correspondent: PatchedValue(correspondent),
-                documentType: PatchedValue(documentType),
-                storagePath: PatchedValue(storagePath),
-                tags: PatchedValue(tags),
-                content: PatchedValue(content),
-                title: PatchedValue(title),
-                created: PatchedValue(createdAt),
-                customFields: PatchedValue(customFieldRequests),
-              ),
-            );
+            .mutate(request);
         if (result is MutationError) {
           throw (result as MutationError).error;
         }

@@ -6,12 +6,8 @@ import 'package:paperless_mobile/core/extensions/context_extensions.dart';
 import 'package:paperless_mobile/core/extensions/flutter_extensions.dart';
 import 'package:paperless_mobile/features/document_search/view/document_search_page.dart';
 
-/// A form field for editing a document link custom field value.
-///
-/// Document links are stored as a list of integer document IDs.
-/// Tapping the field opens a fullscreen document search. Selecting a document
-/// adds it to the linked list. Linked documents are shown as inline chips.
 class DocumentLinkFormField extends StatelessWidget {
+  final int parentDocumentId;
   final String labelText;
   final Object? value;
   final bool enabled;
@@ -25,9 +21,10 @@ class DocumentLinkFormField extends StatelessWidget {
     required this.enabled,
     required this.onChanged,
     this.errorText,
+    required this.parentDocumentId,
   });
 
-  List<int> _parseIds() {
+  List<int> get _parsedIds {
     if (value is List) {
       return (value as List).whereType<int>().toList();
     }
@@ -35,22 +32,19 @@ class DocumentLinkFormField extends StatelessWidget {
   }
 
   void _removeId(int id) {
-    final currentIds = _parseIds();
-    final newIds = currentIds.where((i) => i != id).toList();
+    final newIds = _parsedIds.where((i) => i != id).toList();
     onChanged(newIds.isEmpty ? null : newIds);
   }
 
   void _addDocument(Document document) {
-    final currentIds = _parseIds();
-    if (!currentIds.contains(document.id)) {
-      onChanged([...currentIds, document.id]);
+    if (!_parsedIds.contains(document.id)) {
+      onChanged([..._parsedIds, document.id]);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final ids = _parseIds();
-    final chips = ids.map(
+    final chips = _parsedIds.map(
       (id) => _DocumentLinkChip(
         documentId: id,
         onDeleted: enabled ? () => _removeId(id) : null,
@@ -92,7 +86,7 @@ class DocumentLinkFormField extends StatelessWidget {
       openBuilder: (context, closeContainer) {
         return DocumentSearchPage(
           close: () => closeContainer(),
-          disabledIds: _parseIds(),
+          disabledIds: [..._parsedIds, parentDocumentId],
           onItemSelected: (context, document) {
             closeContainer(returnValue: document);
           },

@@ -12,12 +12,14 @@ import 'package:paperless_mobile/core/widgets/form_builder_fields/custom_field_f
 import 'package:paperless_mobile/core/widgets/form_builder_fields/custom_field_form_field/fields/url_form_field.dart';
 
 class FormBuilderCustomFieldInstance extends FormBuilderField<Object?> {
+  final int parentDocumentId;
   final CustomField customField;
 
   FormBuilderCustomFieldInstance({
     super.key,
     required super.name,
     required this.customField,
+    required this.parentDocumentId,
     super.initialValue,
     super.validator,
     super.onChanged,
@@ -39,6 +41,7 @@ class FormBuilderCustomFieldInstance extends FormBuilderField<Object?> {
              value: state.value,
              extraData: customField.extraData,
              enabled: state.enabled,
+             parentDocumentId: parentDocumentId,
              onChanged: (newValue) {
                state.didChange(newValue);
              },
@@ -64,6 +67,7 @@ class CustomFieldValueEditor extends StatelessWidget {
   final ValueChanged<Object?> onChanged;
   final String? errorText;
   final String labelText;
+  final int parentDocumentId;
 
   const CustomFieldValueEditor({
     required this.labelText,
@@ -72,6 +76,7 @@ class CustomFieldValueEditor extends StatelessWidget {
     required this.extraData,
     required this.enabled,
     required this.onChanged,
+    required this.parentDocumentId,
     this.errorText,
   });
 
@@ -133,6 +138,7 @@ class CustomFieldValueEditor extends StatelessWidget {
         value: value,
         enabled: enabled,
         onChanged: onChanged,
+        parentDocumentId: parentDocumentId,
       ),
       DataTypeEnum.select => SelectFormField(
         errorText: errorText,

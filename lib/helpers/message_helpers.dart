@@ -54,7 +54,8 @@ void showSnackBar(
                       children: <TextSpan>[
                         TextSpan(
                           text: "\n$details",
-                          style: const TextStyle(
+                          style: TextStyle(
+                            color: foregroundColor,
                             fontStyle: FontStyle.italic,
                             fontSize: 10,
                           ),
