@@ -86,6 +86,10 @@
   "@anyTag": {
     "description": "Label shown when any tag should be filtered"
   },
+  "apiKey": "API Key",
+  "@apiKey": {},
+  "apiKeyMustNotBeEmpty": "API Key must not be empty.",
+  "@apiKeyMustNotBeEmpty": {},
   "appearance": "Görünüm",
   "@appearance": {},
   "applicationSettings": "Uygulama",
@@ -317,6 +321,10 @@
     "description": "Message shown when the UI settings could not be loaded"
   },
   "couldNotLoadUser": "Could not load user, please try again.",
+  "couldNotLoadUserProfile": "Could not load user profile, please try again.",
+  "@couldNotLoadUserProfile": {
+    "description": "Message shown when the user profile could not be loaded from the server."
+  },
   "couldNotLoadUsers": "Could not load users, please try again.",
   "couldNotOpenFilePermissionDenied": "Could not open file: Permission denied.",
   "@couldNotOpenFilePermissionDenied": {},
@@ -591,6 +599,10 @@
   "@incorrectOrMissingCertificatePassphrase": {},
   "invalidAddress": "Geçersiz adres.",
   "@invalidAddress": {},
+  "invalidApiKey": "Invalid API key.",
+  "@invalidApiKey": {
+    "description": "Message shown when the provided API key is invalid."
+  },
   "invalidCertificateFormat": "Geçersiz sertifika biçimi, yalnızca .pfx'e izin verilir",
   "@invalidCertificateFormat": {},
   "invalidCertificateOrMissingPassphrase": "Geçersiz sertifika veya eksik parola, lütfen tekrar deneyin",
@@ -809,6 +821,7 @@
     "description": "Option to chose when downloading a document"
   },
   "originalFilename": "Original Filename",
+  "@originalFilename": {},
   "originalFileSize": "Orijinal Dosya Boyutu",
   "@originalFileSize": {},
   "originalMD5Checksum": "Orijinal MD5-Sağlaması",
@@ -820,6 +833,7 @@
     "description": "Label shown in the tabbar on details page"
   },
   "owner": "Owner",
+  "@owner": {},
   "paperlessServerVersion": "Paperless sunucu versiyonu",
   "@paperlessServerVersion": {},
   "passphrase": "Gizli şifre",
@@ -829,8 +843,13 @@
   "passwordMustNotBeEmpty": "Şifre boş bırakılamaz.",
   "@passwordMustNotBeEmpty": {},
   "pendingFiles": "Pending Files",
+  "@pendingFiles": {},
   "permissions": "Permissions",
+  "@permissions": {},
   "persistingUserInformation": "Persisting user information...",
+  "@persistingUserInformation": {},
+  "pleaseProvideCredentialsOrApiKey": "Please provide either username & password or an API key.",
+  "@pleaseProvideCredentialsOrApiKey": {},
   "prepareDocument": "Belge hazırla",
   "@prepareDocument": {},
   "preview": "Ön izleme",
@@ -858,12 +877,19 @@
   "reload": "Yenile",
   "@reload": {},
   "rememberDecision": "Remember my decision",
+  "@rememberDecision": {},
   "remove": "Remove",
+  "@remove": {},
   "removeDocumentFromInbox": "Döküman gelen kutusundan kaldırıldı.",
   "@removeDocumentFromInbox": {},
   "removeFromSearchHistory": "Remove from search history?",
   "@removeFromSearchHistory": {},
   "removeQueryFromSearchHistory": "Arama geçmişinden sorgu silinsin mi?",
+  "@removeQueryFromSearchHistory": {},
+  "removeUser": "Remove user",
+  "@removeUser": {},
+  "removeUserAndLogOut": "Remove user and log out",
+  "@removeUserAndLogOut": {},
   "report": "RAPORLA",
   "@report": {},
   "reportABug": "Hata Bildir",
@@ -1103,6 +1129,7 @@
   "youDoNotHaveUnseenDocuments": "Görüntülenmemiş belgeniz yok.",
   "@youDoNotHaveUnseenDocuments": {},
   "youHaveNoViewsOnYourDashboardYet": "You have not added any views to your dashboard yet.",
+  "@youHaveNoViewsOnYourDashboardYet": {},
   "youreOffline": "Çevrimdışısınız.",
   "@youreOffline": {}
 }

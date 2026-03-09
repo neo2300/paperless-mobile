@@ -86,6 +86,10 @@
   "@anyTag": {
     "description": "Label shown when any tag should be filtered"
   },
+  "apiKey": "API-Authentifizierungstoken",
+  "@apiKey": {},
+  "apiKeyMustNotBeEmpty": "Authentifizierungstoken darf nicht leer sein.",
+  "@apiKeyMustNotBeEmpty": {},
   "appearance": "Aussehen",
   "@appearance": {},
   "applicationSettings": "Anwendung",
@@ -317,6 +321,10 @@
     "description": "Message shown when the UI settings could not be loaded"
   },
   "couldNotLoadUser": "Benutzer konnte nicht geladen werden, bitte versuche es erneut.",
+  "couldNotLoadUserProfile": "Benutzerprofil konnten nicht geladen werden, bitte versuche es erneut.",
+  "@couldNotLoadUserProfile": {
+    "description": "Message shown when the user profile could not be loaded from the server."
+  },
   "couldNotLoadUsers": "Benutzer konnten nicht geladen werden, bitte versuche es erneut.",
   "couldNotOpenFilePermissionDenied": "Datei konnte nicht geöffnet werden: Zugriff verweigert.",
   "@couldNotOpenFilePermissionDenied": {},
@@ -409,7 +417,7 @@
   "@deleteDocumentTooltip": {
     "description": "Tooltip shown for the delete button on details page"
   },
-  "deleteLabelWarningText": "Dieser Kennzeichner wird von Dokumenten referenziert. Durch das Löschen dieses Kennzeichners werden alle Referenzen entfernt. Fortfahren?",
+  "deleteLabelWarningText": "Dieses Label wird von Dokumenten referenziert. Durch das Löschen dieses Labels werden alle Referenzen entfernt. Fortfahren?",
   "@deleteLabelWarningText": {},
   "deleteView": "Ansicht {name} löschen?",
   "@deleteView": {},
@@ -591,6 +599,10 @@
   "@incorrectOrMissingCertificatePassphrase": {},
   "invalidAddress": "Ungültige Adresse.",
   "@invalidAddress": {},
+  "invalidApiKey": "Ungültiger API-Authentifizierungstoken.",
+  "@invalidApiKey": {
+    "description": "Message shown when the provided API key is invalid."
+  },
   "invalidCertificateFormat": "Ungültiges Zertifikatsformat, nur .pfx ist erlaubt.",
   "@invalidCertificateFormat": {},
   "invalidCertificateOrMissingPassphrase": "Ungültiges Zertifikat oder fehlende Passphrase, bitte versuche es erneut.",
@@ -809,6 +821,7 @@
     "description": "Option to chose when downloading a document"
   },
   "originalFilename": "Ursprünglicher Dateiname",
+  "@originalFilename": {},
   "originalFileSize": "Dateigröße Original",
   "@originalFileSize": {},
   "originalMD5Checksum": "MD5-Prüfsumme Original",
@@ -820,6 +833,7 @@
     "description": "Label shown in the tabbar on details page"
   },
   "owner": "Eigentümer",
+  "@owner": {},
   "paperlessServerVersion": "Paperless Server-Version",
   "@paperlessServerVersion": {},
   "passphrase": "Passphrase",
@@ -829,8 +843,13 @@
   "passwordMustNotBeEmpty": "Passwort darf nicht leer sein.",
   "@passwordMustNotBeEmpty": {},
   "pendingFiles": "Ausstehende Dateien",
+  "@pendingFiles": {},
   "permissions": "Berechtigungen",
+  "@permissions": {},
   "persistingUserInformation": "Nutzerinformationen werden gespeichert...",
+  "@persistingUserInformation": {},
+  "pleaseProvideCredentialsOrApiKey": "Bitte gebe entweder Benutzername und Passwort oder einen API-Authentifizierungstoken an.",
+  "@pleaseProvideCredentialsOrApiKey": {},
   "prepareDocument": "Dokument vorbereiten",
   "@prepareDocument": {},
   "preview": "Vorschau",
@@ -858,12 +877,19 @@
   "reload": "Neu laden",
   "@reload": {},
   "rememberDecision": "Meine Entscheidung merken",
+  "@rememberDecision": {},
   "remove": "Entfernen",
+  "@remove": {},
   "removeDocumentFromInbox": "Dokument aus Posteingang entfernt.",
   "@removeDocumentFromInbox": {},
   "removeFromSearchHistory": "Aus dem Suchverlauf entfernen?",
   "@removeFromSearchHistory": {},
   "removeQueryFromSearchHistory": "Aus Suchverlauf entfernen?",
+  "@removeQueryFromSearchHistory": {},
+  "removeUser": "Benutzer entfernen",
+  "@removeUser": {},
+  "removeUserAndLogOut": "Benutzer entfernen und abmelden",
+  "@removeUserAndLogOut": {},
   "report": "MELDEN",
   "@report": {},
   "reportABug": "Einen Fehler melden",
@@ -1103,6 +1129,7 @@
   "youDoNotHaveUnseenDocuments": "Du hast keine ungesehenen Dokumente.",
   "@youDoNotHaveUnseenDocuments": {},
   "youHaveNoViewsOnYourDashboardYet": "Du hast noch keine Ansichten zu deinem Dashboard hinzugefügt.",
+  "@youHaveNoViewsOnYourDashboardYet": {},
   "youreOffline": "Du bist offline.",
   "@youreOffline": {}
 }

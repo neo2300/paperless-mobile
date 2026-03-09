@@ -23,7 +23,6 @@ class AppDrawer extends StatelessWidget {
   Widget build(BuildContext context) {
     final currentAccount = context.loggedInUser$;
     final uiSettings = currentAccount.profile.uiSettings;
-    final profile = currentAccount.profile.profile;
     final username = uiSettings.user.username;
     final appVersion = packageInfo.version;
     final serverUrl = currentAccount.serverUrl.replaceAll(
@@ -65,7 +64,7 @@ class AppDrawer extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.person,
-                      size: 18,
+                      size: 16,
                       color: Theme.of(
                         context,
                       ).colorScheme.onSurface.withAlpha(128),

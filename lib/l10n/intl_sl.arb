@@ -86,6 +86,10 @@
   "@anyTag": {
     "description": "Label shown when any tag should be filtered"
   },
+  "apiKey": "API Key",
+  "@apiKey": {},
+  "apiKeyMustNotBeEmpty": "API Key must not be empty.",
+  "@apiKeyMustNotBeEmpty": {},
   "appearance": "Videz",
   "@appearance": {},
   "applicationSettings": "Aplikacija",
@@ -317,6 +321,10 @@
     "description": "Message shown when the UI settings could not be loaded"
   },
   "couldNotLoadUser": "Uporabnika ni bilo mogoče naložiti, poskusite znova.",
+  "couldNotLoadUserProfile": "Could not load user profile, please try again.",
+  "@couldNotLoadUserProfile": {
+    "description": "Message shown when the user profile could not be loaded from the server."
+  },
   "couldNotLoadUsers": "Uporabnikov ni bilo mogoče naložiti, poskusite znova.",
   "couldNotOpenFilePermissionDenied": "Ni možno odpreti datoteke: Pravica zavrnjena.",
   "@couldNotOpenFilePermissionDenied": {},
@@ -360,7 +368,7 @@
   "@createFromCurrentFilter": {
     "description": "Tooltip of the \"New saved view\" button"
   },
-  "createInboxTag": "Create inbox tag",
+  "createInboxTag": "Ustvari oznako mape Prejeto",
   "createsASavedViewBasedOnTheCurrentFilterCriteria": "Nov pogled ustvarjen na podlagi trenutnih kriterijev.",
   "@createsASavedViewBasedOnTheCurrentFilterCriteria": {},
   "createViewsToQuicklyFilterYourDocuments": "Ustvari poglede za hitrejše filtriranje dokumentov.",
@@ -591,6 +599,10 @@
   "@incorrectOrMissingCertificatePassphrase": {},
   "invalidAddress": "Neveljaven naslov.",
   "@invalidAddress": {},
+  "invalidApiKey": "Invalid API key.",
+  "@invalidApiKey": {
+    "description": "Message shown when the provided API key is invalid."
+  },
   "invalidCertificateFormat": "Neveljaven format certifikata, dovoljen je samo .pfx zapis",
   "@invalidCertificateFormat": {},
   "invalidCertificateOrMissingPassphrase": "Neveljaven certifikat ali manjkajoče geslo, poskusi ponovno",
@@ -754,7 +766,7 @@
   "@noDocumentsScannedYet": {},
   "noDocumentTypesSetUp": "Ni nastavljenih tipov dokumentov.",
   "@noDocumentTypesSetUp": {},
-  "noInboxTagsSetUpHint": "Inbox tags are automatically assigned to newly received documents. Create one and those documents will start appearing here for review.",
+  "noInboxTagsSetUpHint": "Oznake mape Prejeto se samodejno dodelijo novo prejetim dokumentom. Ustvarite eno in ti dokumenti se bodo začeli prikazovati tukaj za pregled.",
   "@noInboxTagsSetUpHint": {},
   "noItemsFound": "Ni elementov!",
   "@noItemsFound": {},
@@ -809,6 +821,7 @@
     "description": "Option to chose when downloading a document"
   },
   "originalFilename": "Izvirno ime datoteke",
+  "@originalFilename": {},
   "originalFileSize": "Izvirna velikost datoteke",
   "@originalFileSize": {},
   "originalMD5Checksum": "Izvirni MD5-Checksum",
@@ -820,6 +833,7 @@
     "description": "Label shown in the tabbar on details page"
   },
   "owner": "Lastnik",
+  "@owner": {},
   "paperlessServerVersion": "Verzija strežnika Paperless",
   "@paperlessServerVersion": {},
   "passphrase": "Geslo",
@@ -829,8 +843,13 @@
   "passwordMustNotBeEmpty": "Geslo ne sme biti prazno.",
   "@passwordMustNotBeEmpty": {},
   "pendingFiles": "Čakajoče datoteke",
+  "@pendingFiles": {},
   "permissions": "Dovoljenja",
+  "@permissions": {},
   "persistingUserInformation": "Trajanje uporabniških podatkov...",
+  "@persistingUserInformation": {},
+  "pleaseProvideCredentialsOrApiKey": "Please provide either username & password or an API key.",
+  "@pleaseProvideCredentialsOrApiKey": {},
   "prepareDocument": "Pripravi dokument",
   "@prepareDocument": {},
   "preview": "Predogled",
@@ -858,12 +877,19 @@
   "reload": "Ponovno naloži",
   "@reload": {},
   "rememberDecision": "Zapomni si to izbiro",
+  "@rememberDecision": {},
   "remove": "Odstrani",
+  "@remove": {},
   "removeDocumentFromInbox": "Dokument je odstranjen iz predalnika.",
   "@removeDocumentFromInbox": {},
   "removeFromSearchHistory": "Izbriši iz zgodovine iskanja?",
   "@removeFromSearchHistory": {},
   "removeQueryFromSearchHistory": "Izbriši iz zgodovine iskanja?",
+  "@removeQueryFromSearchHistory": {},
+  "removeUser": "Remove user",
+  "@removeUser": {},
+  "removeUserAndLogOut": "Remove user and log out",
+  "@removeUserAndLogOut": {},
   "report": "POROČILO",
   "@report": {},
   "reportABug": "Sporoči napako",
@@ -927,7 +953,7 @@
   "@serverAddressMustNotBeEmpty": {},
   "settings": "Nastavitve",
   "@settings": {},
-  "setUpYourInbox": "Set up your inbox first",
+  "setUpYourInbox": "Najprej nastavite mapo »Prejeto«",
   "shareTooltip": "Deli",
   "@shareTooltip": {
     "description": "Tooltip shown for the share button on details page"
@@ -1103,6 +1129,7 @@
   "youDoNotHaveUnseenDocuments": "Nimaš nepregledanih dokumentov.",
   "@youDoNotHaveUnseenDocuments": {},
   "youHaveNoViewsOnYourDashboardYet": "Na nadzorno ploščo še niste dodali nobenega pogleda.",
+  "@youHaveNoViewsOnYourDashboardYet": {},
   "youreOffline": "Ni povezave.",
   "@youreOffline": {}
 }

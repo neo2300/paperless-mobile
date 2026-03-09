@@ -54,7 +54,6 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
     List<HeaderEntry>? additionalHeaders,
   }) async {
     emit(const Authenticating());
-
     try {
       final userProfile = await _addUser(
         serverUrl,
@@ -183,6 +182,9 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
     _store.removeUserData(userId);
     await _encryptedLocalStore.clear(userId);
     await FileService.instance.clearUserData(userId: userId);
+    if (_store.state.localUserData.keys.isEmpty) {
+      emit(Unauthenticated(redirectToAccountSelection: false));
+    }
   }
 
   ///

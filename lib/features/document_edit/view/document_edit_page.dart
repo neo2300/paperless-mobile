@@ -441,6 +441,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
   Widget _buildTitleFormField(String? initialTitle) {
     return FormBuilderTextField(
       name: fkTitle,
+      keyboardType: TextInputType.text,
       decoration: InputDecoration(
         label: Text(S.of(context)!.title),
         suffixIcon: IconButton(

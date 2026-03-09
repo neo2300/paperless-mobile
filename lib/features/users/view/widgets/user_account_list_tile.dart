@@ -21,6 +21,7 @@ class UserAccountListTile extends StatelessWidget {
     return SizedBox(
       width: double.maxFinite,
       child: ListTile(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         onTap: onTap,
         title: Text(account.profile.uiSettings.user.username),
         subtitle: Column(
@@ -29,7 +30,7 @@ class UserAccountListTile extends StatelessWidget {
             if (account.profile.profile.displayName.isNotEmpty)
               Text(account.profile.profile.displayName),
             Text(
-              account.serverUrl.replaceFirst(RegExp(r'https://?'), ''),
+              account.serverUrl.replaceFirst(RegExp(r'https?://'), ''),
               style: TextStyle(color: theme.colorScheme.primary),
             ),
           ],

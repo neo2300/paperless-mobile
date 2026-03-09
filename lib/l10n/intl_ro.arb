@@ -86,6 +86,10 @@
   "@anyTag": {
     "description": "Label shown when any tag should be filtered"
   },
+  "apiKey": "API Key",
+  "@apiKey": {},
+  "apiKeyMustNotBeEmpty": "API Key must not be empty.",
+  "@apiKeyMustNotBeEmpty": {},
   "appearance": "Aspect",
   "@appearance": {},
   "applicationSettings": "Aplicație",
@@ -317,6 +321,10 @@
     "description": "Message shown when the UI settings could not be loaded"
   },
   "couldNotLoadUser": "Could not load user, please try again.",
+  "couldNotLoadUserProfile": "Could not load user profile, please try again.",
+  "@couldNotLoadUserProfile": {
+    "description": "Message shown when the user profile could not be loaded from the server."
+  },
   "couldNotLoadUsers": "Could not load users, please try again.",
   "couldNotOpenFilePermissionDenied": "Fișierul nu a putut fi deschis: Permisiune respinsă.",
   "@couldNotOpenFilePermissionDenied": {},
@@ -591,6 +599,10 @@
   "@incorrectOrMissingCertificatePassphrase": {},
   "invalidAddress": "Invalid address.",
   "@invalidAddress": {},
+  "invalidApiKey": "Invalid API key.",
+  "@invalidApiKey": {
+    "description": "Message shown when the provided API key is invalid."
+  },
   "invalidCertificateFormat": "Invalid certificate format, only .pfx is allowed",
   "@invalidCertificateFormat": {},
   "invalidCertificateOrMissingPassphrase": "Invalid certificate or missing passphrase, please try again",
@@ -809,6 +821,7 @@
     "description": "Option to chose when downloading a document"
   },
   "originalFilename": "Original Filename",
+  "@originalFilename": {},
   "originalFileSize": "Dimensiunea originală",
   "@originalFileSize": {},
   "originalMD5Checksum": "Original MD5-Checksum",
@@ -820,6 +833,7 @@
     "description": "Label shown in the tabbar on details page"
   },
   "owner": "Owner",
+  "@owner": {},
   "paperlessServerVersion": "Versiune Paperless",
   "@paperlessServerVersion": {},
   "passphrase": "Parolă de acces",
@@ -829,8 +843,13 @@
   "passwordMustNotBeEmpty": "Password must not be empty.",
   "@passwordMustNotBeEmpty": {},
   "pendingFiles": "Pending Files",
+  "@pendingFiles": {},
   "permissions": "Permissions",
+  "@permissions": {},
   "persistingUserInformation": "Persisting user information...",
+  "@persistingUserInformation": {},
+  "pleaseProvideCredentialsOrApiKey": "Please provide either username & password or an API key.",
+  "@pleaseProvideCredentialsOrApiKey": {},
   "prepareDocument": "Pregătire document",
   "@prepareDocument": {},
   "preview": "Previzualizare",
@@ -858,12 +877,19 @@
   "reload": "Reîncarcă",
   "@reload": {},
   "rememberDecision": "Reține decizia mea",
+  "@rememberDecision": {},
   "remove": "Șterge",
+  "@remove": {},
   "removeDocumentFromInbox": "Document eliminat din inbox.",
   "@removeDocumentFromInbox": {},
   "removeFromSearchHistory": "Ştergi din istoricul căutărilor?",
   "@removeFromSearchHistory": {},
   "removeQueryFromSearchHistory": "Ștergi interogarea din istoricul de căutare?",
+  "@removeQueryFromSearchHistory": {},
+  "removeUser": "Remove user",
+  "@removeUser": {},
+  "removeUserAndLogOut": "Remove user and log out",
+  "@removeUserAndLogOut": {},
   "report": "Raportează",
   "@report": {},
   "reportABug": "Raportează o eroare",
@@ -1103,6 +1129,7 @@
   "youDoNotHaveUnseenDocuments": "Ai citit toate documentele.",
   "@youDoNotHaveUnseenDocuments": {},
   "youHaveNoViewsOnYourDashboardYet": "You have not added any views to your dashboard yet.",
+  "@youHaveNoViewsOnYourDashboardYet": {},
   "youreOffline": "Eşti deconectat.",
   "@youreOffline": {}
 }
