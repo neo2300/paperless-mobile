@@ -98,12 +98,12 @@ class DocumentGridItem extends DocumentItem {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (currentUser.canViewCorrespondents)
+                        if (context.uiSettings$.canViewCorrespondents)
                           CorrespondentWidget(
                             id: document.correspondent,
                             onSelected: onCorrespondentSelected,
                           ),
-                        if (currentUser.canViewDocumentTypes)
+                        if (context.uiSettings$.canViewDocumentTypes)
                           DocumentTypeWidget(
                             id: document.documentType,
                             onSelected: onDocumentTypeSelected,

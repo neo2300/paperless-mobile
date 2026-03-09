@@ -39,11 +39,6 @@ class HomeShellWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final localStoreState = context.watch<LocalStore>().state;
     final currentUserId = localStoreState.loggedInAppUserId;
-    if (currentUserId == null) {
-      //This only happens during logout...
-      //FIXME: Find way so this does not occur anymore
-      return const SizedBox.shrink();
-    }
     return MultiProvider(
       key: ValueKey(currentUserId),
       providers: [

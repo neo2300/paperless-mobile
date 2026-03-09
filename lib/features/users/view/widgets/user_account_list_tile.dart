@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:paperless_mobile/api/paperless_api.dart';
+import 'package:paperless_mobile/api/extensions/profile_extension.dart';
 import 'package:paperless_mobile/core/store/slices/local_user_account.dart';
 import 'package:paperless_mobile/features/settings/view/widgets/user_avatar.dart';
 
@@ -22,19 +22,19 @@ class UserAccountListTile extends StatelessWidget {
       width: double.maxFinite,
       child: ListTile(
         onTap: onTap,
-        title: Text(account.paperlessUser.username),
+        title: Text(account.profile.uiSettings.user.username),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (account.paperlessUser.displayName.isNotEmpty)
-              Text(account.paperlessUser.displayName),
+            if (account.profile.profile.displayName.isNotEmpty)
+              Text(account.profile.profile.displayName),
             Text(
               account.serverUrl.replaceFirst(RegExp(r'https://?'), ''),
               style: TextStyle(color: theme.colorScheme.primary),
             ),
           ],
         ),
-        isThreeLine: account.paperlessUser.displayName.isNotEmpty,
+        isThreeLine: account.profile.profile.displayName.isNotEmpty,
         leading: UserAvatar(account: account),
         trailing: trailing,
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:paperless_mobile/api/paperless_api.dart';
+import 'package:paperless_mobile/api/extensions/profile_extension.dart';
+import 'package:paperless_mobile/core/extensions/context_extensions.dart';
 import 'package:paperless_mobile/core/store/slices/local_user_account.dart';
 
 class UserAvatar extends StatelessWidget {
@@ -14,6 +15,19 @@ class UserAvatar extends StatelessWidget {
     final foregroundColor = backgroundColor.computeLuminance() > 0.5
         ? Colors.black
         : Colors.white;
+
+    final fullName = account.profile.profile.displayName;
+
+    final displayName = fullName.isEmpty
+        ? account.profile.uiSettings.user.username
+        : fullName;
+
+    final initials = displayName
+        .split(" ")
+        .take(2)
+        .map((e) => e.substring(0, 1))
+        .map((e) => e.toUpperCase())
+        .join("");
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
@@ -25,14 +39,7 @@ class UserAvatar extends StatelessWidget {
       child: CircleAvatar(
         backgroundColor: backgroundColor,
         foregroundColor: foregroundColor,
-        child: Text(
-          (account.paperlessUser.displayName)
-              .split(" ")
-              .take(2)
-              .map((e) => e.substring(0, 1))
-              .map((e) => e.toUpperCase())
-              .join(""),
-        ),
+        child: Text(initials),
       ),
     );
   }

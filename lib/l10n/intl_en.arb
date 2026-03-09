@@ -86,6 +86,10 @@
   "@anyTag": {
     "description": "Label shown when any tag should be filtered"
   },
+  "apiKey": "API Key",
+  "@apiKey": {},
+  "apiKeyMustNotBeEmpty": "API Key must not be empty.",
+  "@apiKeyMustNotBeEmpty": {},
   "appearance": "Appearance",
   "@appearance": {},
   "applicationSettings": "Application",
@@ -831,6 +835,8 @@
   "pendingFiles": "Pending Files",
   "permissions": "Permissions",
   "persistingUserInformation": "Persisting user information...",
+  "pleaseProvideCredentialsOrApiKey": "Please provide either username & password or an API key.",
+  "@pleaseProvideCredentialsOrApiKey": {},
   "prepareDocument": "Prepare document",
   "@prepareDocument": {},
   "preview": "Preview",
@@ -1104,5 +1110,13 @@
   "@youDoNotHaveUnseenDocuments": {},
   "youHaveNoViewsOnYourDashboardYet": "You have not added any views to your dashboard yet.",
   "youreOffline": "You're offline.",
-  "@youreOffline": {}
+  "@youreOffline": {},
+  "couldNotLoadUserProfile": "Could not load user profile, please try again.",
+  "@couldNotLoadUserProfile": {
+    "description": "Message shown when the user profile could not be loaded from the server." 
+  },
+  "invalidApiKey": "Invalid API key.",
+  "@invalidApiKey": {
+    "description": "Message shown when the provided API key is invalid."
+  }
 }

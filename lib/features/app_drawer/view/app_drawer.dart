@@ -22,8 +22,9 @@ class AppDrawer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final currentAccount = context.loggedInUser$;
-    final currentUser = currentAccount.paperlessUser;
-    final username = currentUser.username;
+    final uiSettings = currentAccount.profile.uiSettings;
+    final profile = currentAccount.profile.profile;
+    final username = uiSettings.user.username;
     final appVersion = packageInfo.version;
     final serverUrl = currentAccount.serverUrl.replaceAll(
       RegExp(r'https?://'),
@@ -205,13 +206,13 @@ class AppDrawer extends StatelessWidget {
               onTap: () => SettingsRoute().push(context),
             ),
             const Divider(),
-            if (currentUser.canViewSavedViews) ...[
+            if (uiSettings.canViewSavedViews) ...[
               Text(
                 S.of(context)!.views,
                 textAlign: TextAlign.left,
                 style: Theme.of(context).textTheme.labelLarge,
               ).padded(16),
-              _buildSavedViews(context, currentUser),
+              _buildSavedViews(context, uiSettings),
             ],
           ],
         ),
@@ -219,7 +220,7 @@ class AppDrawer extends StatelessWidget {
     );
   }
 
-  Widget _buildSavedViews(BuildContext context, User currentUser) {
+  Widget _buildSavedViews(BuildContext context, UiSettingsView uiSettings) {
     return QueryBuilder(
       query: context.read<SavedViewRepository>().getAllQuery(),
       builder: (context, state) {
@@ -255,7 +256,7 @@ class AppDrawer extends StatelessWidget {
           itemBuilder: (context, index) {
             final view = sidebarViews[index];
             return ListTile(
-              enabled: currentUser.canViewDocuments,
+              enabled: uiSettings.canViewDocuments,
               title: Text(view.name),
               trailing: const Icon(Icons.arrow_forward),
               onTap: () {

@@ -250,9 +250,8 @@ class _InboxItemState extends State<InboxItem> {
   }
 
   Widget _buildActions(BuildContext context) {
-    final currentUser = context.loggedInUser$.paperlessUser;
-    final canEdit = currentUser.canEditDocuments;
-    final canDelete = currentUser.canDeleteDocuments;
+    final canEdit = context.uiSettings$.canEditDocuments;
+    final canDelete = context.uiSettings$.canDeleteDocuments;
     final actions = [
       if (canEdit)
         ActionChip(

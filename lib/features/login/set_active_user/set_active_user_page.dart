@@ -6,7 +6,6 @@ import 'package:paperless_mobile/features/login/server_connection/model/header_e
 
 class SetActiveUserPage extends StatefulWidget {
   final String serverUrl;
-  final String username;
   final String token;
   final ClientCertificate? clientCertificate;
   final List<HeaderEntry>? additionalHeaders;
@@ -14,7 +13,6 @@ class SetActiveUserPage extends StatefulWidget {
   const SetActiveUserPage({
     super.key,
     required this.serverUrl,
-    required this.username,
     required this.token,
     this.clientCertificate,
     this.additionalHeaders,
@@ -30,7 +28,6 @@ class _SetActiveUserPageState extends State<SetActiveUserPage> {
     super.initState();
     context.read<AuthenticationCubit>().setActiveUser(
       serverUrl: widget.serverUrl,
-      username: widget.username,
       token: widget.token,
       clientCertificate: widget.clientCertificate,
       additionalHeaders: widget.additionalHeaders,

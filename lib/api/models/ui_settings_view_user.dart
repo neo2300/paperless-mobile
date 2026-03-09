@@ -19,9 +19,9 @@ part 'ui_settings_view_user.g.dart';
 class UiSettingsViewUser {
   /// Returns a new [UiSettingsViewUser] instance.
   UiSettingsViewUser({
-    this.id,
+    required this.id,
 
-    this.username,
+    required this.username,
 
     this.firstName,
 
@@ -37,8 +37,8 @@ class UiSettingsViewUser {
   @JsonKey(name: r'id', required: false, includeIfNull: false)
   final int? id;
 
-  @JsonKey(name: r'username', required: false, includeIfNull: false)
-  final String? username;
+  @JsonKey(name: r'username', includeIfNull: false)
+  final String username;
 
   @JsonKey(name: r'first_name', required: false, includeIfNull: false)
   final String? firstName;

@@ -153,6 +153,7 @@ void main() async {
       await localNotificationService.initialize();
 
       final userApi = PaperlessUserApiImpl(sessionManager.client);
+      final serverStatsApi = PaperlessServerStatsApiImpl(sessionManager.client);
       final authenticationCubit = AuthenticationCubit(
         userApi,
         sessionManager,
@@ -161,6 +162,7 @@ void main() async {
         localNotificationService,
         localStore,
         encryptedLocalStore,
+        serverStatsApi,
       );
 
       runApp(
@@ -307,7 +309,9 @@ class _GoRouterShellState extends State<GoRouterShell> {
                     const RestoringSessionRoute().go(context);
                     break;
                   case VerifyingIdentity(:final userId):
-                    VerifyIdentityRoute(userId: userId).go(context);
+                    VerifyIdentityRoute(
+                      userId: userId,
+                    ).pushReplacement(context);
                     break;
                   case SwitchingAccounts():
                     const SwitchingAccountsRoute().go(context);
@@ -320,14 +324,7 @@ class _GoRouterShellState extends State<GoRouterShell> {
                     break;
                   case AuthenticationError error:
                     showGenericError(context, error.error);
-                    AuthenticateRoute(
-                      serverUrl: error.serverUrl,
-                      $extra: AuthRouteExtra(
-                        clientCertificate: error.clientCertificate,
-                        additionalHeaders: error.additionalHeaders,
-                      ),
-                      initialUsername: error.username,
-                    ).replace(context);
+                    context.pop();
                     break;
                   case ConnectionFailure():
                     showSnackBar(

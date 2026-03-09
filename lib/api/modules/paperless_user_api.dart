@@ -8,6 +8,7 @@ abstract class PaperlessUserApi
     extends CrudApi<User, UserRequest, PatchedUserRequest, UserFilterOptions> {
   Future<User?> getCurrentUser();
   Future<String> deactivateTotp(int id);
+  Future<Profile> getProfile();
 }
 
 class PaperlessUserApiImpl extends PaperlessUserApi
@@ -50,13 +51,13 @@ class PaperlessUserApiImpl extends PaperlessUserApi
       final response = await client.get('/api/ui_settings/');
 
       final uiSettings = UiSettingsView.fromJson(response.data!);
-      if (uiSettings.user?.id == null) {
+      if (uiSettings.user.id == null) {
         throw PaperlessApiException(
           ErrorCode.userGetError,
           details: "Could not retrieve current user from UI settings.",
         );
       }
-      return get(uiSettings.user!.id!);
+      return get(uiSettings.user.id!);
     } on DioException catch (exception) {
       throw exception.unravel(
         orElse: const PaperlessApiException(ErrorCode.userGetError),
@@ -74,6 +75,18 @@ class PaperlessUserApiImpl extends PaperlessUserApi
       throw PaperlessApiException(
         ErrorCode.userUpdateError,
         details: "Could not deactivate TOTP for user with id $id: $e",
+      );
+    }
+  }
+
+  @override
+  Future<Profile> getProfile() async {
+    try {
+      final response = await client.get('/api/profile/');
+      return Profile.fromJson(response.data!);
+    } on DioException catch (exception) {
+      throw exception.unravel(
+        orElse: const PaperlessApiException(ErrorCode.profileGetError),
       );
     }
   }

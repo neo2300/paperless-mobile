@@ -360,7 +360,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
             SliverToBoxAdapter(
               child: CurrentUserAppDataBuilder(
                 builder: (context, userData) {
-                  if (!context.loggedInUser$.paperlessUser.canViewSavedViews) {
+                  if (!context.uiSettings$.canViewSavedViews) {
                     return const SizedBox.shrink();
                   }
                   return CurrentUserAppDataBuilder(

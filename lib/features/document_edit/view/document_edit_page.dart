@@ -79,7 +79,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = context.loggedInUser$.paperlessUser;
+    final uiSettings = context.loggedInUser$.profile.uiSettings;
     return QueryBuilder(
       query: context.read<DocumentRepository>().getDocumentQuery(
         widget.documentId,
@@ -200,7 +200,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                           context,
                           state.data!,
                           suggestionsState.data,
-                          currentUser,
+                          uiSettings,
                         );
                       },
                     ),
@@ -248,7 +248,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
     BuildContext context,
     Document document,
     Suggestions? fieldSuggestions,
-    User currentUser,
+    UiSettingsView uiSettings,
   ) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -264,17 +264,17 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                 fieldSuggestions,
               ).padded(),
               // Correspondent form field
-              if (currentUser.canViewCorrespondents)
+              if (uiSettings.canViewCorrespondents)
                 Column(
                   children: [
                     SingleLabelFormField<Correspondent>(
-                      onAddLabel: currentUser.canCreateCorrespondents
+                      onAddLabel: uiSettings.canCreateCorrespondents
                           ? (currentInput) => CreateLabelRoute(
                               LabelType.correspondent,
                               name: currentInput,
                             ).push<Correspondent>(context)
                           : null,
-                      addLabelText: currentUser.canCreateCorrespondents
+                      addLabelText: uiSettings.canCreateCorrespondents
                           ? S.of(context)!.addCorrespondent
                           : null,
                       labelText: S.of(context)!.correspondent,
@@ -287,17 +287,17 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                   ],
                 ).padded(),
               // DocumentType form field
-              if (currentUser.canViewDocumentTypes)
+              if (uiSettings.canViewDocumentTypes)
                 Column(
                   children: [
                     SingleLabelFormField<DocumentType>(
-                      onAddLabel: currentUser.canCreateDocumentTypes
+                      onAddLabel: uiSettings.canCreateDocumentTypes
                           ? (currentInput) => CreateLabelRoute(
                               LabelType.documentType,
                               name: currentInput,
                             ).push<DocumentType>(context)
                           : null,
-                      addLabelText: currentUser.canCreateDocumentTypes
+                      addLabelText: uiSettings.canCreateDocumentTypes
                           ? S.of(context)!.addDocumentType
                           : null,
                       labelText: S.of(context)!.documentType,
@@ -310,17 +310,17 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                   ],
                 ).padded(),
               // StoragePath form field
-              if (currentUser.canViewStoragePaths)
+              if (uiSettings.canViewStoragePaths)
                 Column(
                   children: [
                     SingleLabelFormField<StoragePath>(
-                      onAddLabel: currentUser.canCreateStoragePaths
+                      onAddLabel: uiSettings.canCreateStoragePaths
                           ? (currentInput) => CreateLabelRoute(
                               LabelType.storagePath,
                               name: currentInput,
                             ).push<StoragePath>(context)
                           : null,
-                      addLabelText: currentUser.canCreateStoragePaths
+                      addLabelText: uiSettings.canCreateStoragePaths
                           ? S.of(context)!.addStoragePath
                           : null,
                       labelText: S.of(context)!.storagePath,
@@ -332,7 +332,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                   ],
                 ).padded(),
               // Tag form field
-              if (currentUser.canViewTags)
+              if (uiSettings.canViewTags)
                 TagsFormField(
                   name: fkTags,
                   allowCreation: true,

@@ -1,8 +1,6 @@
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:paperless_mobile/core/extensions/context_extensions.dart';
-import 'package:paperless_mobile/core/store/local_store.dart';
-import 'package:paperless_mobile/core/store/slices/local_user_data.dart';
 import 'package:paperless_mobile/features/login/cubit/authentication_cubit.dart';
 import 'package:paperless_mobile/features/users/view/widgets/user_account_list_tile.dart';
 import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
@@ -14,9 +12,7 @@ class ManageAccountsDialogContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accounts = context.select<LocalStore, Map<String, LocalUserData>>(
-      (store) => store.state.localUserData,
-    );
+    final accounts = context.localUserData$;
     final loggedInUserId = context.loggedInAppUserId$;
     // This is one of the few places where the currentLoggedInUser can be null
     // (exactly after loggin out as the current user to be precise).

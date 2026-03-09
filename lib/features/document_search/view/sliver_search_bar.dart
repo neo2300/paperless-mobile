@@ -17,7 +17,7 @@ class SliverSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (context.loggedInUser$.paperlessUser.canViewDocuments) {
+    if (context.loggedInUser$.profile.uiSettings.canViewDocuments) {
       return const SliverAppBar(
         titleSpacing: 8,
         automaticallyImplyLeading: false,

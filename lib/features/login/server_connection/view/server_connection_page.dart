@@ -50,6 +50,7 @@ class _ServerConnectionPageState extends State<ServerConnectionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       persistentFooterButtons: [AppLogsFooterWidget().padded()],
       persistentFooterAlignment: AlignmentDirectional.center,
       persistentFooterDecoration: BoxDecoration(),

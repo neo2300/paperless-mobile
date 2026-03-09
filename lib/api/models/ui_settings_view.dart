@@ -2,12 +2,12 @@
 // AUTO-GENERATED FILE, DO NOT MODIFY!
 //
 
+import 'package:copy_with_extension/copy_with_extension.dart';
+import 'package:equatable/src/equatable_utils.dart';
+import 'package:json_annotation/json_annotation.dart';
 // ignore_for_file: unused_element
 import 'package:paperless_mobile/api/models/ui_settings_view_settings.dart';
 import 'package:paperless_mobile/api/models/ui_settings_view_user.dart';
-import 'package:copy_with_extension/copy_with_extension.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'package:equatable/src/equatable_utils.dart';
 
 part 'ui_settings_view.g.dart';
 
@@ -20,7 +20,7 @@ part 'ui_settings_view.g.dart';
 )
 class UiSettingsView {
   /// Returns a new [UiSettingsView] instance.
-  UiSettingsView({this.permissions, this.settings, this.user});
+  UiSettingsView({this.permissions, this.settings, required this.user});
 
   @JsonKey(name: r'permissions', required: false, includeIfNull: false)
   final List<String>? permissions;
@@ -28,8 +28,8 @@ class UiSettingsView {
   @JsonKey(name: r'settings', required: false, includeIfNull: false)
   final UiSettingsViewSettings? settings;
 
-  @JsonKey(name: r'user', required: false, includeIfNull: false)
-  final UiSettingsViewUser? user;
+  @JsonKey(name: r'user', includeIfNull: false)
+  final UiSettingsViewUser user;
 
   @override
   bool operator ==(Object other) {

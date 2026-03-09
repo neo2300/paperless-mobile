@@ -353,7 +353,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
   Widget _buildEditButton(Document document, LocalUserAccount currentUser) {
     bool canEdit =
         context.internetConnection$ &&
-        currentUser.paperlessUser.canEditDocuments;
+        currentUser.profile.uiSettings.canEditDocuments;
     if (!canEdit) {
       return const SizedBox.shrink();
     }
@@ -388,7 +388,7 @@ class _DocumentDetailsPageState extends State<DocumentDetailsPage> {
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
               ConnectivityAwareActionWrapper(
-                disabled: !currentUser.paperlessUser.canDeleteDocuments,
+                disabled: !currentUser.profile.uiSettings.canDeleteDocuments,
                 offlineBuilder: (context, child) {
                   return const IconButton(
                     icon: Icon(Icons.delete),

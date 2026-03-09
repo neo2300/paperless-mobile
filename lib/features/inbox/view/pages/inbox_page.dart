@@ -300,7 +300,7 @@ class _InboxPageState extends State<InboxPage> {
   }
 
   Future<bool> _onItemDismissed(Document doc) async {
-    if (!context.loggedInUser.paperlessUser.canEditDocuments) {
+    if (!context.uiSettings$.canEditDocuments) {
       showSnackBar(context, S.of(context)!.missingPermissions);
       return false;
     }

@@ -14,6 +14,7 @@ import 'package:paperless_mobile/core/store/local_store.dart';
 import 'package:paperless_mobile/core/store/slices/local_user_account.dart';
 import 'package:paperless_mobile/core/store/slices/local_user_data.dart';
 import 'package:paperless_mobile/core/store/slices/user_credentials.dart';
+import 'package:paperless_mobile/core/store/slices/user_profile.dart';
 import 'package:paperless_mobile/features/logging/data/logger.dart';
 import 'package:paperless_mobile/features/logging/utils/redaction_utils.dart';
 import 'package:paperless_mobile/features/login/model/client_certificate.dart';
@@ -28,6 +29,7 @@ part 'authentication_state.dart';
 class AuthenticationCubit extends Cubit<AuthenticationState> {
   final LocalAuthenticationService _localAuthService;
   final PaperlessUserApi _usersApi;
+  final PaperlessServerStatsApi _serverStatsApi;
   final LocalStore _store;
   final EncryptedLocalStore _encryptedLocalStore;
   final SessionManager _sessionManager;
@@ -42,29 +44,20 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
     this._notificationService,
     this._store,
     this._encryptedLocalStore,
+    this._serverStatsApi,
   ) : super(const Unauthenticated());
 
   Future<void> setActiveUser({
     required String serverUrl,
-    required String username,
     required String token,
     ClientCertificate? clientCertificate,
     List<HeaderEntry>? additionalHeaders,
   }) async {
     emit(const Authenticating());
-    final localUserId = "$username@$serverUrl";
-    final redactedId = redactUserId(localUserId);
 
-    logger.fd(
-      "Trying to log in $redactedId...",
-      className: runtimeType.toString(),
-      methodName: 'login',
-    );
     try {
-      await _addUser(
-        localUserId,
+      final userProfile = await _addUser(
         serverUrl,
-        username,
         token,
         clientCertificate,
         additionalHeaders,
@@ -72,6 +65,9 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       );
 
       // Mark logged in user as currently active user.
+      final localUserId = _buildLocalUserId(userProfile, serverUrl);
+      final redactedId = redactUserId(localUserId);
+
       _store.setLoggedInAppUserId(localUserId);
 
       emit(Authenticated(localUserId: localUserId));
@@ -91,7 +87,6 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       emit(
         AuthenticationError(
           serverUrl: serverUrl,
-          username: username,
           clientCertificate: clientCertificate,
           additionalHeaders: additionalHeaders,
           error: error,
@@ -315,7 +310,7 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       return emit(
         ConnectionFailure(
           serverUrl: localUserData.localUser.serverUrl,
-          username: localUserData.localUser.paperlessUser.username,
+          username: localUserData.localUser.profile.uiSettings.user.username,
         ),
       );
     }
@@ -379,7 +374,7 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       methodName: '_resetExternalState',
     );
     await HydratedBloc.storage.clear();
-    CachedQuery.instance.deleteCache();
+    CachedQuery.instance.deleteCache(deleteStorage: true);
     logger.fd(
       "Local state cleard.",
       className: runtimeType.toString(),
@@ -389,30 +384,31 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
 
   ///
   /// Adds the user to the local store and persists necessary data.
+  /// Returns the user profile of the added user for convenience.
   ///
-  Future<void> _addUser(
-    String localUserId,
+  Future<UserProfile> _addUser(
     String serverUrl,
-    String username,
     String token,
     ClientCertificate? clientCert,
     List<HeaderEntry>? additionalHeaders,
     SessionManager sessionManager,
   ) async {
-    final redactedId = redactUserId(localUserId);
-
-    logger.fd(
-      "Adding new user $redactedId..",
-      className: runtimeType.toString(),
-      methodName: '_addUser',
-    );
-
     sessionManager.updateSettings(
       baseUrl: serverUrl,
       clientCertificate: clientCert,
       additionalHeaders: additionalHeaders,
       authToken: token,
       broadcast: false,
+    );
+
+    final userProfile = await _getUserProfile();
+    final localUserId = _buildLocalUserId(userProfile, serverUrl);
+    final redactedId = redactUserId(localUserId);
+
+    logger.fd(
+      "Adding new user $redactedId..",
+      className: runtimeType.toString(),
+      methodName: '_addUser',
     );
 
     if (_store.state.localUserData.containsKey(localUserId)) {
@@ -431,23 +427,6 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       methodName: '_addUser',
     );
 
-    late User? serverUser;
-
-    serverUser = await _usersApi.getCurrentUser();
-    if (serverUser == null) {
-      logger.fe(
-        "Could not fetch remote paperless user!",
-        className: runtimeType.toString(),
-        methodName: '_addUser',
-      );
-      throw InfoMessageException(code: ErrorCode.userGetError);
-    }
-    logger.fd(
-      "Remote paperless user successfully fetched.",
-      className: runtimeType.toString(),
-      methodName: '_addUser',
-    );
-
     logger.fd(
       "Persisting user data...",
       className: runtimeType.toString(),
@@ -461,8 +440,8 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
         localUser: LocalUserAccount(
           appUserId: localUserId,
           serverUrl: serverUrl,
-          paperlessUser: serverUser,
           apiVersion: apiVersion,
+          profile: userProfile,
         ),
       ),
     );
@@ -503,6 +482,8 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
         }.toList(),
       ),
     );
+
+    return userProfile;
   }
 
   Future<int> _getApiVersion(
@@ -549,7 +530,7 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
     }
   }
 
-  /// Fetches possibly updated (permissions, name, updated server version and thus new user model, ...) remote user data.
+  // Updates information about the current user in the local store.
   Future<void> _updateRemoteUser(
     String userId,
     SessionManager sessionManager,
@@ -557,32 +538,34 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
     int apiVersion,
   ) async {
     logger.fd(
-      "Trying to update remote user object...",
+      "Trying to update user information...",
       className: runtimeType.toString(),
       methodName: '_updateRemoteUser',
     );
-    final updatedPaperlessUser = await _usersApi.getCurrentUser();
-    if (updatedPaperlessUser == null) {
-      logger.fe(
-        'Could not fetch updated user information!',
-        className: runtimeType.toString(),
-        methodName: '_updateRemoteUser',
-      );
-      return;
-    }
+    final profile = await _getUserProfile();
     _store.updateUserData(
       userId,
       (state) => state.copyWith(
         localUser: localUserAccount.copyWith(
-          paperlessUser: updatedPaperlessUser,
+          profile: profile,
           apiVersion: apiVersion,
         ),
       ),
     );
     logger.fd(
-      "Successfully updated remote user object.",
+      "Successfully updated user information.",
       className: runtimeType.toString(),
       methodName: '_updateRemoteUser',
     );
+  }
+
+  Future<UserProfile> _getUserProfile() async {
+    final profile = await _usersApi.getProfile();
+    final uiSettings = await _serverStatsApi.getUiSettings();
+    return UserProfile(profile: profile, uiSettings: uiSettings);
+  }
+
+  String _buildLocalUserId(UserProfile userProfile, String serverUrl) {
+    return '${userProfile.uiSettings.user.username}@$serverUrl';
   }
 }

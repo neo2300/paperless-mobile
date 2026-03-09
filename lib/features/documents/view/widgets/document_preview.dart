@@ -34,8 +34,6 @@ class DocumentPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentUser = context.loggedInUser$.paperlessUser;
-    debugPrint(mimeType);
     return ConnectivityAwareActionWrapper(
       child: GestureDetector(
         behavior: HitTestBehavior.translucent,
@@ -51,17 +49,17 @@ class DocumentPreview extends StatelessWidget {
             if (enableHero) {
               return Hero(
                 tag: "thumb_$documentId",
-                child: _buildPreview(context, currentUser),
+                child: _buildPreview(context),
               );
             }
-            return _buildPreview(context, currentUser);
+            return _buildPreview(context);
           },
         ),
       ),
     );
   }
 
-  Widget _buildPreview(BuildContext context, User currentUser) {
+  Widget _buildPreview(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: Transform.scale(
@@ -71,7 +69,7 @@ class DocumentPreview extends StatelessWidget {
           alignment: alignment,
           cacheKey: "thumb_$documentId",
 
-          imageUrl: currentUser.canViewDocuments
+          imageUrl: context.uiSettings$.canViewDocuments
               ? context.read<PaperlessDocumentsApi>().getThumbnailUrl(
                   documentId,
                 )
