@@ -118,14 +118,6 @@ class _AuthenticateUserPageState extends State<AuthenticateUserPage> {
                         _buildSubmitButton(),
                       ],
                     ).padded(),
-                    Text(
-                      S.of(context)!.loginRequiredPermissionsHint,
-                      style: Theme.of(context).textTheme.bodySmall?.apply(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withAlpha(153),
-                      ),
-                    ).padded(16),
                   ],
                 ),
               ),
