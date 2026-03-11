@@ -33,22 +33,22 @@ class ShareLink {
     this.fileVersion,
   });
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
-  @JsonKey(name: r'created', required: true, includeIfNull: false)
+  @JsonKey(name: r'created', includeIfNull: false)
   final DateTime created;
 
-  @JsonKey(name: r'expiration', required: false, includeIfNull: false)
+  @JsonKey(name: r'expiration', includeIfNull: false)
   final DateTime? expiration;
 
-  @JsonKey(name: r'slug', required: true, includeIfNull: false)
+  @JsonKey(name: r'slug', includeIfNull: false)
   final String slug;
 
-  @JsonKey(name: r'document', required: false, includeIfNull: false)
+  @JsonKey(name: r'document', includeIfNull: false)
   final int? document;
 
-  @JsonKey(name: r'file_version', required: false, includeIfNull: false)
+  @JsonKey(name: r'file_version', includeIfNull: false)
   final FileVersionEnum? fileVersion;
 
   @override

@@ -34,22 +34,22 @@ class Workflow {
     required this.actions,
   });
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
-  @JsonKey(name: r'name', required: true, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final String name;
 
-  @JsonKey(name: r'order', required: false, includeIfNull: false)
+  @JsonKey(name: r'order', includeIfNull: false)
   final int? order;
 
-  @JsonKey(name: r'enabled', required: false, includeIfNull: false)
+  @JsonKey(name: r'enabled', includeIfNull: false)
   final bool? enabled;
 
-  @JsonKey(name: r'triggers', required: true, includeIfNull: false)
+  @JsonKey(name: r'triggers', includeIfNull: false)
   final List<WorkflowTrigger> triggers;
 
-  @JsonKey(name: r'actions', required: true, includeIfNull: false)
+  @JsonKey(name: r'actions', includeIfNull: false)
   final List<WorkflowAction> actions;
 
   @override

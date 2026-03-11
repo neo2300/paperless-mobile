@@ -22,7 +22,6 @@ class PaperlessAuthenticationApiImpl implements PaperlessAuthenticationApi {
           sendTimeout: const Duration(seconds: 5),
           receiveTimeout: const Duration(seconds: 5),
           followRedirects: false,
-          headers: {"Accept": "application/json"},
         ),
       );
       return PaperlessAuthToken.fromJson(response.data).token;

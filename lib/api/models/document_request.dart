@@ -50,58 +50,54 @@ class DocumentRequest {
     this.removeInboxTags = false,
   });
 
-  @JsonKey(name: r'correspondent', required: true, includeIfNull: true)
+  @JsonKey(name: r'correspondent', includeIfNull: true)
   final int? correspondent;
 
-  @JsonKey(name: r'document_type', required: true, includeIfNull: true)
+  @JsonKey(name: r'document_type', includeIfNull: true)
   final int? documentType;
 
-  @JsonKey(name: r'storage_path', required: true, includeIfNull: true)
+  @JsonKey(name: r'storage_path', includeIfNull: true)
   final int? storagePath;
 
-  @JsonKey(name: r'title', required: false, includeIfNull: false)
+  @JsonKey(name: r'title', includeIfNull: false)
   final String? title;
 
   /// The raw, text-only data of the document. This field is primarily used for searching.
-  @JsonKey(name: r'content', required: false, includeIfNull: false)
+  @JsonKey(name: r'content', includeIfNull: false)
   final String? content;
 
-  @JsonKey(name: r'tags', required: true, includeIfNull: false)
+  @JsonKey(name: r'tags', includeIfNull: false)
   final List<int> tags;
 
-  @JsonKey(name: r'created', required: false, includeIfNull: false)
+  @JsonKey(name: r'created', includeIfNull: false)
   final DateTime? created;
 
   @Deprecated('createdDate has been deprecated')
-  @JsonKey(name: r'created_date', required: false, includeIfNull: false)
+  @JsonKey(name: r'created_date', includeIfNull: false)
   final DateTime? createdDate;
 
-  @JsonKey(name: r'deleted_at', required: false, includeIfNull: false)
+  @JsonKey(name: r'deleted_at', includeIfNull: false)
   final DateTime? deletedAt;
 
   /// The position of this document in your physical document archive.
   // minimum: 0
   // maximum: 4294967295
-  @JsonKey(
-    name: r'archive_serial_number',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'archive_serial_number', includeIfNull: false)
   final int? archiveSerialNumber;
 
-  @JsonKey(name: r'owner', required: false, includeIfNull: false)
+  @JsonKey(name: r'owner', includeIfNull: false)
   final int? owner;
 
-  @JsonKey(name: r'set_permissions', required: false, includeIfNull: false)
+  @JsonKey(name: r'set_permissions', includeIfNull: false)
   final CorrespondentRequestSetPermissions? setPermissions;
 
-  @JsonKey(name: r'custom_fields', required: false, includeIfNull: false)
+  @JsonKey(name: r'custom_fields', includeIfNull: false)
   final List<CustomFieldInstanceRequest>? customFields;
 
   @JsonKey(
     defaultValue: false,
     name: r'remove_inbox_tags',
-    required: false,
+
     includeIfNull: false,
   )
   final bool? removeInboxTags;

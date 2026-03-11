@@ -21,10 +21,10 @@ class CustomFieldInstanceRequest {
   CustomFieldInstanceRequest({required this.value, required this.field});
 
   /// Given the *incoming* primitive data, return the value for this field that should be validated and transformed to a native value.
-  @JsonKey(name: r'value', required: true, includeIfNull: true)
+  @JsonKey(name: r'value', includeIfNull: true)
   final Object? value;
 
-  @JsonKey(name: r'field', required: true, includeIfNull: false)
+  @JsonKey(name: r'field', includeIfNull: false)
   final int field;
 
   @override

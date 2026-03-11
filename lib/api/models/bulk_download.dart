@@ -31,7 +31,7 @@ class BulkDownload {
   @JsonKey(
     defaultValue: ContentEnum.archive,
     name: r'content',
-    required: false,
+
     includeIfNull: false,
   )
   final ContentEnum? content;
@@ -39,7 +39,7 @@ class BulkDownload {
   @JsonKey(
     defaultValue: CompressionEnum.none,
     name: r'compression',
-    required: false,
+
     includeIfNull: false,
   )
   final CompressionEnum? compression;
@@ -47,7 +47,7 @@ class BulkDownload {
   @JsonKey(
     defaultValue: false,
     name: r'follow_formatting',
-    required: false,
+
     includeIfNull: false,
   )
   final bool? followFormatting;

@@ -21,17 +21,17 @@ class Note {
   /// Returns a new [Note] instance.
   Note({required this.id, this.note, this.created, required this.user});
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
   /// Note for the document
-  @JsonKey(name: r'note', required: false, includeIfNull: false)
+  @JsonKey(name: r'note', includeIfNull: false)
   final String? note;
 
-  @JsonKey(name: r'created', required: false, includeIfNull: false)
+  @JsonKey(name: r'created', includeIfNull: false)
   final DateTime? created;
 
-  @JsonKey(name: r'user', required: true, includeIfNull: false)
+  @JsonKey(name: r'user', includeIfNull: false)
   final BasicUser user;
 
   @override

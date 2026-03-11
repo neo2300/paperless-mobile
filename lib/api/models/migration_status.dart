@@ -24,10 +24,10 @@ class MigrationStatus {
     required this.unappliedMigrations,
   });
 
-  @JsonKey(name: r'latest_migration', required: true, includeIfNull: false)
+  @JsonKey(name: r'latest_migration', includeIfNull: false)
   final String latestMigration;
 
-  @JsonKey(name: r'unapplied_migrations', required: true, includeIfNull: false)
+  @JsonKey(name: r'unapplied_migrations', includeIfNull: false)
   final List<String> unappliedMigrations;
 
   @override

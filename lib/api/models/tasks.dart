@@ -28,16 +28,16 @@ class Tasks {
     required this.celeryStatus,
   });
 
-  @JsonKey(name: r'redis_url', required: true, includeIfNull: false)
+  @JsonKey(name: r'redis_url', includeIfNull: false)
   final String redisUrl;
 
-  @JsonKey(name: r'redis_status', required: true, includeIfNull: false)
+  @JsonKey(name: r'redis_status', includeIfNull: false)
   final String redisStatus;
 
-  @JsonKey(name: r'redis_error', required: true, includeIfNull: false)
+  @JsonKey(name: r'redis_error', includeIfNull: false)
   final String redisError;
 
-  @JsonKey(name: r'celery_status', required: true, includeIfNull: false)
+  @JsonKey(name: r'celery_status', includeIfNull: false)
   final String celeryStatus;
 
   @override

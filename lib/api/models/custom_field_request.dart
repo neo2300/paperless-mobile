@@ -27,14 +27,14 @@ class CustomFieldRequest {
     this.extraData,
   });
 
-  @JsonKey(name: r'name', required: true, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final String name;
 
-  @JsonKey(name: r'data_type', required: true, includeIfNull: false)
+  @JsonKey(name: r'data_type', includeIfNull: false)
   final DataTypeEnum dataType;
 
   /// Extra data for the custom field, such as select options
-  @JsonKey(name: r'extra_data', required: false, includeIfNull: false)
+  @JsonKey(name: r'extra_data', includeIfNull: false)
   final Object? extraData;
 
   @override

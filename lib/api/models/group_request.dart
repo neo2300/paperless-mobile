@@ -20,10 +20,10 @@ class GroupRequest {
   /// Returns a new [GroupRequest] instance.
   GroupRequest({required this.name, required this.permissions});
 
-  @JsonKey(name: r'name', required: true, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final String name;
 
-  @JsonKey(name: r'permissions', required: true, includeIfNull: false)
+  @JsonKey(name: r'permissions', includeIfNull: false)
   final List<String> permissions;
 
   @override

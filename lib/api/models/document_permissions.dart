@@ -21,10 +21,10 @@ class DocumentPermissions {
   /// Returns a new [DocumentPermissions] instance.
   DocumentPermissions({this.view, this.change});
 
-  @JsonKey(name: r'view', required: false, includeIfNull: false)
+  @JsonKey(name: r'view', includeIfNull: false)
   final CorrespondentPermissionsView? view;
 
-  @JsonKey(name: r'change', required: false, includeIfNull: false)
+  @JsonKey(name: r'change', includeIfNull: false)
   final CorrespondentPermissionsView? change;
 
   @override

@@ -20,7 +20,7 @@ class BulkEditDocumentsResult {
   /// Returns a new [BulkEditDocumentsResult] instance.
   BulkEditDocumentsResult({required this.result});
 
-  @JsonKey(name: r'result', required: true, includeIfNull: false)
+  @JsonKey(name: r'result', includeIfNull: false)
   final String result;
 
   @override

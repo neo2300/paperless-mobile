@@ -23,13 +23,13 @@ class PatchedShareLinkRequest {
   /// Returns a new [PatchedShareLinkRequest] instance.
   PatchedShareLinkRequest({this.expiration, this.document, this.fileVersion});
 
-  @JsonKey(name: r'expiration', required: false, includeIfNull: false)
+  @JsonKey(name: r'expiration', includeIfNull: false)
   final Option<DateTime?>? expiration;
 
-  @JsonKey(name: r'document', required: false, includeIfNull: false)
+  @JsonKey(name: r'document', includeIfNull: false)
   final Option<int?>? document;
 
-  @JsonKey(name: r'file_version', required: false, includeIfNull: false)
+  @JsonKey(name: r'file_version', includeIfNull: false)
   final Option<FileVersionEnum?>? fileVersion;
 
   @override

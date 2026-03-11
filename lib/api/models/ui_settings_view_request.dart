@@ -20,7 +20,7 @@ class UiSettingsViewRequest {
   /// Returns a new [UiSettingsViewRequest] instance.
   UiSettingsViewRequest({this.settings});
 
-  @JsonKey(name: r'settings', required: false, includeIfNull: false)
+  @JsonKey(name: r'settings', includeIfNull: false)
   final Map<String, Object>? settings;
 
   @override

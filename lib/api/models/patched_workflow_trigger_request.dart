@@ -60,86 +60,66 @@ class PatchedWorkflowTriggerRequest {
     this.scheduleDateCustomField,
   });
 
-  @JsonKey(name: r'id', required: false, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final Option<int?>? id;
 
-  @JsonKey(name: r'sources', required: false, includeIfNull: false)
+  @JsonKey(name: r'sources', includeIfNull: false)
   final Option<List<SourcesEnum>?>? sources;
 
-  @JsonKey(name: r'type', required: false, includeIfNull: false)
+  @JsonKey(name: r'type', includeIfNull: false)
   final Option<WorkflowTriggerTypeEnum?>? type;
 
   /// Only consume documents with a path that matches this if specified. Wildcards specified as * are allowed. Case insensitive.
-  @JsonKey(name: r'filter_path', required: false, includeIfNull: false)
+  @JsonKey(name: r'filter_path', includeIfNull: false)
   final Option<String?>? filterPath;
 
   /// Only consume documents which entirely match this filename if specified. Wildcards such as *.pdf or *invoice* are allowed. Case insensitive.
-  @JsonKey(name: r'filter_filename', required: false, includeIfNull: false)
+  @JsonKey(name: r'filter_filename', includeIfNull: false)
   final Option<String?>? filterFilename;
-  @JsonKey(name: r'filter_mailrule', required: false, includeIfNull: false)
+  @JsonKey(name: r'filter_mailrule', includeIfNull: false)
   final Option<int?>? filterMailrule;
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'matching_algorithm', required: false, includeIfNull: false)
+  @JsonKey(name: r'matching_algorithm', includeIfNull: false)
   final Option<WorkflowTriggerMatchingAlgorithmEnum?>? matchingAlgorithm;
 
-  @JsonKey(name: r'match', required: false, includeIfNull: false)
+  @JsonKey(name: r'match', includeIfNull: false)
   final Option<String?>? match;
 
-  @JsonKey(name: r'is_insensitive', required: false, includeIfNull: false)
+  @JsonKey(name: r'is_insensitive', includeIfNull: false)
   final Option<bool?>? isInsensitive;
 
-  @JsonKey(name: r'filter_has_tags', required: false, includeIfNull: false)
+  @JsonKey(name: r'filter_has_tags', includeIfNull: false)
   final Option<List<int>?>? filterHasTags;
 
-  @JsonKey(
-    name: r'filter_has_correspondent',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'filter_has_correspondent', includeIfNull: false)
   final Option<int?>? filterHasCorrespondent;
 
-  @JsonKey(
-    name: r'filter_has_document_type',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'filter_has_document_type', includeIfNull: false)
   final Option<int?>? filterHasDocumentType;
 
   /// The number of days to offset the schedule trigger by.
   // minimum: -2147483648
   // maximum: 2147483647
-  @JsonKey(name: r'schedule_offset_days', required: false, includeIfNull: false)
+  @JsonKey(name: r'schedule_offset_days', includeIfNull: false)
   final Option<int?>? scheduleOffsetDays;
 
   /// If the schedule should be recurring.
-  @JsonKey(
-    name: r'schedule_is_recurring',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'schedule_is_recurring', includeIfNull: false)
   final Option<bool?>? scheduleIsRecurring;
 
   /// The number of days between recurring schedule triggers.
   // minimum: 1
   // maximum: 2147483647
-  @JsonKey(
-    name: r'schedule_recurring_interval_days',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'schedule_recurring_interval_days', includeIfNull: false)
   final Option<int?>? scheduleRecurringIntervalDays;
 
   /// The field to check for a schedule trigger.  * `added` - Added * `created` - Created * `modified` - Modified * `custom_field` - Custom Field
-  @JsonKey(name: r'schedule_date_field', required: false, includeIfNull: false)
+  @JsonKey(name: r'schedule_date_field', includeIfNull: false)
   final Option<ScheduleDateFieldEnum?>? scheduleDateField;
 
-  @JsonKey(
-    name: r'schedule_date_custom_field',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'schedule_date_custom_field', includeIfNull: false)
   final Option<int?>? scheduleDateCustomField;
 
   @override

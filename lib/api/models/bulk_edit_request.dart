@@ -27,18 +27,13 @@ class BulkEditRequest {
     this.parameters,
   });
 
-  @JsonKey(name: r'documents', required: true, includeIfNull: false)
+  @JsonKey(name: r'documents', includeIfNull: false)
   final List<int> documents;
 
-  @JsonKey(name: r'method', required: true, includeIfNull: false)
+  @JsonKey(name: r'method', includeIfNull: false)
   final MethodEnum method;
 
-  @JsonKey(
-    defaultValue: {},
-    name: r'parameters',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(defaultValue: {}, name: r'parameters', includeIfNull: false)
   final Map<String, Object>? parameters;
 
   @override

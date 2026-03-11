@@ -35,16 +35,16 @@ class SavedView {
     required this.userCanChange,
   });
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
-  @JsonKey(name: r'name', required: true, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final String name;
 
-  @JsonKey(name: r'show_on_dashboard', required: true, includeIfNull: false)
+  @JsonKey(name: r'show_on_dashboard', includeIfNull: false)
   final bool showOnDashboard;
 
-  @JsonKey(name: r'show_in_sidebar', required: true, includeIfNull: false)
+  @JsonKey(name: r'show_in_sidebar', includeIfNull: false)
   final bool showInSidebar;
 
   @JsonKey(name: r'sort_field', includeIfNull: false)
@@ -53,7 +53,7 @@ class SavedView {
   @JsonKey(name: r'sort_reverse', includeIfNull: false)
   final bool? sortReverse;
 
-  @JsonKey(name: r'filter_rules', required: true, includeIfNull: false)
+  @JsonKey(name: r'filter_rules', includeIfNull: false)
   final List<SavedViewFilterRule> filterRules;
 
   // minimum: 1

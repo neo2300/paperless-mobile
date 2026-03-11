@@ -34,27 +34,22 @@ class BulkEditObjectsRequest {
     this.merge = false,
   });
 
-  @JsonKey(name: r'objects', required: true, includeIfNull: false)
+  @JsonKey(name: r'objects', includeIfNull: false)
   final List<int> objects;
 
-  @JsonKey(name: r'object_type', required: true, includeIfNull: false)
+  @JsonKey(name: r'object_type', includeIfNull: false)
   final ObjectTypeEnum objectType;
 
-  @JsonKey(name: r'operation', required: true, includeIfNull: false)
+  @JsonKey(name: r'operation', includeIfNull: false)
   final OperationEnum operation;
 
-  @JsonKey(name: r'owner', required: false, includeIfNull: false)
+  @JsonKey(name: r'owner', includeIfNull: false)
   final int? owner;
 
-  @JsonKey(name: r'permissions', required: false, includeIfNull: false)
+  @JsonKey(name: r'permissions', includeIfNull: false)
   final Map<String, Object>? permissions;
 
-  @JsonKey(
-    defaultValue: false,
-    name: r'merge',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(defaultValue: false, name: r'merge', includeIfNull: false)
   final bool? merge;
 
   @override

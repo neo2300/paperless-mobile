@@ -39,6 +39,7 @@ class HomeShellWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final localStoreState = context.watch<LocalStore>().state;
     final currentUserId = localStoreState.loggedInAppUserId;
+    final client = context.read<SessionManager>().client;
     return MultiProvider(
       key: ValueKey(currentUserId),
       providers: [
@@ -47,60 +48,42 @@ class HomeShellWidget extends StatelessWidget {
             Config(
               // Isolated cache per user.
               localUserId,
-              fileService: DioFileService(
-                context.read<SessionManager>().client,
-              ),
+              fileService: DioFileService(client),
             ),
           ),
         ),
         Provider<PaperlessDocumentsApi>(
-          create: (context) =>
-              PaperlessDocumentsApiImpl(context.read<SessionManager>().client),
+          create: (context) => PaperlessDocumentsApiImpl(client),
         ),
         Provider<PaperlessSearchApi>(
-          create: (context) =>
-              PaperlessSearchApiImpl(context.read<SessionManager>().client),
+          create: (context) => PaperlessSearchApiImpl(client),
         ),
         Provider<PaperlessCorrespondentsApi>(
-          create: (context) => PaperlessCorrespondentsApiImpl(
-            context.read<SessionManager>().client,
-          ),
+          create: (context) => PaperlessCorrespondentsApiImpl(client),
         ),
         Provider<PaperlessDocumentTypesApi>(
-          create: (context) => PaperlessDocumentTypesApiImpl(
-            context.read<SessionManager>().client,
-          ),
+          create: (context) => PaperlessDocumentTypesApiImpl(client),
         ),
         Provider<PaperlessTagsApi>(
-          create: (context) =>
-              PaperlessTagsApiImpl(context.read<SessionManager>().client),
+          create: (context) => PaperlessTagsApiImpl(client),
         ),
         Provider<PaperlessStoragePathsApi>(
-          create: (context) => PaperlessStoragePathsApiImpl(
-            context.read<SessionManager>().client,
-          ),
+          create: (context) => PaperlessStoragePathsApiImpl(client),
         ),
         Provider<PaperlessSavedViewsApi>(
-          create: (context) =>
-              PaperlessSavedViewsApiImpl(context.read<SessionManager>().client),
+          create: (context) => PaperlessSavedViewsApiImpl(client),
         ),
         Provider<PaperlessCustomFieldsApi>(
-          create: (context) => PaperlessCustomFieldsApiImpl(
-            context.read<SessionManager>().client,
-          ),
+          create: (context) => PaperlessCustomFieldsApiImpl(client),
         ),
         Provider<PaperlessServerStatsApi>(
-          create: (context) => PaperlessServerStatsApiImpl(
-            context.read<SessionManager>().client,
-          ),
+          create: (context) => PaperlessServerStatsApiImpl(client),
         ),
         Provider<PaperlessTasksApi>(
-          create: (context) =>
-              PaperlessTasksApiImpl(context.read<SessionManager>().client),
+          create: (context) => PaperlessTasksApiImpl(client),
         ),
         Provider<PaperlessUserApi>(
-          create: (context) =>
-              PaperlessUserApiImpl(context.read<SessionManager>().client),
+          create: (context) => PaperlessUserApiImpl(client),
         ),
       ],
       builder: (context, _) {

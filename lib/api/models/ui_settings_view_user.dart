@@ -34,25 +34,25 @@ class UiSettingsViewUser {
     this.isSuperuser,
   });
 
-  @JsonKey(name: r'id', required: false, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int? id;
 
   @JsonKey(name: r'username', includeIfNull: false)
   final String username;
 
-  @JsonKey(name: r'first_name', required: false, includeIfNull: false)
+  @JsonKey(name: r'first_name', includeIfNull: false)
   final String? firstName;
 
-  @JsonKey(name: r'last_name', required: false, includeIfNull: false)
+  @JsonKey(name: r'last_name', includeIfNull: false)
   final String? lastName;
 
-  @JsonKey(name: r'groups', required: false, includeIfNull: false)
+  @JsonKey(name: r'groups', includeIfNull: false)
   final List<int>? groups;
 
-  @JsonKey(name: r'is_staff', required: false, includeIfNull: false)
+  @JsonKey(name: r'is_staff', includeIfNull: false)
   final bool? isStaff;
 
-  @JsonKey(name: r'is_superuser', required: false, includeIfNull: false)
+  @JsonKey(name: r'is_superuser', includeIfNull: false)
   final bool? isSuperuser;
 
   @override

@@ -20,7 +20,7 @@ class MailAccountTestResponse {
   /// Returns a new [MailAccountTestResponse] instance.
   MailAccountTestResponse({required this.success});
 
-  @JsonKey(name: r'success', required: true, includeIfNull: false)
+  @JsonKey(name: r'success', includeIfNull: false)
   final bool success;
 
   @override

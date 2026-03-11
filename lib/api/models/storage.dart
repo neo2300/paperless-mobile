@@ -20,10 +20,10 @@ class Storage {
   /// Returns a new [Storage] instance.
   Storage({required this.total, required this.available});
 
-  @JsonKey(name: r'total', required: true, includeIfNull: false)
+  @JsonKey(name: r'total', includeIfNull: false)
   final int total;
 
-  @JsonKey(name: r'available', required: true, includeIfNull: false)
+  @JsonKey(name: r'available', includeIfNull: false)
   final int available;
 
   @override

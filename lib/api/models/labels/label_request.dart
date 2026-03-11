@@ -14,23 +14,23 @@ sealed class LabelRequest {
     this.setPermissions,
   });
 
-  @JsonKey(name: r'name', required: true, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final String name;
 
-  @JsonKey(name: r'match', required: false, includeIfNull: false)
+  @JsonKey(name: r'match', includeIfNull: false)
   final String? match;
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'matching_algorithm', required: false, includeIfNull: false)
+  @JsonKey(name: r'matching_algorithm', includeIfNull: false)
   final MatchingAlgorithm? matchingAlgorithm;
 
-  @JsonKey(name: r'is_insensitive', required: false, includeIfNull: false)
+  @JsonKey(name: r'is_insensitive', includeIfNull: false)
   final bool? isInsensitive;
 
-  @JsonKey(name: r'owner', required: false, includeIfNull: false)
+  @JsonKey(name: r'owner', includeIfNull: false)
   final int? owner;
-  @JsonKey(name: r'set_permissions', required: false, includeIfNull: false)
+  @JsonKey(name: r'set_permissions', includeIfNull: false)
   final CorrespondentRequestSetPermissions? setPermissions;
 
   Map<String, dynamic> toJson();
@@ -76,11 +76,11 @@ class TagRequest extends LabelRequest {
     this.color,
   });
 
-  @JsonKey(name: r'color', required: false, includeIfNull: false)
+  @JsonKey(name: r'color', includeIfNull: false)
   final String? color;
 
   /// Marks this tag as an inbox tag: All newly consumed documents will be tagged with inbox tags.
-  @JsonKey(name: r'is_inbox_tag', required: false, includeIfNull: false)
+  @JsonKey(name: r'is_inbox_tag', includeIfNull: false)
   final bool? isInboxTag;
 
   @override
@@ -128,7 +128,7 @@ class StoragePathRequest extends LabelRequest {
     super.setPermissions,
   });
 
-  @JsonKey(name: r'path', required: true, includeIfNull: false)
+  @JsonKey(name: r'path', includeIfNull: false)
   final String path;
 
   @override

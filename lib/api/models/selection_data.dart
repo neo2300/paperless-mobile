@@ -35,35 +35,19 @@ class SelectionData {
     required this.selectedCustomFields,
   });
 
-  @JsonKey(
-    name: r'selected_correspondents',
-    required: true,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'selected_correspondents', includeIfNull: false)
   final List<CorrespondentCounts> selectedCorrespondents;
 
-  @JsonKey(name: r'selected_tags', required: true, includeIfNull: false)
+  @JsonKey(name: r'selected_tags', includeIfNull: false)
   final List<TagCounts> selectedTags;
 
-  @JsonKey(
-    name: r'selected_document_types',
-    required: true,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'selected_document_types', includeIfNull: false)
   final List<DocumentTypeCounts> selectedDocumentTypes;
 
-  @JsonKey(
-    name: r'selected_storage_paths',
-    required: true,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'selected_storage_paths', includeIfNull: false)
   final List<StoragePathCounts> selectedStoragePaths;
 
-  @JsonKey(
-    name: r'selected_custom_fields',
-    required: true,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'selected_custom_fields', includeIfNull: false)
   final List<CustomFieldCounts> selectedCustomFields;
 
   @override

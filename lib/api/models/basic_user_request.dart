@@ -21,13 +21,13 @@ class BasicUserRequest {
   BasicUserRequest({required this.username, this.firstName, this.lastName});
 
   /// Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
-  @JsonKey(name: r'username', required: true, includeIfNull: false)
+  @JsonKey(name: r'username', includeIfNull: false)
   final String username;
 
-  @JsonKey(name: r'first_name', required: false, includeIfNull: false)
+  @JsonKey(name: r'first_name', includeIfNull: false)
   final String? firstName;
 
-  @JsonKey(name: r'last_name', required: false, includeIfNull: false)
+  @JsonKey(name: r'last_name', includeIfNull: false)
   final String? lastName;
 
   @override

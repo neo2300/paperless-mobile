@@ -20,7 +20,7 @@ class SocialAccountRequest {
   /// Returns a new [SocialAccountRequest] instance.
   SocialAccountRequest({required this.provider});
 
-  @JsonKey(name: r'provider', required: true, includeIfNull: false)
+  @JsonKey(name: r'provider', includeIfNull: false)
   final String provider;
 
   @override

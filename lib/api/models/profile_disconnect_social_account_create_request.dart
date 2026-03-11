@@ -20,7 +20,7 @@ class ProfileDisconnectSocialAccountCreateRequest {
   /// Returns a new [ProfileDisconnectSocialAccountCreateRequest] instance.
   ProfileDisconnectSocialAccountCreateRequest({required this.id});
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
   @override

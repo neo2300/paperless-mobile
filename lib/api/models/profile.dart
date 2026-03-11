@@ -37,28 +37,28 @@ class Profile {
     required this.isMfaEnabled,
   });
 
-  @JsonKey(name: r'email', required: false, includeIfNull: false)
+  @JsonKey(name: r'email', includeIfNull: false)
   final String? email;
 
-  @JsonKey(name: r'password', required: false, includeIfNull: false)
+  @JsonKey(name: r'password', includeIfNull: false)
   final String? password;
 
-  @JsonKey(name: r'first_name', required: false, includeIfNull: false)
+  @JsonKey(name: r'first_name', includeIfNull: false)
   final String? firstName;
 
-  @JsonKey(name: r'last_name', required: false, includeIfNull: false)
+  @JsonKey(name: r'last_name', includeIfNull: false)
   final String? lastName;
 
-  @JsonKey(name: r'auth_token', required: true, includeIfNull: false)
+  @JsonKey(name: r'auth_token', includeIfNull: false)
   final String authToken;
 
-  @JsonKey(name: r'social_accounts', required: true, includeIfNull: false)
+  @JsonKey(name: r'social_accounts', includeIfNull: false)
   final List<SocialAccount> socialAccounts;
 
-  @JsonKey(name: r'has_usable_password', required: true, includeIfNull: false)
+  @JsonKey(name: r'has_usable_password', includeIfNull: false)
   final bool hasUsablePassword;
 
-  @JsonKey(name: r'is_mfa_enabled', required: true, includeIfNull: false)
+  @JsonKey(name: r'is_mfa_enabled', includeIfNull: false)
   final bool isMfaEnabled;
 
   @override

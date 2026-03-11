@@ -37,28 +37,28 @@ class UiSettingsViewSettings {
     this.auditlogEnabled,
   });
 
-  @JsonKey(name: r'version', required: false, includeIfNull: false)
+  @JsonKey(name: r'version', includeIfNull: false)
   final String? version;
 
-  @JsonKey(name: r'app_logo', required: false, includeIfNull: false)
+  @JsonKey(name: r'app_logo', includeIfNull: false)
   final String? appLogo;
 
-  @JsonKey(name: r'app_title', required: false, includeIfNull: false)
+  @JsonKey(name: r'app_title', includeIfNull: false)
   final String? appTitle;
 
-  @JsonKey(name: r'trash_delay', required: false, includeIfNull: false)
+  @JsonKey(name: r'trash_delay', includeIfNull: false)
   final int? trashDelay;
 
-  @JsonKey(name: r'email_enabled', required: false, includeIfNull: false)
+  @JsonKey(name: r'email_enabled', includeIfNull: false)
   final bool? emailEnabled;
 
-  @JsonKey(name: r'tour_complete', required: false, includeIfNull: false)
+  @JsonKey(name: r'tour_complete', includeIfNull: false)
   final bool? tourComplete;
 
-  @JsonKey(name: r'update_checking', required: false, includeIfNull: false)
+  @JsonKey(name: r'update_checking', includeIfNull: false)
   final UiSettingsViewSettingsUpdateChecking? updateChecking;
 
-  @JsonKey(name: r'auditlog_enabled', required: false, includeIfNull: false)
+  @JsonKey(name: r'auditlog_enabled', includeIfNull: false)
   final bool? auditlogEnabled;
 
   @override

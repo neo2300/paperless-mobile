@@ -30,22 +30,22 @@ class WorkflowActionEmail {
     this.includeDocument,
   });
 
-  @JsonKey(name: r'id', required: false, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int? id;
 
   /// The subject of the email, can include some placeholders, see documentation.
-  @JsonKey(name: r'subject', required: true, includeIfNull: false)
+  @JsonKey(name: r'subject', includeIfNull: false)
   final String subject;
 
   /// The body (message) of the email, can include some placeholders, see documentation.
-  @JsonKey(name: r'body', required: true, includeIfNull: false)
+  @JsonKey(name: r'body', includeIfNull: false)
   final String body;
 
   /// The destination email addresses, comma separated.
-  @JsonKey(name: r'to', required: true, includeIfNull: false)
+  @JsonKey(name: r'to', includeIfNull: false)
   final String to;
 
-  @JsonKey(name: r'include_document', required: false, includeIfNull: false)
+  @JsonKey(name: r'include_document', includeIfNull: false)
   final bool? includeDocument;
 
   @override

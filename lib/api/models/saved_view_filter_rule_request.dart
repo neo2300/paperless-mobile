@@ -23,10 +23,10 @@ class SavedViewFilterRuleRequest {
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'rule_type', required: true, includeIfNull: false)
+  @JsonKey(name: r'rule_type', includeIfNull: false)
   final RuleTypeEnum ruleType;
 
-  @JsonKey(name: r'value', required: false, includeIfNull: false)
+  @JsonKey(name: r'value', includeIfNull: false)
   final String? value;
 
   @override

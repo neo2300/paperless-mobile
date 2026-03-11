@@ -28,19 +28,19 @@ class EmailRequestRequest {
     this.useArchiveVersion = true,
   });
 
-  @JsonKey(name: r'addresses', required: true, includeIfNull: false)
+  @JsonKey(name: r'addresses', includeIfNull: false)
   final String addresses;
 
-  @JsonKey(name: r'subject', required: true, includeIfNull: false)
+  @JsonKey(name: r'subject', includeIfNull: false)
   final String subject;
 
-  @JsonKey(name: r'message', required: true, includeIfNull: false)
+  @JsonKey(name: r'message', includeIfNull: false)
   final String message;
 
   @JsonKey(
     defaultValue: true,
     name: r'use_archive_version',
-    required: false,
+
     includeIfNull: false,
   )
   final bool? useArchiveVersion;

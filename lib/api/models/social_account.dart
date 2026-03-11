@@ -20,13 +20,13 @@ class SocialAccount {
   /// Returns a new [SocialAccount] instance.
   SocialAccount({required this.id, required this.provider, required this.name});
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
-  @JsonKey(name: r'provider', required: true, includeIfNull: false)
+  @JsonKey(name: r'provider', includeIfNull: false)
   final String provider;
 
-  @JsonKey(name: r'name', required: true, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final String name;
 
   @override

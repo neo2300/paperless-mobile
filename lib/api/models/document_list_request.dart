@@ -20,7 +20,7 @@ class DocumentListRequest {
   /// Returns a new [DocumentListRequest] instance.
   DocumentListRequest({required this.documents});
 
-  @JsonKey(name: r'documents', required: true, includeIfNull: false)
+  @JsonKey(name: r'documents', includeIfNull: false)
   final List<int> documents;
 
   @override

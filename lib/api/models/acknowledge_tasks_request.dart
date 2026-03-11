@@ -18,9 +18,9 @@ part 'acknowledge_tasks_request.g.dart';
 )
 class AcknowledgeTasksRequest {
   /// Returns a new [AcknowledgeTasksRequest] instance.
-  AcknowledgeTasksRequest({required this.tasks});
+  AcknowledgeTasksRequest({this.tasks = const []});
 
-  @JsonKey(name: r'tasks', required: true, includeIfNull: false)
+  @JsonKey(name: r'tasks', includeIfNull: false)
   final List<int> tasks;
 
   @override

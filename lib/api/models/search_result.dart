@@ -47,43 +47,43 @@ class SearchResult {
     required this.customFields,
   });
 
-  @JsonKey(name: r'total', required: true, includeIfNull: false)
+  @JsonKey(name: r'total', includeIfNull: false)
   final int total;
 
-  @JsonKey(name: r'documents', required: true, includeIfNull: false)
+  @JsonKey(name: r'documents', includeIfNull: false)
   final List<Document> documents;
 
-  @JsonKey(name: r'saved_views', required: true, includeIfNull: false)
+  @JsonKey(name: r'saved_views', includeIfNull: false)
   final List<SavedView> savedViews;
 
-  @JsonKey(name: r'tags', required: true, includeIfNull: false)
+  @JsonKey(name: r'tags', includeIfNull: false)
   final List<Tag> tags;
 
-  @JsonKey(name: r'correspondents', required: true, includeIfNull: false)
+  @JsonKey(name: r'correspondents', includeIfNull: false)
   final List<Correspondent> correspondents;
 
-  @JsonKey(name: r'document_types', required: true, includeIfNull: false)
+  @JsonKey(name: r'document_types', includeIfNull: false)
   final List<DocumentType> documentTypes;
 
-  @JsonKey(name: r'storage_paths', required: true, includeIfNull: false)
+  @JsonKey(name: r'storage_paths', includeIfNull: false)
   final List<StoragePath> storagePaths;
 
-  @JsonKey(name: r'users', required: true, includeIfNull: false)
+  @JsonKey(name: r'users', includeIfNull: false)
   final List<User> users;
 
-  @JsonKey(name: r'groups', required: true, includeIfNull: false)
+  @JsonKey(name: r'groups', includeIfNull: false)
   final List<Group> groups;
 
-  @JsonKey(name: r'mail_rules', required: true, includeIfNull: false)
+  @JsonKey(name: r'mail_rules', includeIfNull: false)
   final List<MailRule> mailRules;
 
-  @JsonKey(name: r'mail_accounts', required: true, includeIfNull: false)
+  @JsonKey(name: r'mail_accounts', includeIfNull: false)
   final List<MailAccount> mailAccounts;
 
-  @JsonKey(name: r'workflows', required: true, includeIfNull: false)
+  @JsonKey(name: r'workflows', includeIfNull: false)
   final List<Workflow> workflows;
 
-  @JsonKey(name: r'custom_fields', required: true, includeIfNull: false)
+  @JsonKey(name: r'custom_fields', includeIfNull: false)
   final List<CustomField> customFields;
 
   @override

@@ -30,19 +30,19 @@ class Suggestions {
     required this.dates,
   });
 
-  @JsonKey(name: r'correspondents', required: true, includeIfNull: false)
+  @JsonKey(name: r'correspondents', includeIfNull: false)
   final List<int> correspondents;
 
-  @JsonKey(name: r'tags', required: true, includeIfNull: false)
+  @JsonKey(name: r'tags', includeIfNull: false)
   final List<int> tags;
 
-  @JsonKey(name: r'document_types', required: true, includeIfNull: false)
+  @JsonKey(name: r'document_types', includeIfNull: false)
   final List<int> documentTypes;
 
-  @JsonKey(name: r'storage_paths', required: true, includeIfNull: false)
+  @JsonKey(name: r'storage_paths', includeIfNull: false)
   final List<int> storagePaths;
 
-  @JsonKey(name: r'dates', required: true, includeIfNull: false)
+  @JsonKey(name: r'dates', includeIfNull: false)
   final List<String> dates;
 
   @override

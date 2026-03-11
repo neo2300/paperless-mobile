@@ -22,10 +22,10 @@ class UiSettingsView {
   /// Returns a new [UiSettingsView] instance.
   UiSettingsView({this.permissions, this.settings, required this.user});
 
-  @JsonKey(name: r'permissions', required: false, includeIfNull: false)
+  @JsonKey(name: r'permissions', includeIfNull: false)
   final List<String>? permissions;
 
-  @JsonKey(name: r'settings', required: false, includeIfNull: false)
+  @JsonKey(name: r'settings', includeIfNull: false)
   final UiSettingsViewSettings? settings;
 
   @JsonKey(name: r'user', includeIfNull: false)

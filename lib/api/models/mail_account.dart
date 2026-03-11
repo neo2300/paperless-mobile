@@ -48,52 +48,52 @@ class MailAccount {
     this.expiration,
   });
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
-  @JsonKey(name: r'name', required: true, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final String name;
 
-  @JsonKey(name: r'imap_server', required: true, includeIfNull: false)
+  @JsonKey(name: r'imap_server', includeIfNull: false)
   final String imapServer;
 
   /// This is usually 143 for unencrypted and STARTTLS connections, and 993 for SSL connections.
   // minimum: -2147483648
   // maximum: 2147483647
-  @JsonKey(name: r'imap_port', required: false, includeIfNull: false)
+  @JsonKey(name: r'imap_port', includeIfNull: false)
   final int? imapPort;
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'imap_security', required: false, includeIfNull: false)
+  @JsonKey(name: r'imap_security', includeIfNull: false)
   final ImapSecurityEnum? imapSecurity;
 
-  @JsonKey(name: r'username', required: true, includeIfNull: false)
+  @JsonKey(name: r'username', includeIfNull: false)
   final String username;
 
-  @JsonKey(name: r'password', required: true, includeIfNull: false)
+  @JsonKey(name: r'password', includeIfNull: false)
   final String password;
 
   /// The character set to use when communicating with the mail server, such as 'UTF-8' or 'US-ASCII'.
-  @JsonKey(name: r'character_set', required: false, includeIfNull: false)
+  @JsonKey(name: r'character_set', includeIfNull: false)
   final String? characterSet;
 
-  @JsonKey(name: r'is_token', required: false, includeIfNull: false)
+  @JsonKey(name: r'is_token', includeIfNull: false)
   final bool? isToken;
 
-  @JsonKey(name: r'owner', required: false, includeIfNull: false)
+  @JsonKey(name: r'owner', includeIfNull: false)
   final int? owner;
 
-  @JsonKey(name: r'user_can_change', required: true, includeIfNull: false)
+  @JsonKey(name: r'user_can_change', includeIfNull: false)
   final bool userCanChange;
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'account_type', required: false, includeIfNull: false)
+  @JsonKey(name: r'account_type', includeIfNull: false)
   final AccountTypeEnum? accountType;
 
   /// The expiration date of the refresh token.
-  @JsonKey(name: r'expiration', required: false, includeIfNull: false)
+  @JsonKey(name: r'expiration', includeIfNull: false)
   final DateTime? expiration;
 
   @override

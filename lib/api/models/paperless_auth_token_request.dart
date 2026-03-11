@@ -26,13 +26,13 @@ class PaperlessAuthTokenRequest {
     this.code,
   });
 
-  @JsonKey(name: r'username', required: true, includeIfNull: false)
+  @JsonKey(name: r'username', includeIfNull: false)
   final String username;
 
-  @JsonKey(name: r'password', required: true, includeIfNull: false)
+  @JsonKey(name: r'password', includeIfNull: false)
   final String password;
 
-  @JsonKey(name: r'code', required: false, includeIfNull: false)
+  @JsonKey(name: r'code', includeIfNull: false)
   final String? code;
 
   @override

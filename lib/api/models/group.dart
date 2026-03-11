@@ -20,13 +20,13 @@ class Group {
   /// Returns a new [Group] instance.
   Group({required this.id, required this.name, required this.permissions});
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
-  @JsonKey(name: r'name', required: true, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final String name;
 
-  @JsonKey(name: r'permissions', required: true, includeIfNull: false)
+  @JsonKey(name: r'permissions', includeIfNull: false)
   final List<String> permissions;
 
   @override

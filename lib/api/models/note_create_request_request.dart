@@ -20,7 +20,7 @@ class NoteCreateRequestRequest {
   /// Returns a new [NoteCreateRequestRequest] instance.
   NoteCreateRequestRequest({required this.note});
 
-  @JsonKey(name: r'note', required: true, includeIfNull: false)
+  @JsonKey(name: r'note', includeIfNull: false)
   final String note;
 
   @override

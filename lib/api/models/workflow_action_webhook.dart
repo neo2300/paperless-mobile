@@ -36,32 +36,32 @@ class WorkflowActionWebhook {
     this.includeDocument,
   });
 
-  @JsonKey(name: r'id', required: false, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int? id;
 
   /// The destination URL for the notification.
-  @JsonKey(name: r'url', required: true, includeIfNull: false)
+  @JsonKey(name: r'url', includeIfNull: false)
   final String url;
 
-  @JsonKey(name: r'use_params', required: false, includeIfNull: false)
+  @JsonKey(name: r'use_params', includeIfNull: false)
   final bool? useParams;
 
-  @JsonKey(name: r'as_json', required: false, includeIfNull: false)
+  @JsonKey(name: r'as_json', includeIfNull: false)
   final bool? asJson;
 
   /// The parameters to send with the webhook URL if body not used.
-  @JsonKey(name: r'params', required: false, includeIfNull: false)
+  @JsonKey(name: r'params', includeIfNull: false)
   final Object? params;
 
   /// The body to send with the webhook URL if parameters not used.
-  @JsonKey(name: r'body', required: false, includeIfNull: false)
+  @JsonKey(name: r'body', includeIfNull: false)
   final String? body;
 
   /// The headers to send with the webhook URL.
-  @JsonKey(name: r'headers', required: false, includeIfNull: false)
+  @JsonKey(name: r'headers', includeIfNull: false)
   final Object? headers;
 
-  @JsonKey(name: r'include_document', required: false, includeIfNull: false)
+  @JsonKey(name: r'include_document', includeIfNull: false)
   final bool? includeDocument;
 
   @override

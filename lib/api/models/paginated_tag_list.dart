@@ -30,19 +30,19 @@ class PaginatedTagList {
     this.all,
   });
 
-  @JsonKey(name: r'count', required: true, includeIfNull: false)
+  @JsonKey(name: r'count', includeIfNull: false)
   final int count;
 
-  @JsonKey(name: r'next', required: false, includeIfNull: false)
+  @JsonKey(name: r'next', includeIfNull: false)
   final String? next;
 
-  @JsonKey(name: r'previous', required: false, includeIfNull: false)
+  @JsonKey(name: r'previous', includeIfNull: false)
   final String? previous;
 
-  @JsonKey(name: r'results', required: true, includeIfNull: false)
+  @JsonKey(name: r'results', includeIfNull: false)
   final List<Tag> results;
 
-  @JsonKey(name: r'all', required: false, includeIfNull: false)
+  @JsonKey(name: r'all', includeIfNull: false)
   final List<int>? all;
 
   @override

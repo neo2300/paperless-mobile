@@ -20,12 +20,7 @@ class MailAccountProcessResponse {
   /// Returns a new [MailAccountProcessResponse] instance.
   MailAccountProcessResponse({this.result = 'OK'});
 
-  @JsonKey(
-    defaultValue: 'OK',
-    name: r'result',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(defaultValue: 'OK', name: r'result', includeIfNull: false)
   final String? result;
 
   @override

@@ -91,139 +91,107 @@ class PatchedWorkflowActionRequest {
     this.webhook,
   });
 
-  @JsonKey(name: r'id', required: false, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final Option<int?>? id;
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'type', required: false, includeIfNull: false)
+  @JsonKey(name: r'type', includeIfNull: false)
   final Option<WorkflowActionTypeEnum?>? type;
 
   /// Assign a document title, can include some placeholders, see documentation.
-  @JsonKey(name: r'assign_title', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_title', includeIfNull: false)
   final Option<String?>? assignTitle;
 
-  @JsonKey(name: r'assign_tags', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_tags', includeIfNull: false)
   final Option<List<int>?>? assignTags;
 
-  @JsonKey(name: r'assign_correspondent', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_correspondent', includeIfNull: false)
   final Option<int?>? assignCorrespondent;
 
-  @JsonKey(name: r'assign_document_type', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_document_type', includeIfNull: false)
   final Option<int?>? assignDocumentType;
 
-  @JsonKey(name: r'assign_storage_path', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_storage_path', includeIfNull: false)
   final Option<int?>? assignStoragePath;
 
-  @JsonKey(name: r'assign_owner', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_owner', includeIfNull: false)
   final Option<int?>? assignOwner;
 
-  @JsonKey(name: r'assign_view_users', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_view_users', includeIfNull: false)
   final Option<List<int>?>? assignViewUsers;
 
-  @JsonKey(name: r'assign_view_groups', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_view_groups', includeIfNull: false)
   final Option<List<int>?>? assignViewGroups;
 
-  @JsonKey(name: r'assign_change_users', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_change_users', includeIfNull: false)
   final Option<List<int>?>? assignChangeUsers;
 
-  @JsonKey(name: r'assign_change_groups', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_change_groups', includeIfNull: false)
   final Option<List<int>?>? assignChangeGroups;
 
-  @JsonKey(name: r'assign_custom_fields', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_custom_fields', includeIfNull: false)
   final Option<List<int>?>? assignCustomFields;
 
   /// Optional values to assign to the custom fields.
-  @JsonKey(
-    name: r'assign_custom_fields_values',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'assign_custom_fields_values', includeIfNull: false)
   final Option<Object?>? assignCustomFieldsValues;
 
-  @JsonKey(name: r'remove_all_tags', required: false, includeIfNull: false)
+  @JsonKey(name: r'remove_all_tags', includeIfNull: false)
   final Option<bool?>? removeAllTags;
 
-  @JsonKey(name: r'remove_tags', required: false, includeIfNull: false)
+  @JsonKey(name: r'remove_tags', includeIfNull: false)
   final Option<List<int>?>? removeTags;
 
-  @JsonKey(
-    name: r'remove_all_correspondents',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'remove_all_correspondents', includeIfNull: false)
   final Option<bool?>? removeAllCorrespondents;
 
-  @JsonKey(
-    name: r'remove_correspondents',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'remove_correspondents', includeIfNull: false)
   final Option<List<int>?>? removeCorrespondents;
 
-  @JsonKey(
-    name: r'remove_all_document_types',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'remove_all_document_types', includeIfNull: false)
   final Option<bool?>? removeAllDocumentTypes;
 
-  @JsonKey(
-    name: r'remove_document_types',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'remove_document_types', includeIfNull: false)
   final Option<List<int>?>? removeDocumentTypes;
 
-  @JsonKey(
-    name: r'remove_all_storage_paths',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'remove_all_storage_paths', includeIfNull: false)
   final Option<bool?>? removeAllStoragePaths;
 
-  @JsonKey(name: r'remove_storage_paths', required: false, includeIfNull: false)
+  @JsonKey(name: r'remove_storage_paths', includeIfNull: false)
   final Option<List<int>?>? removeStoragePaths;
 
-  @JsonKey(name: r'remove_custom_fields', required: false, includeIfNull: false)
+  @JsonKey(name: r'remove_custom_fields', includeIfNull: false)
   final Option<List<int>?>? removeCustomFields;
 
-  @JsonKey(
-    name: r'remove_all_custom_fields',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'remove_all_custom_fields', includeIfNull: false)
   final Option<bool?>? removeAllCustomFields;
 
-  @JsonKey(name: r'remove_all_owners', required: false, includeIfNull: false)
+  @JsonKey(name: r'remove_all_owners', includeIfNull: false)
   final Option<bool?>? removeAllOwners;
 
-  @JsonKey(name: r'remove_owners', required: false, includeIfNull: false)
+  @JsonKey(name: r'remove_owners', includeIfNull: false)
   final Option<List<int>?>? removeOwners;
 
-  @JsonKey(
-    name: r'remove_all_permissions',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'remove_all_permissions', includeIfNull: false)
   final Option<bool?>? removeAllPermissions;
 
-  @JsonKey(name: r'remove_view_users', required: false, includeIfNull: false)
+  @JsonKey(name: r'remove_view_users', includeIfNull: false)
   final Option<List<int>?>? removeViewUsers;
 
-  @JsonKey(name: r'remove_view_groups', required: false, includeIfNull: false)
+  @JsonKey(name: r'remove_view_groups', includeIfNull: false)
   final Option<List<int>?>? removeViewGroups;
 
-  @JsonKey(name: r'remove_change_users', required: false, includeIfNull: false)
+  @JsonKey(name: r'remove_change_users', includeIfNull: false)
   final Option<List<int>?>? removeChangeUsers;
 
-  @JsonKey(name: r'remove_change_groups', required: false, includeIfNull: false)
+  @JsonKey(name: r'remove_change_groups', includeIfNull: false)
   final Option<List<int>?>? removeChangeGroups;
 
-  @JsonKey(name: r'email', required: false, includeIfNull: false)
+  @JsonKey(name: r'email', includeIfNull: false)
   final Option<WorkflowActionEmailRequest?>? email;
 
-  @JsonKey(name: r'webhook', required: false, includeIfNull: false)
+  @JsonKey(name: r'webhook', includeIfNull: false)
   final Option<WorkflowActionWebhookRequest?>? webhook;
 
   @override

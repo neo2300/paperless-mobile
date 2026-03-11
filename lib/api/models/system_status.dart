@@ -44,31 +44,31 @@ class SystemStatus {
     required this.sanityCheck,
   });
 
-  @JsonKey(name: r'pngx_version', required: true, includeIfNull: false)
+  @JsonKey(name: r'pngx_version', includeIfNull: false)
   final String pngxVersion;
 
-  @JsonKey(name: r'server_os', required: true, includeIfNull: false)
+  @JsonKey(name: r'server_os', includeIfNull: false)
   final String serverOs;
 
-  @JsonKey(name: r'install_type', required: true, includeIfNull: false)
+  @JsonKey(name: r'install_type', includeIfNull: false)
   final String installType;
 
-  @JsonKey(name: r'storage', required: true, includeIfNull: false)
+  @JsonKey(name: r'storage', includeIfNull: false)
   final Storage storage;
 
-  @JsonKey(name: r'database', required: true, includeIfNull: false)
+  @JsonKey(name: r'database', includeIfNull: false)
   final Database database;
 
-  @JsonKey(name: r'tasks', required: true, includeIfNull: false)
+  @JsonKey(name: r'tasks', includeIfNull: false)
   final Tasks tasks;
 
-  @JsonKey(name: r'index', required: true, includeIfNull: false)
+  @JsonKey(name: r'index', includeIfNull: false)
   final Index index;
 
-  @JsonKey(name: r'classifier', required: true, includeIfNull: false)
+  @JsonKey(name: r'classifier', includeIfNull: false)
   final Classifier classifier;
 
-  @JsonKey(name: r'sanity_check', required: true, includeIfNull: false)
+  @JsonKey(name: r'sanity_check', includeIfNull: false)
   final SanityCheck sanityCheck;
 
   @override

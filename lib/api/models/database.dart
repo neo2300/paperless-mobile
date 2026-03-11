@@ -31,19 +31,19 @@ class Database {
     required this.migrationStatus,
   });
 
-  @JsonKey(name: r'type', required: true, includeIfNull: false)
+  @JsonKey(name: r'type', includeIfNull: false)
   final String type;
 
-  @JsonKey(name: r'url', required: true, includeIfNull: false)
+  @JsonKey(name: r'url', includeIfNull: false)
   final String url;
 
-  @JsonKey(name: r'status', required: true, includeIfNull: false)
+  @JsonKey(name: r'status', includeIfNull: false)
   final String status;
 
-  @JsonKey(name: r'error', required: true, includeIfNull: false)
+  @JsonKey(name: r'error', includeIfNull: false)
   final String error;
 
-  @JsonKey(name: r'migration_status', required: true, includeIfNull: false)
+  @JsonKey(name: r'migration_status', includeIfNull: false)
   final MigrationStatus migrationStatus;
 
   @override

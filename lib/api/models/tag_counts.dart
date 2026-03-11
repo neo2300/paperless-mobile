@@ -20,10 +20,10 @@ class TagCounts {
   /// Returns a new [TagCounts] instance.
   TagCounts({required this.id, required this.documentCount});
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
-  @JsonKey(name: r'document_count', required: true, includeIfNull: false)
+  @JsonKey(name: r'document_count', includeIfNull: false)
   final int documentCount;
 
   @override

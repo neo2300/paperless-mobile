@@ -26,13 +26,13 @@ class SanityCheck {
     required this.lastRun,
   });
 
-  @JsonKey(name: r'status', required: true, includeIfNull: false)
+  @JsonKey(name: r'status', includeIfNull: false)
   final String status;
 
-  @JsonKey(name: r'error', required: true, includeIfNull: false)
+  @JsonKey(name: r'error', includeIfNull: false)
   final String error;
 
-  @JsonKey(name: r'last_run', required: true, includeIfNull: false)
+  @JsonKey(name: r'last_run', includeIfNull: false)
   final DateTime lastRun;
 
   @override

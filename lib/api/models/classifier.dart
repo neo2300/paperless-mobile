@@ -26,13 +26,13 @@ class Classifier {
     required this.lastTrained,
   });
 
-  @JsonKey(name: r'status', required: true, includeIfNull: false)
+  @JsonKey(name: r'status', includeIfNull: false)
   final String status;
 
-  @JsonKey(name: r'error', required: true, includeIfNull: false)
+  @JsonKey(name: r'error', includeIfNull: false)
   final String error;
 
-  @JsonKey(name: r'last_trained', required: true, includeIfNull: false)
+  @JsonKey(name: r'last_trained', includeIfNull: false)
   final DateTime lastTrained;
 
   @override

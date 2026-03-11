@@ -47,48 +47,48 @@ class TasksView {
     this.owner,
   });
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
   /// Celery ID for the Task that was run
-  @JsonKey(name: r'task_id', required: true, includeIfNull: false)
+  @JsonKey(name: r'task_id', includeIfNull: false)
   final String taskId;
 
-  @JsonKey(name: r'task_name', required: false, includeIfNull: false)
+  @JsonKey(name: r'task_name', includeIfNull: false)
   final TaskNameEnum? taskName;
 
   /// Name of the file which the Task was run for
-  @JsonKey(name: r'task_file_name', required: false, includeIfNull: false)
+  @JsonKey(name: r'task_file_name', includeIfNull: false)
   final String? taskFileName;
 
   /// Datetime field when the task result was created in UTC
-  @JsonKey(name: r'date_created', required: false, includeIfNull: false)
+  @JsonKey(name: r'date_created', includeIfNull: false)
   final DateTime? dateCreated;
 
   /// Datetime field when the task was completed in UTC
-  @JsonKey(name: r'date_done', required: false, includeIfNull: false)
+  @JsonKey(name: r'date_done', includeIfNull: false)
   final DateTime? dateDone;
 
   /// The type of task that was run  * `auto_task` - Auto Task * `scheduled_task` - Scheduled Task * `manual_task` - Manual Task
-  @JsonKey(name: r'type', required: false, includeIfNull: false)
+  @JsonKey(name: r'type', includeIfNull: false)
   final TasksViewTypeEnum? type;
 
   /// Current state of the task being run  * `FAILURE` - FAILURE * `PENDING` - PENDING * `RECEIVED` - RECEIVED * `RETRY` - RETRY * `REVOKED` - REVOKED * `STARTED` - STARTED * `SUCCESS` - SUCCESS
-  @JsonKey(name: r'status', required: false, includeIfNull: false)
+  @JsonKey(name: r'status', includeIfNull: false)
   final StatusEnum? status;
 
   /// The data returned by the task
-  @JsonKey(name: r'result', required: false, includeIfNull: false)
+  @JsonKey(name: r'result', includeIfNull: false)
   final String? result;
 
   /// If the task is acknowledged via the frontend or API
-  @JsonKey(name: r'acknowledged', required: false, includeIfNull: false)
+  @JsonKey(name: r'acknowledged', includeIfNull: false)
   final bool? acknowledged;
 
-  @JsonKey(name: r'related_document', required: true, includeIfNull: true)
+  @JsonKey(name: r'related_document', includeIfNull: true)
   final String? relatedDocument;
 
-  @JsonKey(name: r'owner', required: false, includeIfNull: false)
+  @JsonKey(name: r'owner', includeIfNull: false)
   final int? owner;
 
   @override

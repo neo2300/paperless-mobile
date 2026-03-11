@@ -22,10 +22,10 @@ class PatchedGroupRequest {
   /// Returns a new [PatchedGroupRequest] instance.
   PatchedGroupRequest({this.name, this.permissions});
 
-  @JsonKey(name: r'name', required: false, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final Option<String?>? name;
 
-  @JsonKey(name: r'permissions', required: false, includeIfNull: false)
+  @JsonKey(name: r'permissions', includeIfNull: false)
   final Option<List<String>?>? permissions;
 
   @override

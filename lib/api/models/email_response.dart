@@ -20,7 +20,7 @@ class EmailResponse {
   /// Returns a new [EmailResponse] instance.
   EmailResponse({required this.message});
 
-  @JsonKey(name: r'message', required: true, includeIfNull: false)
+  @JsonKey(name: r'message', includeIfNull: false)
   final String message;
 
   @override

@@ -78,122 +78,101 @@ class MailRule {
     required this.userCanChange,
   });
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
-  @JsonKey(name: r'name', required: true, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final String name;
 
-  @JsonKey(name: r'account', required: true, includeIfNull: false)
+  @JsonKey(name: r'account', includeIfNull: false)
   final int account;
 
-  @JsonKey(name: r'enabled', required: false, includeIfNull: false)
+  @JsonKey(name: r'enabled', includeIfNull: false)
   final bool? enabled;
 
   /// Subfolders must be separated by a delimiter, often a dot ('.') or slash ('/'), but it varies by mail server.
-  @JsonKey(name: r'folder', required: false, includeIfNull: false)
+  @JsonKey(name: r'folder', includeIfNull: false)
   final String? folder;
 
-  @JsonKey(name: r'filter_from', required: false, includeIfNull: false)
+  @JsonKey(name: r'filter_from', includeIfNull: false)
   final String? filterFrom;
 
-  @JsonKey(name: r'filter_to', required: false, includeIfNull: false)
+  @JsonKey(name: r'filter_to', includeIfNull: false)
   final String? filterTo;
 
-  @JsonKey(name: r'filter_subject', required: false, includeIfNull: false)
+  @JsonKey(name: r'filter_subject', includeIfNull: false)
   final String? filterSubject;
 
-  @JsonKey(name: r'filter_body', required: false, includeIfNull: false)
+  @JsonKey(name: r'filter_body', includeIfNull: false)
   final String? filterBody;
 
   /// Only consume documents which entirely match this filename if specified. Wildcards such as *.pdf or *invoice* are allowed. Case insensitive.
-  @JsonKey(
-    name: r'filter_attachment_filename_include',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'filter_attachment_filename_include', includeIfNull: false)
   final String? filterAttachmentFilenameInclude;
 
   /// Do not consume documents which entirely match this filename if specified. Wildcards such as *.pdf or *invoice* are allowed. Case insensitive.
-  @JsonKey(
-    name: r'filter_attachment_filename_exclude',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'filter_attachment_filename_exclude', includeIfNull: false)
   final String? filterAttachmentFilenameExclude;
 
   /// Specified in days.
   // minimum: 0
   // maximum: 2147483647
-  @JsonKey(name: r'maximum_age', required: false, includeIfNull: false)
+  @JsonKey(name: r'maximum_age', includeIfNull: false)
   final int? maximumAge;
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'action', required: false, includeIfNull: false)
+  @JsonKey(name: r'action', includeIfNull: false)
   final MailRuleActionEnum? action;
 
-  @JsonKey(
-    defaultValue: '',
-    name: r'action_parameter',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(defaultValue: '', name: r'action_parameter', includeIfNull: false)
   final String? actionParameter;
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'assign_title_from', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_title_from', includeIfNull: false)
   final AssignTitleFromEnum? assignTitleFrom;
 
-  @JsonKey(name: r'assign_tags', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_tags', includeIfNull: false)
   final List<int>? assignTags;
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(
-    name: r'assign_correspondent_from',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'assign_correspondent_from', includeIfNull: false)
   final AssignCorrespondentFromEnum? assignCorrespondentFrom;
 
-  @JsonKey(name: r'assign_correspondent', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_correspondent', includeIfNull: false)
   final int? assignCorrespondent;
 
-  @JsonKey(name: r'assign_document_type', required: false, includeIfNull: false)
+  @JsonKey(name: r'assign_document_type', includeIfNull: false)
   final int? assignDocumentType;
 
-  @JsonKey(
-    name: r'assign_owner_from_rule',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'assign_owner_from_rule', includeIfNull: false)
   final bool? assignOwnerFromRule;
 
-  @JsonKey(name: r'order', required: false, includeIfNull: false)
+  @JsonKey(name: r'order', includeIfNull: false)
   final int? order;
 
   /// Inline attachments include embedded images, so it's best to combine this option with a filename filter.  * `1` - Only process attachments. * `2` - Process all files, including 'inline' attachments.
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'attachment_type', required: false, includeIfNull: false)
+  @JsonKey(name: r'attachment_type', includeIfNull: false)
   final AttachmentTypeEnum? attachmentType;
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'consumption_scope', required: false, includeIfNull: false)
+  @JsonKey(name: r'consumption_scope', includeIfNull: false)
   final ConsumptionScopeEnum? consumptionScope;
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'pdf_layout', required: false, includeIfNull: false)
+  @JsonKey(name: r'pdf_layout', includeIfNull: false)
   final PdfLayoutEnum? pdfLayout;
 
-  @JsonKey(name: r'owner', required: false, includeIfNull: false)
+  @JsonKey(name: r'owner', includeIfNull: false)
   final int? owner;
 
-  @JsonKey(name: r'user_can_change', required: true, includeIfNull: false)
+  @JsonKey(name: r'user_can_change', includeIfNull: false)
   final bool userCanChange;
 
   @override

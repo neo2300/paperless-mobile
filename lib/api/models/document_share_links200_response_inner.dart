@@ -28,16 +28,16 @@ class DocumentShareLinks200ResponseInner {
     this.slug,
   });
 
-  @JsonKey(name: r'id', required: false, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int? id;
 
-  @JsonKey(name: r'created', required: false, includeIfNull: false)
+  @JsonKey(name: r'created', includeIfNull: false)
   final DateTime? created;
 
-  @JsonKey(name: r'expiration', required: false, includeIfNull: false)
+  @JsonKey(name: r'expiration', includeIfNull: false)
   final DateTime? expiration;
 
-  @JsonKey(name: r'slug', required: false, includeIfNull: false)
+  @JsonKey(name: r'slug', includeIfNull: false)
   final String? slug;
 
   @override

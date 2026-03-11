@@ -30,13 +30,13 @@ class BulkDownloadRequest {
     this.followFormatting = false,
   });
 
-  @JsonKey(name: r'documents', required: true, includeIfNull: false)
+  @JsonKey(name: r'documents', includeIfNull: false)
   final List<int> documents;
 
   @JsonKey(
     defaultValue: ContentEnum.archive,
     name: r'content',
-    required: false,
+
     includeIfNull: false,
   )
   final ContentEnum? content;
@@ -44,7 +44,7 @@ class BulkDownloadRequest {
   @JsonKey(
     defaultValue: CompressionEnum.none,
     name: r'compression',
-    required: false,
+
     includeIfNull: false,
   )
   final CompressionEnum? compression;
@@ -52,7 +52,7 @@ class BulkDownloadRequest {
   @JsonKey(
     defaultValue: false,
     name: r'follow_formatting',
-    required: false,
+
     includeIfNull: false,
   )
   final bool? followFormatting;

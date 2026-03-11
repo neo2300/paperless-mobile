@@ -42,36 +42,36 @@ class SavedViewRequest {
     this.owner,
   });
 
-  @JsonKey(name: r'name', required: true, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final String name;
 
-  @JsonKey(name: r'show_on_dashboard', required: true, includeIfNull: false)
+  @JsonKey(name: r'show_on_dashboard', includeIfNull: false)
   final bool showOnDashboard;
 
-  @JsonKey(name: r'show_in_sidebar', required: true, includeIfNull: false)
+  @JsonKey(name: r'show_in_sidebar', includeIfNull: false)
   final bool showInSidebar;
 
-  @JsonKey(name: r'sort_field', required: false, includeIfNull: false)
+  @JsonKey(name: r'sort_field', includeIfNull: false)
   final String? sortField;
 
-  @JsonKey(name: r'sort_reverse', required: false, includeIfNull: false)
+  @JsonKey(name: r'sort_reverse', includeIfNull: false)
   final bool? sortReverse;
 
-  @JsonKey(name: r'filter_rules', required: true, includeIfNull: false)
+  @JsonKey(name: r'filter_rules', includeIfNull: false)
   final List<SavedViewFilterRuleRequest> filterRules;
 
   // minimum: 1
   // maximum: 2147483647
-  @JsonKey(name: r'page_size', required: false, includeIfNull: false)
+  @JsonKey(name: r'page_size', includeIfNull: false)
   final int? pageSize;
 
-  @JsonKey(name: r'display_mode', required: false, includeIfNull: false)
+  @JsonKey(name: r'display_mode', includeIfNull: false)
   final DisplayModeEnum? displayMode;
 
-  @JsonKey(name: r'display_fields', required: false, includeIfNull: false)
+  @JsonKey(name: r'display_fields', includeIfNull: false)
   final List<String>? displayFields;
 
-  @JsonKey(name: r'owner', required: false, includeIfNull: false)
+  @JsonKey(name: r'owner', includeIfNull: false)
   final int? owner;
 
   @override

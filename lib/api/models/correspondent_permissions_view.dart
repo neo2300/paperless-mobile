@@ -20,10 +20,10 @@ class CorrespondentPermissionsView {
   /// Returns a new [CorrespondentPermissionsView] instance.
   CorrespondentPermissionsView({this.users, this.groups});
 
-  @JsonKey(name: r'users', required: false, includeIfNull: false)
+  @JsonKey(name: r'users', includeIfNull: false)
   final List<int>? users;
 
-  @JsonKey(name: r'groups', required: false, includeIfNull: false)
+  @JsonKey(name: r'groups', includeIfNull: false)
   final List<int>? groups;
 
   @override

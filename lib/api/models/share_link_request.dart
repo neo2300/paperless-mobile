@@ -21,13 +21,13 @@ class ShareLinkRequest {
   /// Returns a new [ShareLinkRequest] instance.
   ShareLinkRequest({this.expiration, this.document, this.fileVersion});
 
-  @JsonKey(name: r'expiration', required: false, includeIfNull: false)
+  @JsonKey(name: r'expiration', includeIfNull: false)
   final DateTime? expiration;
 
-  @JsonKey(name: r'document', required: false, includeIfNull: false)
+  @JsonKey(name: r'document', includeIfNull: false)
   final int? document;
 
-  @JsonKey(name: r'file_version', required: false, includeIfNull: false)
+  @JsonKey(name: r'file_version', includeIfNull: false)
   final FileVersionEnum? fileVersion;
 
   @override

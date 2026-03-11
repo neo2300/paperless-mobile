@@ -20,10 +20,10 @@ class Actor {
   /// Returns a new [Actor] instance.
   Actor({required this.id, required this.username});
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
-  @JsonKey(name: r'username', required: true, includeIfNull: false)
+  @JsonKey(name: r'username', includeIfNull: false)
   final String username;
 
   @override

@@ -26,13 +26,13 @@ class Index {
     required this.lastModified,
   });
 
-  @JsonKey(name: r'status', required: true, includeIfNull: false)
+  @JsonKey(name: r'status', includeIfNull: false)
   final String status;
 
-  @JsonKey(name: r'error', required: true, includeIfNull: false)
+  @JsonKey(name: r'error', includeIfNull: false)
   final String error;
 
-  @JsonKey(name: r'last_modified', required: true, includeIfNull: false)
+  @JsonKey(name: r'last_modified', includeIfNull: false)
   final DateTime lastModified;
 
   @override

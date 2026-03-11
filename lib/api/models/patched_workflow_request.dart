@@ -34,19 +34,19 @@ class PatchedWorkflowRequest {
     this.actions,
   });
 
-  @JsonKey(name: r'name', required: false, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final Option<String?>? name;
 
-  @JsonKey(name: r'order', required: false, includeIfNull: false)
+  @JsonKey(name: r'order', includeIfNull: false)
   final Option<int?>? order;
 
-  @JsonKey(name: r'enabled', required: false, includeIfNull: false)
+  @JsonKey(name: r'enabled', includeIfNull: false)
   final Option<bool?>? enabled;
 
-  @JsonKey(name: r'triggers', required: false, includeIfNull: false)
+  @JsonKey(name: r'triggers', includeIfNull: false)
   final Option<List<WorkflowTriggerRequest>?>? triggers;
 
-  @JsonKey(name: r'actions', required: false, includeIfNull: false)
+  @JsonKey(name: r'actions', includeIfNull: false)
   final Option<List<WorkflowActionRequest>?>? actions;
 
   @override

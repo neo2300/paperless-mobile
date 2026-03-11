@@ -49,49 +49,49 @@ class PatchedMailAccountRequest {
     this.expiration,
   });
 
-  @JsonKey(name: r'name', required: false, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final Option<String?>? name;
 
-  @JsonKey(name: r'imap_server', required: false, includeIfNull: false)
+  @JsonKey(name: r'imap_server', includeIfNull: false)
   final Option<String?>? imapServer;
 
   /// This is usually 143 for unencrypted and STARTTLS connections, and 993 for SSL connections.
   // minimum: -2147483648
   // maximum: 2147483647
-  @JsonKey(name: r'imap_port', required: false, includeIfNull: false)
+  @JsonKey(name: r'imap_port', includeIfNull: false)
   final Option<int?>? imapPort;
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'imap_security', required: false, includeIfNull: false)
+  @JsonKey(name: r'imap_security', includeIfNull: false)
   final Option<ImapSecurityEnum?>? imapSecurity;
 
-  @JsonKey(name: r'username', required: false, includeIfNull: false)
+  @JsonKey(name: r'username', includeIfNull: false)
   final Option<String?>? username;
 
-  @JsonKey(name: r'password', required: false, includeIfNull: false)
+  @JsonKey(name: r'password', includeIfNull: false)
   final Option<String?>? password;
 
   /// The character set to use when communicating with the mail server, such as 'UTF-8' or 'US-ASCII'.
-  @JsonKey(name: r'character_set', required: false, includeIfNull: false)
+  @JsonKey(name: r'character_set', includeIfNull: false)
   final Option<String?>? characterSet;
 
-  @JsonKey(name: r'is_token', required: false, includeIfNull: false)
+  @JsonKey(name: r'is_token', includeIfNull: false)
   final Option<bool?>? isToken;
 
-  @JsonKey(name: r'owner', required: false, includeIfNull: false)
+  @JsonKey(name: r'owner', includeIfNull: false)
   final Option<int?>? owner;
 
-  @JsonKey(name: r'set_permissions', required: false, includeIfNull: false)
+  @JsonKey(name: r'set_permissions', includeIfNull: false)
   final Option<CorrespondentRequestSetPermissions?>? setPermissions;
 
   // minimum: 0.0
   // maximum: 2.147483647E9
-  @JsonKey(name: r'account_type', required: false, includeIfNull: false)
+  @JsonKey(name: r'account_type', includeIfNull: false)
   final Option<AccountTypeEnum?>? accountType;
 
   /// The expiration date of the refresh token.
-  @JsonKey(name: r'expiration', required: false, includeIfNull: false)
+  @JsonKey(name: r'expiration', includeIfNull: false)
   final Option<DateTime?>? expiration;
 
   @override

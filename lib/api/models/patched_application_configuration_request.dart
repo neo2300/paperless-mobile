@@ -80,108 +80,92 @@ class PatchedApplicationConfigurationRequest {
     this.barcodeEnableTag,
   });
 
-  @JsonKey(name: r'user_args', required: false, includeIfNull: false)
+  @JsonKey(name: r'user_args', includeIfNull: false)
   final Option<Object?>? userArgs;
 
-  @JsonKey(name: r'barcode_tag_mapping', required: false, includeIfNull: false)
+  @JsonKey(name: r'barcode_tag_mapping', includeIfNull: false)
   final Option<Object?>? barcodeTagMapping;
 
-  @JsonKey(name: r'output_type', required: false, includeIfNull: false)
+  @JsonKey(name: r'output_type', includeIfNull: false)
   final Option<OutputTypeEnum?>? outputType;
 
   // minimum: 1
   // maximum: 2147483647
-  @JsonKey(name: r'pages', required: false, includeIfNull: false)
+  @JsonKey(name: r'pages', includeIfNull: false)
   final Option<int?>? pages;
 
-  @JsonKey(name: r'language', required: false, includeIfNull: false)
+  @JsonKey(name: r'language', includeIfNull: false)
   final Option<String?>? language;
 
-  @JsonKey(name: r'mode', required: false, includeIfNull: false)
+  @JsonKey(name: r'mode', includeIfNull: false)
   final Option<ModeEnum?>? mode;
 
-  @JsonKey(name: r'skip_archive_file', required: false, includeIfNull: false)
+  @JsonKey(name: r'skip_archive_file', includeIfNull: false)
   final Option<SkipArchiveFileEnum?>? skipArchiveFile;
 
   // minimum: 1
   // maximum: 2147483647
-  @JsonKey(name: r'image_dpi', required: false, includeIfNull: false)
+  @JsonKey(name: r'image_dpi', includeIfNull: false)
   final Option<int?>? imageDpi;
 
-  @JsonKey(name: r'unpaper_clean', required: false, includeIfNull: false)
+  @JsonKey(name: r'unpaper_clean', includeIfNull: false)
   final Option<UnpaperCleanEnum?>? unpaperClean;
 
-  @JsonKey(name: r'deskew', required: false, includeIfNull: false)
+  @JsonKey(name: r'deskew', includeIfNull: false)
   final Option<bool?>? deskew;
 
-  @JsonKey(name: r'rotate_pages', required: false, includeIfNull: false)
+  @JsonKey(name: r'rotate_pages', includeIfNull: false)
   final Option<bool?>? rotatePages;
 
   // minimum: 0.0
-  @JsonKey(
-    name: r'rotate_pages_threshold',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'rotate_pages_threshold', includeIfNull: false)
   final Option<double?>? rotatePagesThreshold;
 
   // minimum: 0.0
-  @JsonKey(name: r'max_image_pixels', required: false, includeIfNull: false)
+  @JsonKey(name: r'max_image_pixels', includeIfNull: false)
   final Option<double?>? maxImagePixels;
-  @JsonKey(
-    name: r'color_conversion_strategy',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'color_conversion_strategy', includeIfNull: false)
   final Option<ColorConversionStrategyEnum?>? colorConversionStrategy;
 
-  @JsonKey(name: r'app_title', required: false, includeIfNull: false)
+  @JsonKey(name: r'app_title', includeIfNull: false)
   final Option<String?>? appTitle;
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   final Option<MultipartFile?>? appLogo;
 
-  @JsonKey(name: r'barcodes_enabled', required: false, includeIfNull: false)
+  @JsonKey(name: r'barcodes_enabled', includeIfNull: false)
   final Option<bool?>? barcodesEnabled;
 
-  @JsonKey(
-    name: r'barcode_enable_tiff_support',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'barcode_enable_tiff_support', includeIfNull: false)
   final Option<bool?>? barcodeEnableTiffSupport;
 
-  @JsonKey(name: r'barcode_string', required: false, includeIfNull: false)
+  @JsonKey(name: r'barcode_string', includeIfNull: false)
   final Option<String?>? barcodeString;
 
-  @JsonKey(
-    name: r'barcode_retain_split_pages',
-    required: false,
-    includeIfNull: false,
-  )
+  @JsonKey(name: r'barcode_retain_split_pages', includeIfNull: false)
   final Option<bool?>? barcodeRetainSplitPages;
 
-  @JsonKey(name: r'barcode_enable_asn', required: false, includeIfNull: false)
+  @JsonKey(name: r'barcode_enable_asn', includeIfNull: false)
   final Option<bool?>? barcodeEnableAsn;
 
-  @JsonKey(name: r'barcode_asn_prefix', required: false, includeIfNull: false)
+  @JsonKey(name: r'barcode_asn_prefix', includeIfNull: false)
   final Option<String?>? barcodeAsnPrefix;
 
   // minimum: 1.0
-  @JsonKey(name: r'barcode_upscale', required: false, includeIfNull: false)
+  @JsonKey(name: r'barcode_upscale', includeIfNull: false)
   final Option<double?>? barcodeUpscale;
 
   // minimum: 1
   // maximum: 2147483647
-  @JsonKey(name: r'barcode_dpi', required: false, includeIfNull: false)
+  @JsonKey(name: r'barcode_dpi', includeIfNull: false)
   final Option<int?>? barcodeDpi;
 
   // minimum: 1
   // maximum: 2147483647
-  @JsonKey(name: r'barcode_max_pages', required: false, includeIfNull: false)
+  @JsonKey(name: r'barcode_max_pages', includeIfNull: false)
   final Option<int?>? barcodeMaxPages;
 
-  @JsonKey(name: r'barcode_enable_tag', required: false, includeIfNull: false)
+  @JsonKey(name: r'barcode_enable_tag', includeIfNull: false)
   final Option<bool?>? barcodeEnableTag;
 
   @override

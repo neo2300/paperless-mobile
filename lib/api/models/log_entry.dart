@@ -31,19 +31,19 @@ class LogEntry {
     required this.actor,
   });
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
-  @JsonKey(name: r'timestamp', required: true, includeIfNull: false)
+  @JsonKey(name: r'timestamp', includeIfNull: false)
   final DateTime timestamp;
 
-  @JsonKey(name: r'action', required: true, includeIfNull: false)
+  @JsonKey(name: r'action', includeIfNull: false)
   final String action;
 
-  @JsonKey(name: r'changes', required: true, includeIfNull: false)
+  @JsonKey(name: r'changes', includeIfNull: false)
   final Map<String, Object> changes;
 
-  @JsonKey(name: r'actor', required: true, includeIfNull: false)
+  @JsonKey(name: r'actor', includeIfNull: false)
   final Actor actor;
 
   @override

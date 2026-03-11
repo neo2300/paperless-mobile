@@ -20,7 +20,7 @@ class UiSettingsViewSettingsUpdateChecking {
   /// Returns a new [UiSettingsViewSettingsUpdateChecking] instance.
   UiSettingsViewSettingsUpdateChecking({this.backendSetting});
 
-  @JsonKey(name: r'backend_setting', required: false, includeIfNull: false)
+  @JsonKey(name: r'backend_setting', includeIfNull: false)
   final dynamic backendSetting;
 
   @override

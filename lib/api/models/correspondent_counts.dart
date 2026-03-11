@@ -20,10 +20,10 @@ class CorrespondentCounts {
   /// Returns a new [CorrespondentCounts] instance.
   CorrespondentCounts({required this.id, required this.documentCount});
 
-  @JsonKey(name: r'id', required: true, includeIfNull: false)
+  @JsonKey(name: r'id', includeIfNull: false)
   final int id;
 
-  @JsonKey(name: r'document_count', required: true, includeIfNull: false)
+  @JsonKey(name: r'document_count', includeIfNull: false)
   final int documentCount;
 
   @override

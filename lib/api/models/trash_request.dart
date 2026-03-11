@@ -21,10 +21,10 @@ class TrashRequest {
   /// Returns a new [TrashRequest] instance.
   TrashRequest({this.documents, required this.action});
 
-  @JsonKey(name: r'documents', required: false, includeIfNull: false)
+  @JsonKey(name: r'documents', includeIfNull: false)
   final List<int>? documents;
 
-  @JsonKey(name: r'action', required: true, includeIfNull: false)
+  @JsonKey(name: r'action', includeIfNull: false)
   final TrashActionEnum action;
 
   @override

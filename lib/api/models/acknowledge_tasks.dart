@@ -20,7 +20,7 @@ class AcknowledgeTasks {
   /// Returns a new [AcknowledgeTasks] instance.
   AcknowledgeTasks({required this.result});
 
-  @JsonKey(name: r'result', required: true, includeIfNull: false)
+  @JsonKey(name: r'result', includeIfNull: false)
   final int result;
 
   @override

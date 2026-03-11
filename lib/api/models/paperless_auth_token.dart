@@ -20,7 +20,7 @@ class PaperlessAuthToken {
   /// Returns a new [PaperlessAuthToken] instance.
   PaperlessAuthToken({required this.token});
 
-  @JsonKey(name: r'token', required: true, includeIfNull: false)
+  @JsonKey(name: r'token', includeIfNull: false)
   final String token;
 
   @override

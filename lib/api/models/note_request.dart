@@ -21,10 +21,10 @@ class NoteRequest {
   NoteRequest({this.note, this.created});
 
   /// Note for the document
-  @JsonKey(name: r'note', required: false, includeIfNull: false)
+  @JsonKey(name: r'note', includeIfNull: false)
   final String? note;
 
-  @JsonKey(name: r'created', required: false, includeIfNull: false)
+  @JsonKey(name: r'created', includeIfNull: false)
   final DateTime? created;
 
   @override

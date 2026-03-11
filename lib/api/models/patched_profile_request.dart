@@ -30,16 +30,16 @@ class PatchedProfileRequest {
     this.lastName,
   });
 
-  @JsonKey(name: r'email', required: false, includeIfNull: false)
+  @JsonKey(name: r'email', includeIfNull: false)
   final Option<String?>? email;
 
-  @JsonKey(name: r'password', required: false, includeIfNull: false)
+  @JsonKey(name: r'password', includeIfNull: false)
   final Option<String?>? password;
 
-  @JsonKey(name: r'first_name', required: false, includeIfNull: false)
+  @JsonKey(name: r'first_name', includeIfNull: false)
   final Option<String?>? firstName;
 
-  @JsonKey(name: r'last_name', required: false, includeIfNull: false)
+  @JsonKey(name: r'last_name', includeIfNull: false)
   final Option<String?>? lastName;
 
   @override

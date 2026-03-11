@@ -23,14 +23,14 @@ class PatchedCustomFieldRequest {
   /// Returns a new [PatchedCustomFieldRequest] instance.
   PatchedCustomFieldRequest({this.name, this.dataType, this.extraData});
 
-  @JsonKey(name: r'name', required: false, includeIfNull: false)
+  @JsonKey(name: r'name', includeIfNull: false)
   final Option<String?>? name;
 
-  @JsonKey(name: r'data_type', required: false, includeIfNull: false)
+  @JsonKey(name: r'data_type', includeIfNull: false)
   final Option<DataTypeEnum?>? dataType;
 
   /// Extra data for the custom field, such as select options
-  @JsonKey(name: r'extra_data', required: false, includeIfNull: false)
+  @JsonKey(name: r'extra_data', includeIfNull: false)
   final Option<Object?>? extraData;
 
   @override
