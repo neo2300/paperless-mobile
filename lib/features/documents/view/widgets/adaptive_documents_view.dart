@@ -1,7 +1,6 @@
 import 'package:cached_query_flutter/cached_query_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:paperless_mobile/api/models/document.dart';
-import 'package:paperless_mobile/api/models/paginated_document_list.dart';
 import 'package:paperless_mobile/core/extensions/flutter_extensions.dart';
 import 'package:paperless_mobile/features/documents/view/widgets/items/document_detailed_item.dart';
 import 'package:paperless_mobile/features/documents/view/widgets/items/document_grid_item.dart';
@@ -9,6 +8,8 @@ import 'package:paperless_mobile/features/documents/view/widgets/items/document_
 import 'package:paperless_mobile/features/documents/view/widgets/placeholder/document_grid_loading_widget.dart';
 import 'package:paperless_mobile/features/documents/view/widgets/placeholder/documents_list_loading_widget.dart';
 import 'package:paperless_mobile/features/settings/model/view_type.dart';
+
+import '../../../../api/paperless_api.dart';
 
 abstract class AdaptiveDocumentsView extends StatelessWidget {
   final List<Document> documents;
@@ -45,7 +46,7 @@ abstract class AdaptiveDocumentsView extends StatelessWidget {
   });
 
   AdaptiveDocumentsView.fromPagedState(
-    InfiniteQueryStatus<PaginatedDocumentList, int> queryState, {
+    InfiniteQueryStatus<PaginatedResultList<Document>, int> queryState, {
     super.key,
     this.onSelected,
     this.onTap,

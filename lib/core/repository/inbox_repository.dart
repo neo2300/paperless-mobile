@@ -6,7 +6,7 @@ import 'package:paperless_mobile/core/repository/tag_repository.dart';
 import 'package:paperless_mobile/features/logging/data/logger.dart';
 
 class InboxData {
-  final InfiniteQueryData<PaginatedDocumentList, int> documents;
+  final InfiniteQueryData<PaginatedResultList<Document>, int> documents;
   final List<Tag> inboxTags;
 
   List<Document> get flattened =>
@@ -73,13 +73,13 @@ class InboxRepository {
     );
   }
 
-  InfiniteQuery<PaginatedDocumentList, int> get inboxDocumentsQuery {
+  InfiniteQuery<PaginatedResultList<Document>, int> get inboxDocumentsQuery {
     return InfiniteQuery(
       key: 'inbox',
       queryFn: (page) async {
         final inboxTags = await inboxTagsQuery.fetch();
         if (inboxTags.data?.isEmpty ?? true) {
-          return PaginatedDocumentList(count: 0, results: []);
+          return PaginatedResultList(count: 0, results: []);
         }
         final filter = DocumentFilter(
           page: page,
@@ -187,18 +187,18 @@ class InboxRepository {
       },
       onSuccess: (res, arg) {
         final query = CachedQuery.instance
-            .getQuery<InfiniteQuery<PaginatedDocumentList, int>>(
+            .getQuery<InfiniteQuery<PaginatedResultList<Document>, int>>(
               'inbox_documents',
             );
         if (query?.state.data == null) {
           return;
         }
         query!.update((oldData) {
-          return InfiniteQueryData<PaginatedDocumentList, int>(
+          return InfiniteQueryData<PaginatedResultList<Document>, int>(
             args: oldData!.args,
             pages: oldData.pages
                 .map(
-                  (page) => PaginatedDocumentList(
+                  (page) => PaginatedResultList<Document>(
                     count: page.count - 1,
                     next: page.next,
                     previous: page.previous,

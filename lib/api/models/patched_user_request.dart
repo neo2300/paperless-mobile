@@ -1,146 +1,37 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
-//
-
-// ignore_for_file: unused_element
-import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'package:equatable/src/equatable_utils.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:paperless_mobile/api/utils/patched_value.dart';
 
+part 'patched_user_request.freezed.dart';
 part 'patched_user_request.g.dart';
 
-@CopyWith()
-@JsonSerializable(
-  checked: true,
-  createToJson: true,
-  disallowUnrecognizedKeys: false,
-  explicitToJson: true,
-)
-class PatchedUserRequest {
-  /// Returns a new [PatchedUserRequest] instance.
-  PatchedUserRequest({
-    this.username,
+@Freezed(toJson: true, fromJson: false)
+abstract class PatchedUserRequest with _$PatchedUserRequest {
+  factory PatchedUserRequest({
+    /// Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+    Option<String?>? username,
+    Option<String?>? email,
+    Option<String?>? password,
+    Option<String?>? firstName,
+    Option<String?>? lastName,
+    Option<DateTime?>? dateJoined,
 
-    this.email,
+    /// Designates whether the user can log into this admin site.
+    Option<bool?>? isStaff,
 
-    this.password,
+    /// Designates whether this user should be treated as active. Unselect this instead of deleting accounts.
+    Option<bool?>? isActive,
 
-    this.firstName,
+    /// Designates that this user has all permissions without explicitly assigning them.
+    Option<bool?>? isSuperuser,
 
-    this.lastName,
-
-    this.dateJoined,
-
-    this.isStaff,
-
-    this.isActive,
-
-    this.isSuperuser,
-
-    this.groups,
-
-    this.userPermissions,
-  });
-
-  /// Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
-  @JsonKey(name: r'username', includeIfNull: false)
-  final Option<String?>? username;
-
-  @JsonKey(name: r'email', includeIfNull: false)
-  final Option<String?>? email;
-
-  @JsonKey(name: r'password', includeIfNull: false)
-  final Option<String?>? password;
-
-  @JsonKey(name: r'first_name', includeIfNull: false)
-  final Option<String?>? firstName;
-
-  @JsonKey(name: r'last_name', includeIfNull: false)
-  final Option<String?>? lastName;
-
-  @JsonKey(name: r'date_joined', includeIfNull: false)
-  final Option<DateTime?>? dateJoined;
-
-  /// Designates whether the user can log into this admin site.
-  @JsonKey(name: r'is_staff', includeIfNull: false)
-  final Option<bool?>? isStaff;
-
-  /// Designates whether this user should be treated as active. Unselect this instead of deleting accounts.
-  @JsonKey(name: r'is_active', includeIfNull: false)
-  final Option<bool?>? isActive;
-
-  /// Designates that this user has all permissions without explicitly assigning them.
-  @JsonKey(name: r'is_superuser', includeIfNull: false)
-  final Option<bool?>? isSuperuser;
-
-  /// The groups this user belongs to. A user will get all permissions granted to each of their groups.
-  @JsonKey(name: r'groups', includeIfNull: false)
-  final Option<List<int>?>? groups;
-
-  @JsonKey(name: r'user_permissions', includeIfNull: false)
-  final Option<List<String>?>? userPermissions;
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        other is PatchedUserRequest &&
-            runtimeType == other.runtimeType &&
-            equals(
-              [
-                username,
-                email,
-                password,
-                firstName,
-                lastName,
-                dateJoined,
-                isStaff,
-                isActive,
-                isSuperuser,
-                groups,
-                userPermissions,
-              ],
-              [
-                other.username,
-                other.email,
-                other.password,
-                other.firstName,
-                other.lastName,
-                other.dateJoined,
-                other.isStaff,
-                other.isActive,
-                other.isSuperuser,
-                other.groups,
-                other.userPermissions,
-              ],
-            );
-  }
+    /// The groups this user belongs to. A user will get all permissions granted to each of their groups.
+    Option<List<int>?>? groups,
+    Option<List<String>?>? userPermissions,
+  }) = _PatchedUserRequest;
 
   @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      mapPropsToHashCode([
-        username,
-        email,
-        password,
-        firstName,
-        lastName,
-        dateJoined,
-        isStaff,
-        isActive,
-        isSuperuser,
-        groups,
-        userPermissions,
-      ]);
-
-  factory PatchedUserRequest.fromJson(Map<String, dynamic> json) =>
-      _$PatchedUserRequestFromJson(json);
-
-  Map<String, dynamic> toJson() =>
-      processPatchedValueJson(_$PatchedUserRequestToJson(this));
-
-  @override
-  String toString() {
-    return toJson().toString();
-  }
+  Map<String, dynamic> toJson() => processPatchedValueJson(
+    _$PatchedUserRequestToJson(this as _PatchedUserRequest),
+  );
 }

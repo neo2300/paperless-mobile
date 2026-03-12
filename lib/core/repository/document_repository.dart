@@ -32,13 +32,13 @@ class DocumentRepository with ChangeNotifierMixin {
   /// Gets an infinite query for documents with optional filtering.
   /// [key] is the unique key for the query, e.g. the screen where the query is executed.
   /// [filter] is an optional DocumentFilter to apply.
-  InfiniteQuery<PaginatedDocumentList, int> getAllQuery({
+  InfiniteQuery<PaginatedResultList<Document>, int> getAllQuery({
     DocumentFilter? filter,
     String? overrideKey,
   }) {
     // Page is always set to 1 to ensure it does not alter the cache key.
     final queryKey = queryKeyForFilter(filter, overrideKey);
-    return InfiniteQuery<PaginatedDocumentList, int>(
+    return InfiniteQuery<PaginatedResultList<Document>, int>(
       key: queryKey,
       queryFn: (page) async {
         try {
@@ -254,11 +254,11 @@ class DocumentRepository with ChangeNotifierMixin {
     );
   }
 
-  InfiniteQuery<PaginatedLogEntryList, int> getLogsQuery(
+  InfiniteQuery<PaginatedResultList<LogEntry>, int> getLogsQuery(
     int id, {
     int? pageSize,
   }) {
-    return InfiniteQuery<PaginatedLogEntryList, int>(
+    return InfiniteQuery<PaginatedResultList<LogEntry>, int>(
       key: 'document_logs/$id',
       queryFn: (page) async {
         return _api.getLogs(id, page: page, pageSize: pageSize);

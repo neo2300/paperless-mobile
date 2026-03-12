@@ -7,7 +7,6 @@ part 'application_configuration_request.g.dart';
 @Freezed(toJson: true, fromJson: false)
 abstract class ApplicationConfigurationRequest
     with _$ApplicationConfigurationRequest {
-  /// Returns a new [ApplicationConfigurationRequest] instance.
   factory ApplicationConfigurationRequest({
     Object? userArgs,
     Object? barcodeTagMapping,

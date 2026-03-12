@@ -20,13 +20,17 @@ abstract class PaperlessDocumentsApi {
     int? archiveSerialNumber,
     void Function(double progress)? onProgressChanged,
   });
-  Future<PaginatedDocumentList> getAll([DocumentFilter? options]);
+  Future<PaginatedResultList<Document>> getAll([DocumentFilter? options]);
   Future<Document> get(int id, {List<String>? fields});
   Future<Document> put(int id, DocumentRequest document);
   Future<Document> patch(int id, PatchedDocumentRequest document);
   Future<void> delete(int id);
   Future<Metadata> getMetaData(int id);
-  Future<PaginatedLogEntryList> getLogs(int id, {int? page, int? pageSize});
+  Future<PaginatedResultList<LogEntry>> getLogs(
+    int id, {
+    int? page,
+    int? pageSize,
+  });
   Future<List<Note>> getNotes(int id, {int? page, int? pageSize});
   Future<List<Note>> addNote(int documentId, String note);
   Future<List<Note>> deleteNote(int documentId, int noteId);
@@ -141,14 +145,19 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
   }
 
   @override
-  Future<PaginatedDocumentList> getAll([DocumentFilter? options]) async {
+  Future<PaginatedResultList<Document>> getAll([
+    DocumentFilter? options,
+  ]) async {
     final filterParams = options?.toQueryParameters() ?? {}
       ..putIfAbsent('truncate_content', () => "true");
     try {
       return client.get("/api/documents/", queryParameters: filterParams).then((
         response,
       ) {
-        return PaginatedDocumentList.fromJson(response.data);
+        return PaginatedResultList<Document>.fromJson(
+          response.data,
+          (arg) => Document.fromJson(arg),
+        );
       });
     } on DioException catch (exception) {
       throw exception.unravel(
@@ -370,7 +379,7 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
   }
 
   @override
-  Future<PaginatedLogEntryList> getLogs(
+  Future<PaginatedResultList<LogEntry>> getLogs(
     int id, {
     int? page,
     int? pageSize,
@@ -380,7 +389,10 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
         "/api/documents/$id/logs/",
         queryParameters: {'page': page, 'page_size': pageSize},
       );
-      return PaginatedLogEntryList.fromJson(response.data);
+      return PaginatedResultList.fromJson(
+        response.data,
+        (json) => LogEntry.fromJson(json),
+      );
     } on DioException catch (exception) {
       throw exception.unravel(orElse: const PaperlessApiException.unknown());
     }

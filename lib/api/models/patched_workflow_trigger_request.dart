@@ -1,205 +1,59 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
-//
-
-// ignore_for_file: unused_element
 import 'package:fpdart/fpdart.dart';
-import 'package:paperless_mobile/api/models/workflow_trigger_matching_algorithm_enum.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:paperless_mobile/api/models/schedule_date_field_enum.dart';
-import 'package:paperless_mobile/api/models/workflow_trigger_type_enum.dart';
 import 'package:paperless_mobile/api/models/sources_enum.dart';
-import 'package:copy_with_extension/copy_with_extension.dart';
-import 'package:json_annotation/json_annotation.dart';
-import 'package:equatable/src/equatable_utils.dart';
+import 'package:paperless_mobile/api/models/workflow_trigger_matching_algorithm_enum.dart';
+import 'package:paperless_mobile/api/models/workflow_trigger_type_enum.dart';
 import 'package:paperless_mobile/api/utils/patched_value.dart';
 
+part 'patched_workflow_trigger_request.freezed.dart';
 part 'patched_workflow_trigger_request.g.dart';
 
-@CopyWith()
-@JsonSerializable(
-  checked: true,
-  createToJson: true,
-  disallowUnrecognizedKeys: false,
-  explicitToJson: true,
-)
-class PatchedWorkflowTriggerRequest {
-  /// Returns a new [PatchedWorkflowTriggerRequest] instance.
-  PatchedWorkflowTriggerRequest({
-    this.id,
+@Freezed(toJson: true, fromJson: false)
+abstract class PatchedWorkflowTriggerRequest
+    with _$PatchedWorkflowTriggerRequest {
+  factory PatchedWorkflowTriggerRequest({
+    Option<int?>? id,
+    Option<List<SourcesEnum>?>? sources,
+    Option<WorkflowTriggerTypeEnum?>? type,
 
-    this.sources,
+    /// Only consume documents with a path that matches this if specified. Wildcards specified as * are allowed. Case insensitive.
+    Option<String?>? filterPath,
 
-    this.type,
+    /// Only consume documents which entirely match this filename if specified. Wildcards such as *.pdf or *invoice* are allowed. Case insensitive.
+    Option<String?>? filterFilename,
+    Option<int?>? filterMailrule,
+    // minimum: 0.0
+    // maximum: 2.147483647E9
+    Option<WorkflowTriggerMatchingAlgorithmEnum?>? matchingAlgorithm,
+    Option<String?>? match,
+    Option<bool?>? isInsensitive,
+    Option<List<int>?>? filterHasTags,
+    Option<int?>? filterHasCorrespondent,
+    Option<int?>? filterHasDocumentType,
 
-    this.filterPath,
+    /// The number of days to offset the schedule trigger by.
+    // minimum: -2147483648
+    // maximum: 2147483647
+    Option<int?>? scheduleOffsetDays,
 
-    this.filterFilename,
+    /// If the schedule should be recurring.
+    Option<bool?>? scheduleIsRecurring,
 
-    this.filterMailrule,
+    /// The number of days between recurring schedule triggers.
+    // minimum: 1
+    // maximum: 2147483647
+    Option<int?>? scheduleRecurringIntervalDays,
 
-    this.matchingAlgorithm,
-
-    this.match,
-
-    this.isInsensitive,
-
-    this.filterHasTags,
-
-    this.filterHasCorrespondent,
-
-    this.filterHasDocumentType,
-
-    this.scheduleOffsetDays,
-
-    this.scheduleIsRecurring,
-
-    this.scheduleRecurringIntervalDays,
-
-    this.scheduleDateField,
-
-    this.scheduleDateCustomField,
-  });
-
-  @JsonKey(name: r'id', includeIfNull: false)
-  final Option<int?>? id;
-
-  @JsonKey(name: r'sources', includeIfNull: false)
-  final Option<List<SourcesEnum>?>? sources;
-
-  @JsonKey(name: r'type', includeIfNull: false)
-  final Option<WorkflowTriggerTypeEnum?>? type;
-
-  /// Only consume documents with a path that matches this if specified. Wildcards specified as * are allowed. Case insensitive.
-  @JsonKey(name: r'filter_path', includeIfNull: false)
-  final Option<String?>? filterPath;
-
-  /// Only consume documents which entirely match this filename if specified. Wildcards such as *.pdf or *invoice* are allowed. Case insensitive.
-  @JsonKey(name: r'filter_filename', includeIfNull: false)
-  final Option<String?>? filterFilename;
-  @JsonKey(name: r'filter_mailrule', includeIfNull: false)
-  final Option<int?>? filterMailrule;
-
-  // minimum: 0.0
-  // maximum: 2.147483647E9
-  @JsonKey(name: r'matching_algorithm', includeIfNull: false)
-  final Option<WorkflowTriggerMatchingAlgorithmEnum?>? matchingAlgorithm;
-
-  @JsonKey(name: r'match', includeIfNull: false)
-  final Option<String?>? match;
-
-  @JsonKey(name: r'is_insensitive', includeIfNull: false)
-  final Option<bool?>? isInsensitive;
-
-  @JsonKey(name: r'filter_has_tags', includeIfNull: false)
-  final Option<List<int>?>? filterHasTags;
-
-  @JsonKey(name: r'filter_has_correspondent', includeIfNull: false)
-  final Option<int?>? filterHasCorrespondent;
-
-  @JsonKey(name: r'filter_has_document_type', includeIfNull: false)
-  final Option<int?>? filterHasDocumentType;
-
-  /// The number of days to offset the schedule trigger by.
-  // minimum: -2147483648
-  // maximum: 2147483647
-  @JsonKey(name: r'schedule_offset_days', includeIfNull: false)
-  final Option<int?>? scheduleOffsetDays;
-
-  /// If the schedule should be recurring.
-  @JsonKey(name: r'schedule_is_recurring', includeIfNull: false)
-  final Option<bool?>? scheduleIsRecurring;
-
-  /// The number of days between recurring schedule triggers.
-  // minimum: 1
-  // maximum: 2147483647
-  @JsonKey(name: r'schedule_recurring_interval_days', includeIfNull: false)
-  final Option<int?>? scheduleRecurringIntervalDays;
-
-  /// The field to check for a schedule trigger.  * `added` - Added * `created` - Created * `modified` - Modified * `custom_field` - Custom Field
-  @JsonKey(name: r'schedule_date_field', includeIfNull: false)
-  final Option<ScheduleDateFieldEnum?>? scheduleDateField;
-
-  @JsonKey(name: r'schedule_date_custom_field', includeIfNull: false)
-  final Option<int?>? scheduleDateCustomField;
+    /// The field to check for a schedule trigger.  * `added` - Added * `created` - Created * `modified` - Modified * `custom_field` - Custom Field
+    Option<ScheduleDateFieldEnum?>? scheduleDateField,
+    Option<int?>? scheduleDateCustomField,
+  }) = _PatchedWorkflowTriggerRequest;
 
   @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        other is PatchedWorkflowTriggerRequest &&
-            runtimeType == other.runtimeType &&
-            equals(
-              [
-                id,
-                sources,
-                type,
-                filterPath,
-                filterFilename,
-                filterMailrule,
-                matchingAlgorithm,
-                match,
-                isInsensitive,
-                filterHasTags,
-                filterHasCorrespondent,
-                filterHasDocumentType,
-                scheduleOffsetDays,
-                scheduleIsRecurring,
-                scheduleRecurringIntervalDays,
-                scheduleDateField,
-                scheduleDateCustomField,
-              ],
-              [
-                other.id,
-                other.sources,
-                other.type,
-                other.filterPath,
-                other.filterFilename,
-                other.filterMailrule,
-                other.matchingAlgorithm,
-                other.match,
-                other.isInsensitive,
-                other.filterHasTags,
-                other.filterHasCorrespondent,
-                other.filterHasDocumentType,
-                other.scheduleOffsetDays,
-                other.scheduleIsRecurring,
-                other.scheduleRecurringIntervalDays,
-                other.scheduleDateField,
-                other.scheduleDateCustomField,
-              ],
-            );
-  }
-
-  @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      mapPropsToHashCode([
-        id,
-        sources,
-        type,
-        filterPath,
-        filterFilename,
-        filterMailrule,
-        matchingAlgorithm,
-        match,
-        isInsensitive,
-        filterHasTags,
-        filterHasCorrespondent,
-        filterHasDocumentType,
-        scheduleOffsetDays,
-        scheduleIsRecurring,
-        scheduleRecurringIntervalDays,
-        scheduleDateField,
-        scheduleDateCustomField,
-      ]);
-
-  factory PatchedWorkflowTriggerRequest.fromJson(Map<String, dynamic> json) =>
-      _$PatchedWorkflowTriggerRequestFromJson(json);
-
-  Map<String, dynamic> toJson() =>
-      processPatchedValueJson(_$PatchedWorkflowTriggerRequestToJson(this));
-
-  @override
-  String toString() {
-    return toJson().toString();
-  }
+  Map<String, dynamic> toJson() => processPatchedValueJson(
+    _$PatchedWorkflowTriggerRequestToJson(
+      this as _PatchedWorkflowTriggerRequest,
+    ),
+  );
 }

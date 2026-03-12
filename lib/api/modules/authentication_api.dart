@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:paperless_mobile/api/models/paperless_auth_token.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
 
 abstract class PaperlessAuthenticationApi {

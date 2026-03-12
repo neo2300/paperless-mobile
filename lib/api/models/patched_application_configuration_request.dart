@@ -1,280 +1,62 @@
-//
-// AUTO-GENERATED FILE, DO NOT MODIFY!
-//
-
-import 'package:copy_with_extension/copy_with_extension.dart';
-import 'package:dio/dio.dart';
-import 'package:equatable/src/equatable_utils.dart';
 import 'package:fpdart/fpdart.dart';
-import 'package:json_annotation/json_annotation.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:paperless_mobile/api/models/color_conversion_strategy_enum.dart';
 import 'package:paperless_mobile/api/models/mode_enum.dart';
 import 'package:paperless_mobile/api/models/output_type_enum.dart';
-// ignore_for_file: unused_element
 import 'package:paperless_mobile/api/models/skip_archive_file_enum.dart';
 import 'package:paperless_mobile/api/models/unpaper_clean_enum.dart';
 import 'package:paperless_mobile/api/utils/patched_value.dart';
 
+part 'patched_application_configuration_request.freezed.dart';
 part 'patched_application_configuration_request.g.dart';
 
-@CopyWith()
-@JsonSerializable(
-  checked: true,
-  createToJson: true,
-  disallowUnrecognizedKeys: false,
-  explicitToJson: true,
-)
-class PatchedApplicationConfigurationRequest {
-  /// Returns a new [PatchedApplicationConfigurationRequest] instance.
-  PatchedApplicationConfigurationRequest({
-    this.userArgs,
-
-    this.barcodeTagMapping,
-
-    this.outputType,
-
-    this.pages,
-
-    this.language,
-
-    this.mode,
-
-    this.skipArchiveFile,
-
-    this.imageDpi,
-
-    this.unpaperClean,
-
-    this.deskew,
-
-    this.rotatePages,
-
-    this.rotatePagesThreshold,
-
-    this.maxImagePixels,
-
-    this.colorConversionStrategy,
-
-    this.appTitle,
-
-    this.appLogo,
-
-    this.barcodesEnabled,
-
-    this.barcodeEnableTiffSupport,
-
-    this.barcodeString,
-
-    this.barcodeRetainSplitPages,
-
-    this.barcodeEnableAsn,
-
-    this.barcodeAsnPrefix,
-
-    this.barcodeUpscale,
-
-    this.barcodeDpi,
-
-    this.barcodeMaxPages,
-
-    this.barcodeEnableTag,
-  });
-
-  @JsonKey(name: r'user_args', includeIfNull: false)
-  final Option<Object?>? userArgs;
-
-  @JsonKey(name: r'barcode_tag_mapping', includeIfNull: false)
-  final Option<Object?>? barcodeTagMapping;
-
-  @JsonKey(name: r'output_type', includeIfNull: false)
-  final Option<OutputTypeEnum?>? outputType;
-
-  // minimum: 1
-  // maximum: 2147483647
-  @JsonKey(name: r'pages', includeIfNull: false)
-  final Option<int?>? pages;
-
-  @JsonKey(name: r'language', includeIfNull: false)
-  final Option<String?>? language;
-
-  @JsonKey(name: r'mode', includeIfNull: false)
-  final Option<ModeEnum?>? mode;
-
-  @JsonKey(name: r'skip_archive_file', includeIfNull: false)
-  final Option<SkipArchiveFileEnum?>? skipArchiveFile;
-
-  // minimum: 1
-  // maximum: 2147483647
-  @JsonKey(name: r'image_dpi', includeIfNull: false)
-  final Option<int?>? imageDpi;
-
-  @JsonKey(name: r'unpaper_clean', includeIfNull: false)
-  final Option<UnpaperCleanEnum?>? unpaperClean;
-
-  @JsonKey(name: r'deskew', includeIfNull: false)
-  final Option<bool?>? deskew;
-
-  @JsonKey(name: r'rotate_pages', includeIfNull: false)
-  final Option<bool?>? rotatePages;
-
-  // minimum: 0.0
-  @JsonKey(name: r'rotate_pages_threshold', includeIfNull: false)
-  final Option<double?>? rotatePagesThreshold;
-
-  // minimum: 0.0
-  @JsonKey(name: r'max_image_pixels', includeIfNull: false)
-  final Option<double?>? maxImagePixels;
-  @JsonKey(name: r'color_conversion_strategy', includeIfNull: false)
-  final Option<ColorConversionStrategyEnum?>? colorConversionStrategy;
-
-  @JsonKey(name: r'app_title', includeIfNull: false)
-  final Option<String?>? appTitle;
-
-  @JsonKey(includeFromJson: false, includeToJson: false)
-  final Option<MultipartFile?>? appLogo;
-
-  @JsonKey(name: r'barcodes_enabled', includeIfNull: false)
-  final Option<bool?>? barcodesEnabled;
-
-  @JsonKey(name: r'barcode_enable_tiff_support', includeIfNull: false)
-  final Option<bool?>? barcodeEnableTiffSupport;
-
-  @JsonKey(name: r'barcode_string', includeIfNull: false)
-  final Option<String?>? barcodeString;
-
-  @JsonKey(name: r'barcode_retain_split_pages', includeIfNull: false)
-  final Option<bool?>? barcodeRetainSplitPages;
-
-  @JsonKey(name: r'barcode_enable_asn', includeIfNull: false)
-  final Option<bool?>? barcodeEnableAsn;
-
-  @JsonKey(name: r'barcode_asn_prefix', includeIfNull: false)
-  final Option<String?>? barcodeAsnPrefix;
-
-  // minimum: 1.0
-  @JsonKey(name: r'barcode_upscale', includeIfNull: false)
-  final Option<double?>? barcodeUpscale;
-
-  // minimum: 1
-  // maximum: 2147483647
-  @JsonKey(name: r'barcode_dpi', includeIfNull: false)
-  final Option<int?>? barcodeDpi;
-
-  // minimum: 1
-  // maximum: 2147483647
-  @JsonKey(name: r'barcode_max_pages', includeIfNull: false)
-  final Option<int?>? barcodeMaxPages;
-
-  @JsonKey(name: r'barcode_enable_tag', includeIfNull: false)
-  final Option<bool?>? barcodeEnableTag;
-
-  @override
-  bool operator ==(Object other) {
-    return identical(this, other) ||
-        other is PatchedApplicationConfigurationRequest &&
-            runtimeType == other.runtimeType &&
-            equals(
-              [
-                userArgs,
-                barcodeTagMapping,
-                outputType,
-                pages,
-                language,
-                mode,
-                skipArchiveFile,
-                imageDpi,
-                unpaperClean,
-                deskew,
-                rotatePages,
-                rotatePagesThreshold,
-                maxImagePixels,
-                colorConversionStrategy,
-                appTitle,
-                appLogo,
-                barcodesEnabled,
-                barcodeEnableTiffSupport,
-                barcodeString,
-                barcodeRetainSplitPages,
-                barcodeEnableAsn,
-                barcodeAsnPrefix,
-                barcodeUpscale,
-                barcodeDpi,
-                barcodeMaxPages,
-                barcodeEnableTag,
-              ],
-              [
-                other.userArgs,
-                other.barcodeTagMapping,
-                other.outputType,
-                other.pages,
-                other.language,
-                other.mode,
-                other.skipArchiveFile,
-                other.imageDpi,
-                other.unpaperClean,
-                other.deskew,
-                other.rotatePages,
-                other.rotatePagesThreshold,
-                other.maxImagePixels,
-                other.colorConversionStrategy,
-                other.appTitle,
-                other.appLogo,
-                other.barcodesEnabled,
-                other.barcodeEnableTiffSupport,
-                other.barcodeString,
-                other.barcodeRetainSplitPages,
-                other.barcodeEnableAsn,
-                other.barcodeAsnPrefix,
-                other.barcodeUpscale,
-                other.barcodeDpi,
-                other.barcodeMaxPages,
-                other.barcodeEnableTag,
-              ],
-            );
-  }
-
-  @override
-  int get hashCode =>
-      runtimeType.hashCode ^
-      mapPropsToHashCode([
-        userArgs,
-        barcodeTagMapping,
-        outputType,
-        pages,
-        language,
-        mode,
-        skipArchiveFile,
-        imageDpi,
-        unpaperClean,
-        deskew,
-        rotatePages,
-        rotatePagesThreshold,
-        maxImagePixels,
-        colorConversionStrategy,
-        appTitle,
-        appLogo,
-        barcodesEnabled,
-        barcodeEnableTiffSupport,
-        barcodeString,
-        barcodeRetainSplitPages,
-        barcodeEnableAsn,
-        barcodeAsnPrefix,
-        barcodeUpscale,
-        barcodeDpi,
-        barcodeMaxPages,
-        barcodeEnableTag,
-      ]);
-
-  factory PatchedApplicationConfigurationRequest.fromJson(
-    Map<String, dynamic> json,
-  ) => _$PatchedApplicationConfigurationRequestFromJson(json);
+@Freezed(toJson: true, fromJson: false)
+abstract class PatchedApplicationConfigurationRequest
+    with _$PatchedApplicationConfigurationRequest {
+  factory PatchedApplicationConfigurationRequest({
+    Option<Object?>? userArgs,
+    Option<Object?>? barcodeTagMapping,
+    Option<OutputTypeEnum?>? outputType,
+    // minimum: 1
+    // maximum: 2147483647
+    Option<int?>? pages,
+    Option<String?>? language,
+    Option<ModeEnum?>? mode,
+    Option<SkipArchiveFileEnum?>? skipArchiveFile,
+    // minimum: 1
+    // maximum: 2147483647
+    Option<int?>? imageDpi,
+    Option<UnpaperCleanEnum?>? unpaperClean,
+    Option<bool?>? deskew,
+    Option<bool?>? rotatePages,
+    // minimum: 0.0
+    Option<double?>? rotatePagesThreshold,
+    // minimum: 0.0
+    Option<double?>? maxImagePixels,
+    Option<ColorConversionStrategyEnum?>? colorConversionStrategy,
+    Option<String?>? appTitle,
+    // @JsonKey(includeToJson: false)
+    // Option<MultipartFile?>? appLogo,
+    Option<bool?>? barcodesEnabled,
+    Option<bool?>? barcodeEnableTiffSupport,
+    Option<String?>? barcodeString,
+    Option<bool?>? barcodeRetainSplitPages,
+    Option<bool?>? barcodeEnableAsn,
+    Option<String?>? barcodeAsnPrefix,
+    // minimum: 1.0
+    Option<double?>? barcodeUpscale,
+    // minimum: 1
+    // maximum: 2147483647
+    Option<int?>? barcodeDpi,
+    // minimum: 1
+    // maximum: 2147483647
+    Option<int?>? barcodeMaxPages,
+    Option<bool?>? barcodeEnableTag,
+  }) = _PatchedApplicationConfigurationRequest;
 
   Map<String, dynamic> toJson() => processPatchedValueJson(
-    _$PatchedApplicationConfigurationRequestToJson(this),
+    _$PatchedApplicationConfigurationRequestToJson(
+      this as _PatchedApplicationConfigurationRequest,
+    ),
   );
-
-  @override
-  String toString() {
-    return toJson().toString();
-  }
 }

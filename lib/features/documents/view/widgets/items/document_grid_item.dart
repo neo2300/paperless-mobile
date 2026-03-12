@@ -27,7 +27,6 @@ class DocumentGridItem extends DocumentItem {
 
   @override
   Widget build(BuildContext context) {
-    var currentUser = context.loggedInUser$.paperlessUser;
     return Stack(
       children: [
         Card(

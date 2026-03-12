@@ -77,7 +77,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
     final notifier = context.read<PendingTasksNotifier>();
     final tasks = notifier.value;
     final finishedTasks = tasks.values.where(
-      (element) => element.status == StatusEnum.SUCCESS,
+      (element) => element.status == StatusEnum.success,
     );
     if (finishedTasks.isNotEmpty) {
       showSnackBar(
