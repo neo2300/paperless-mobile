@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:paperless_mobile/api/extensions/profile_extension.dart';
-import 'package:paperless_mobile/core/extensions/context_extensions.dart';
 import 'package:paperless_mobile/core/store/slices/local_user_account.dart';
 
 class UserAvatar extends StatelessWidget {

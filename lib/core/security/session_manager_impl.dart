@@ -50,7 +50,7 @@ class SessionManagerImpl extends ValueNotifier<Dio> implements SessionManager {
       DioHttpErrorInterceptor(),
       DioOfflineInterceptor(),
       RetryOnConnectionChangeInterceptor(dio: dio),
-      PrettyDioLogger(),
+      PrettyDioLogger(requestBody: false, responseBody: false, compact: true),
     ]);
     return dio;
   }

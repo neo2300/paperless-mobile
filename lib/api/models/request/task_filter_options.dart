@@ -9,7 +9,6 @@ part 'task_filter_options.g.dart';
 
 @CopyWith()
 @JsonSerializable(
-  checked: true,
   createFactory: false,
   explicitToJson: true,
   includeIfNull: false,

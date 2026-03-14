@@ -40,7 +40,6 @@ sealed class PatchedLabelRequest {
 
 @CopyWith()
 @JsonSerializable(
-  checked: true,
   createToJson: true,
   explicitToJson: true,
   createFactory: false,
@@ -62,7 +61,6 @@ class PatchedCorrespondentRequest extends PatchedLabelRequest {
 
 @CopyWith()
 @JsonSerializable(
-  checked: true,
   createToJson: true,
   explicitToJson: true,
   createFactory: false,
@@ -94,7 +92,6 @@ class PatchedTagRequest extends PatchedLabelRequest {
 
 @CopyWith()
 @JsonSerializable(
-  checked: true,
   createToJson: true,
   explicitToJson: true,
   createFactory: false,
@@ -117,7 +114,6 @@ class PatchedDocumentTypeRequest extends PatchedLabelRequest {
 
 @CopyWith()
 @JsonSerializable(
-  checked: true,
   createToJson: true,
   explicitToJson: true,
   createFactory: false,
