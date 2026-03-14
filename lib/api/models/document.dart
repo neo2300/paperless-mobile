@@ -35,7 +35,7 @@ abstract class Document with _$Document {
     bool? userCanChange,
     bool? isSharedByRequester,
     required List<Note> notes,
-    List<CustomFieldInstance>? customFields,
+    @Default([]) List<CustomFieldInstance>? customFields,
     required int? pageCount,
     required String mimeType,
   }) = _Document;

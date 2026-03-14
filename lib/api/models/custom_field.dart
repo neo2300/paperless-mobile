@@ -13,7 +13,7 @@ abstract class CustomField with _$CustomField {
 
     /// Extra data for the custom field, such as select options
     Object? extraData,
-    required int documentCount,
+    @Default(0) int documentCount,
   }) = _CustomField;
 
   factory CustomField.fromJson(Map<String, dynamic> json) =>

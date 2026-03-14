@@ -38,6 +38,7 @@ abstract class DocumentFilter with _$DocumentFilter {
     int? moreLike,
     int? selectedView,
     List<String>? fields,
+    List<int>? documentIds,
   }) = _DocumentFilter;
 
   bool get forceExtendedQuery {
@@ -68,7 +69,9 @@ abstract class DocumentFilter with _$DocumentFilter {
       if (sortField != null)
         MapEntry('ordering', '${sortOrder.queryString}${sortField!.value}'),
       if (moreLike != null) MapEntry('more_like_id', moreLike),
-      if (fields != null) MapEntry('fields', fields),
+      if (fields?.isNotEmpty ?? false) MapEntry('fields', fields!.join(",")),
+      if (documentIds?.isNotEmpty ?? false)
+        MapEntry('id__in', documentIds!.join(",")),
     ];
 
     // Reverse ordering can also be encoded using &reverse=1

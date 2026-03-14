@@ -76,6 +76,15 @@ extension UserPermissionExtension on UiSettingsView {
   bool get canCreateSavedViews =>
       hasPermission(PermissionAction.add, PermissionTarget.savedView);
 
+  bool get canViewCustomFields =>
+      hasPermission(PermissionAction.view, PermissionTarget.customField);
+  bool get canEditCustomFields =>
+      hasPermission(PermissionAction.change, PermissionTarget.customField);
+  bool get canDeleteCustomFields =>
+      hasPermission(PermissionAction.delete, PermissionTarget.customField);
+  bool get canCreateCustomFields =>
+      hasPermission(PermissionAction.add, PermissionTarget.customField);
+
   bool get canViewAnyLabel =>
       canViewCorrespondents ||
       canViewDocumentTypes ||

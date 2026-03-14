@@ -25,6 +25,9 @@
   "@addCorrespondent": {
     "description": "Title when adding a new correspondent"
   },
+  "addCustomField": "Neues benutzerdefiniertes Feld",
+  "@addCustomField": {},
+  "addCustomFieldToDocument": "Benutzerdefiniertes Feld hinzufügen",
   "addDocumentType": "Neuer Dokumenttyp",
   "@addDocumentType": {
     "description": "Title when adding a new document type"
@@ -34,6 +37,8 @@
   "additionalHeaders": "Zusätzliche Header",
   "addNewCorrespondent": "Neuen Korrespondenten erstellen",
   "@addNewCorrespondent": {},
+  "addNewCustomField": "Neues benutzerdefiniertes Feld hinzufügen",
+  "@addNewCustomField": {},
   "addNewDocumentType": "Neuen Dokumenten-Typ erstellen",
   "@addNewDocumentType": {},
   "addNewStoragePath": "Neuen Speicherpfad erstellen",
@@ -373,6 +378,56 @@
   "@createsASavedViewBasedOnTheCurrentFilterCriteria": {},
   "createViewsToQuicklyFilterYourDocuments": "Lege Ansichten an, um Dokumente schneller zu finden.",
   "@createViewsToQuicklyFilterYourDocuments": {},
+  "customFieldCreatedSuccessfully": "Benutzerdefiniertes Feld erfolgreich erstellt.",
+  "@customFieldCreatedSuccessfully": {},
+  "customFieldDataType": "Datentyp",
+  "@customFieldDataType": {},
+  "customFieldDeletedSuccessfully": "Benutzerdefiniertes Feld wurde erfolgreich gelöscht.",
+  "@customFieldDeletedSuccessfully": {},
+  "customFieldMonetaryDefaultCurrencyHelperText": "Gebe optional deine Standardwährung (z. B. USD, EUR, GBP) an",
+  "@customFieldMonetaryDefaultCurrencyHelperText": {
+    "description": "Helper text for the default currency field in a custom monetary field"
+  },
+  "customFieldMonetaryDefaultCurrencyHintText": "Nutze den Standard-ISO-Währungscode deiner Region (USD, EUR, GBP, ...)",
+  "@customFieldMonetaryDefaultCurrencyHintText": {
+    "description": "Hint text for the default currency field in a custom monetary field"
+  },
+  "customFieldMonetaryDefaultCurrencyLabel": "Standardwährung",
+  "@customFieldMonetaryDefaultCurrencyLabel": {
+    "description": "Label for the default currency field in a custom monetary field"
+  },
+  "customFieldName": "Name",
+  "@customFieldName": {},
+  "customFields": "Benutzerdefinierte Felder",
+  "@customFields": {},
+  "customFieldSelectAddOption": "Option hinzufügen",
+  "@customFieldSelectAddOption": {
+    "description": "Label for the button to add a new option to a custom field with select data type"
+  },
+  "customFieldSelectOptionHintText": "Option {index}",
+  "@customFieldSelectOptionHintText": {
+    "description": "Hint text for the text field to add or edit an option of a custom field with select data type",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "customFieldSelectOptions": "Optionen",
+  "@customFieldSelectOptions": {
+    "description": "Label shown above the options of a custom field with select data type"
+  },
+  "customFieldTypeBoolean": "Wahrheitswert",
+  "customFieldTypeDate": "Date",
+  "customFieldTypeDocumentLink": "Document Link",
+  "customFieldTypeFloat": "Float",
+  "customFieldTypeInteger": "Integer",
+  "customFieldTypeMonetary": "Currency",
+  "customFieldTypeSelect": "Select",
+  "customFieldTypeText": "Text",
+  "customFieldTypeUrl": "URL",
+  "customFieldUpdatedSuccessfully": "Custom field updated successfully.",
+  "@customFieldUpdatedSuccessfully": {},
   "dark": "Dunkel",
   "@dark": {},
   "darkTheme": "Dunkler Modus",
@@ -409,6 +464,8 @@
   "@delete": {},
   "deleteAllScans": "Alle scans löschen",
   "@deleteAllScans": {},
+  "deleteCustomFieldWarningText": "This custom field contains references to other documents. By deleting this label, all references will be removed. Continue?",
+  "@deleteCustomFieldWarningText": {},
   "deleteDocument": "Dokument löschen",
   "@deleteDocument": {
     "description": "Used as an action label on each inbox item"
@@ -508,6 +565,8 @@
   "@dynamicColorScheme": {},
   "edit": "Bearbeiten",
   "@edit": {},
+  "editCustomField": "Edit Custom Field",
+  "@editCustomField": {},
   "editDocument": "Dokument Bearbeiten",
   "@editDocument": {},
   "editDocumentTooltip": "Bearbeiten",
@@ -758,6 +817,8 @@
   "@noAppToDisplayPDFFilesFound": {},
   "noCorrespondentsSetUp": "Es wurden noch keine Korrespondenten angelegt.",
   "@noCorrespondentsSetUp": {},
+  "noCustomFieldsSetUp": "You don't seem to have any custom fields set up.",
+  "@noCustomFieldsSetUp": {},
   "noDocumentsFound": "Keine Dokumente gefunden.",
   "@noDocumentsFound": {
     "description": "Message shown when no documents were found."
@@ -935,6 +996,7 @@
   "@scrollToTop": {},
   "search": "Suche",
   "@search": {},
+  "searchCustomFields": "Search custom fields",
   "searchDocuments": "Durchsuche Dokumente",
   "@searchDocuments": {},
   "security": "Sicherheit",

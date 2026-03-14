@@ -17,6 +17,7 @@ abstract class AdaptiveDocumentsView extends StatelessWidget {
   final bool hasLoaded;
   final bool enableHeroAnimation;
   final List<int> selectedDocumentIds;
+  final List<int> disabledIds;
   final ViewType viewType;
   final void Function(Document)? onTap;
   final void Function(Document)? onSelected;
@@ -31,6 +32,7 @@ abstract class AdaptiveDocumentsView extends StatelessWidget {
   const AdaptiveDocumentsView({
     super.key,
     this.selectedDocumentIds = const [],
+    this.disabledIds = const [],
     required this.documents,
     this.onTap,
     this.onSelected,
@@ -58,6 +60,7 @@ abstract class AdaptiveDocumentsView extends StatelessWidget {
     this.enableHeroAnimation = true,
     this.viewType = ViewType.list,
     this.selectedDocumentIds = const [],
+    this.disabledIds = const [],
   }) : documents =
            queryState.data?.pages.expand((p) => p.results).toList() ?? [],
        isLoading = queryState.isLoading,
@@ -76,6 +79,7 @@ class SliverAdaptiveDocumentsView extends AdaptiveDocumentsView {
     super.onTagSelected,
     super.onTap,
     super.selectedDocumentIds,
+    super.disabledIds,
     super.viewType,
     super.enableHeroAnimation,
     required super.isLoading,
@@ -109,6 +113,7 @@ class SliverAdaptiveDocumentsView extends AdaptiveDocumentsView {
           document: document,
           onTap: onTap,
           isSelected: selectedDocumentIds.contains(document.id),
+          isEnabled: !disabledIds.contains(document.id),
           onSelected: onSelected,
           isSelectionActive: selectedDocumentIds.isNotEmpty,
           onTagSelected: onTagSelected,
@@ -137,6 +142,7 @@ class SliverAdaptiveDocumentsView extends AdaptiveDocumentsView {
           document: document,
           onTap: onTap,
           isSelected: selectedDocumentIds.contains(document.id),
+          isEnabled: !disabledIds.contains(document.id),
           onSelected: onSelected,
           isSelectionActive: selectedDocumentIds.isNotEmpty,
           onTagSelected: onTagSelected,
@@ -167,6 +173,7 @@ class SliverAdaptiveDocumentsView extends AdaptiveDocumentsView {
           document: document,
           onTap: onTap,
           isSelected: selectedDocumentIds.contains(document.id),
+          isEnabled: !disabledIds.contains(document.id),
           onSelected: onSelected,
           isSelectionActive: selectedDocumentIds.isNotEmpty,
           isLabelClickable: isLabelClickable,
@@ -197,6 +204,7 @@ class DefaultAdaptiveDocumentsView extends AdaptiveDocumentsView {
     super.onTap,
     this.scrollController,
     super.selectedDocumentIds,
+    super.disabledIds,
     super.viewType,
     super.enableHeroAnimation = true,
   });
@@ -230,6 +238,7 @@ class DefaultAdaptiveDocumentsView extends AdaptiveDocumentsView {
           document: document,
           onTap: onTap,
           isSelected: selectedDocumentIds.contains(document.id),
+          isEnabled: !disabledIds.contains(document.id),
           onSelected: onSelected,
           isSelectionActive: selectedDocumentIds.isNotEmpty,
           onTagSelected: onTagSelected,
@@ -260,6 +269,7 @@ class DefaultAdaptiveDocumentsView extends AdaptiveDocumentsView {
           document: document,
           onTap: onTap,
           isSelected: selectedDocumentIds.contains(document.id),
+          isEnabled: !disabledIds.contains(document.id),
           onSelected: onSelected,
           isSelectionActive: selectedDocumentIds.isNotEmpty,
           onTagSelected: onTagSelected,
@@ -293,6 +303,7 @@ class DefaultAdaptiveDocumentsView extends AdaptiveDocumentsView {
           document: document,
           onTap: onTap,
           isSelected: selectedDocumentIds.contains(document.id),
+          isEnabled: !disabledIds.contains(document.id),
           onSelected: onSelected,
           isSelectionActive: selectedDocumentIds.isNotEmpty,
           isLabelClickable: isLabelClickable,

@@ -25,6 +25,9 @@
   "@addCorrespondent": {
     "description": "Title when adding a new correspondent"
   },
+  "addCustomField": "New Custom Field",
+  "@addCustomField": {},
+  "addCustomFieldToDocument": "Add custom field",
   "addDocumentType": "Novi tip dokumenta",
   "@addDocumentType": {
     "description": "Title when adding a new document type"
@@ -34,6 +37,8 @@
   "additionalHeaders": "Dodatne glave",
   "addNewCorrespondent": "Dodaj novega dopisnika",
   "@addNewCorrespondent": {},
+  "addNewCustomField": "Add new custom field",
+  "@addNewCustomField": {},
   "addNewDocumentType": "Dodaj nov tip dokumenta",
   "@addNewDocumentType": {},
   "addNewStoragePath": "Dodaj novo mesto shranjevanja",
@@ -86,9 +91,9 @@
   "@anyTag": {
     "description": "Label shown when any tag should be filtered"
   },
-  "apiKey": "API Key",
+  "apiKey": "API ključ",
   "@apiKey": {},
-  "apiKeyMustNotBeEmpty": "API Key must not be empty.",
+  "apiKeyMustNotBeEmpty": "API ključ ne sme biti prazen.",
   "@apiKeyMustNotBeEmpty": {},
   "appearance": "Videz",
   "@appearance": {},
@@ -321,7 +326,7 @@
     "description": "Message shown when the UI settings could not be loaded"
   },
   "couldNotLoadUser": "Uporabnika ni bilo mogoče naložiti, poskusite znova.",
-  "couldNotLoadUserProfile": "Could not load user profile, please try again.",
+  "couldNotLoadUserProfile": "Uporabniškega profila ni bilo mogoče naložiti, poskusite znova.",
   "@couldNotLoadUserProfile": {
     "description": "Message shown when the user profile could not be loaded from the server."
   },
@@ -373,6 +378,56 @@
   "@createsASavedViewBasedOnTheCurrentFilterCriteria": {},
   "createViewsToQuicklyFilterYourDocuments": "Ustvari poglede za hitrejše filtriranje dokumentov.",
   "@createViewsToQuicklyFilterYourDocuments": {},
+  "customFieldCreatedSuccessfully": "Custom field created successfully.",
+  "@customFieldCreatedSuccessfully": {},
+  "customFieldDataType": "Data Type",
+  "@customFieldDataType": {},
+  "customFieldDeletedSuccessfully": "Custom field deleted successfully.",
+  "@customFieldDeletedSuccessfully": {},
+  "customFieldMonetaryDefaultCurrencyHelperText": "Enter the default currency (e.g., USD, EUR, GBP)",
+  "@customFieldMonetaryDefaultCurrencyHelperText": {
+    "description": "Helper text for the default currency field in a custom monetary field"
+  },
+  "customFieldMonetaryDefaultCurrencyHintText": "Refer to the default ISO currency code of your region (USD, EUR, GBP, ...)",
+  "@customFieldMonetaryDefaultCurrencyHintText": {
+    "description": "Hint text for the default currency field in a custom monetary field"
+  },
+  "customFieldMonetaryDefaultCurrencyLabel": "Default Currency",
+  "@customFieldMonetaryDefaultCurrencyLabel": {
+    "description": "Label for the default currency field in a custom monetary field"
+  },
+  "customFieldName": "Field Name",
+  "@customFieldName": {},
+  "customFields": "Custom Fields",
+  "@customFields": {},
+  "customFieldSelectAddOption": "Add option",
+  "@customFieldSelectAddOption": {
+    "description": "Label for the button to add a new option to a custom field with select data type"
+  },
+  "customFieldSelectOptionHintText": "Option {index}",
+  "@customFieldSelectOptionHintText": {
+    "description": "Hint text for the text field to add or edit an option of a custom field with select data type",
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "customFieldSelectOptions": "Options",
+  "@customFieldSelectOptions": {
+    "description": "Label shown above the options of a custom field with select data type"
+  },
+  "customFieldTypeBoolean": "Boolean",
+  "customFieldTypeDate": "Date",
+  "customFieldTypeDocumentLink": "Document Link",
+  "customFieldTypeFloat": "Float",
+  "customFieldTypeInteger": "Integer",
+  "customFieldTypeMonetary": "Currency",
+  "customFieldTypeSelect": "Select",
+  "customFieldTypeText": "Text",
+  "customFieldTypeUrl": "URL",
+  "customFieldUpdatedSuccessfully": "Custom field updated successfully.",
+  "@customFieldUpdatedSuccessfully": {},
   "dark": "Temna",
   "@dark": {},
   "darkTheme": "Temna tema",
@@ -409,6 +464,8 @@
   "@delete": {},
   "deleteAllScans": "Izbriši vse skene",
   "@deleteAllScans": {},
+  "deleteCustomFieldWarningText": "This custom field contains references to other documents. By deleting this label, all references will be removed. Continue?",
+  "@deleteCustomFieldWarningText": {},
   "deleteDocument": "Izbriši dokument",
   "@deleteDocument": {
     "description": "Used as an action label on each inbox item"
@@ -508,6 +565,8 @@
   "@dynamicColorScheme": {},
   "edit": "Uredi",
   "@edit": {},
+  "editCustomField": "Edit Custom Field",
+  "@editCustomField": {},
   "editDocument": "Uredi dokument",
   "@editDocument": {},
   "editDocumentTooltip": "Uredi",
@@ -599,7 +658,7 @@
   "@incorrectOrMissingCertificatePassphrase": {},
   "invalidAddress": "Neveljaven naslov.",
   "@invalidAddress": {},
-  "invalidApiKey": "Invalid API key.",
+  "invalidApiKey": "Neveljaven API ključ.",
   "@invalidApiKey": {
     "description": "Message shown when the provided API key is invalid."
   },
@@ -758,6 +817,8 @@
   "@noAppToDisplayPDFFilesFound": {},
   "noCorrespondentsSetUp": "Ni nastavljenih dopisnikov.",
   "@noCorrespondentsSetUp": {},
+  "noCustomFieldsSetUp": "You don't seem to have any custom fields set up.",
+  "@noCustomFieldsSetUp": {},
   "noDocumentsFound": "Ni najdenih dokumentov.",
   "@noDocumentsFound": {
     "description": "Message shown when no documents were found."
@@ -848,7 +909,7 @@
   "@permissions": {},
   "persistingUserInformation": "Trajanje uporabniških podatkov...",
   "@persistingUserInformation": {},
-  "pleaseProvideCredentialsOrApiKey": "Please provide either username & password or an API key.",
+  "pleaseProvideCredentialsOrApiKey": "Prosimo, navedite uporabniško ime in geslo ali API ključ.",
   "@pleaseProvideCredentialsOrApiKey": {},
   "prepareDocument": "Pripravi dokument",
   "@prepareDocument": {},
@@ -886,9 +947,9 @@
   "@removeFromSearchHistory": {},
   "removeQueryFromSearchHistory": "Izbriši iz zgodovine iskanja?",
   "@removeQueryFromSearchHistory": {},
-  "removeUser": "Remove user",
+  "removeUser": "Odstrani uporabnika",
   "@removeUser": {},
-  "removeUserAndLogOut": "Remove user and log out",
+  "removeUserAndLogOut": "Odstrani uporabnika in se odjavi",
   "@removeUserAndLogOut": {},
   "report": "POROČILO",
   "@report": {},
@@ -935,6 +996,7 @@
   "@scrollToTop": {},
   "search": "Iskanje",
   "@search": {},
+  "searchCustomFields": "Search custom fields",
   "searchDocuments": "Preišči dokumente",
   "@searchDocuments": {},
   "security": "Varnost",

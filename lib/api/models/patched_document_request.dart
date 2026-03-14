@@ -29,7 +29,7 @@ abstract class PatchedDocumentRequest with _$PatchedDocumentRequest {
     PatchedValue<int?>? archiveSerialNumber,
     PatchedValue<int?>? owner,
     CorrespondentRequestSetPermissions? setPermissions,
-    List<CustomFieldInstanceRequest>? customFields,
+    PatchedValue<List<CustomFieldInstanceRequest>?>? customFields,
     @Default(false) bool? removeInboxTags,
   }) = _PatchedDocumentRequest;
 
