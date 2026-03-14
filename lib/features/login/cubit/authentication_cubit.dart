@@ -2,6 +2,7 @@ import 'package:cached_query_flutter/cached_query_flutter.dart';
 import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
 import 'package:paperless_mobile/constants.dart';
@@ -47,7 +48,7 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
     this._serverStatsApi,
   ) : super(const Unauthenticated());
 
-  Future<void> setActiveUser({
+  Future<void> addUser({
     required String serverUrl,
     required String token,
     ClientCertificate? clientCertificate,
@@ -63,23 +64,19 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
         _sessionManager,
       );
 
-      // Mark logged in user as currently active user.
       final localUserId = _buildLocalUserId(userProfile, serverUrl);
-      final redactedId = redactUserId(localUserId);
-
       _store.setLoggedInAppUserId(localUserId);
-
       emit(Authenticated(localUserId: localUserId));
       logger.fd(
-        'User $redactedId successfully logged in.',
+        'User ${redactUserId(localUserId)} successfully logged in.',
         className: runtimeType.toString(),
-        methodName: 'login',
+        methodName: 'addUser',
       );
     } catch (error, stackTrace) {
       logger.fe(
-        "An error occurred while fetching the remote paperless user.",
+        "Failed to add user.",
         className: runtimeType.toString(),
-        methodName: '_addUser',
+        methodName: 'addUser',
         error: error,
         stackTrace: stackTrace,
       );
@@ -91,297 +88,291 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
           error: error,
         ),
       );
-      return;
     }
   }
 
   /// Switches to another account if it exists.
   Future<void> switchAccount(String localUserId) async {
     emit(const SwitchingAccounts());
-    await FileService.instance.initialize();
-
     final redactedId = redactUserId(localUserId);
-    logger.fd(
-      'Trying to switch to user $redactedId...',
-      className: runtimeType.toString(),
-      methodName: 'switchAccount',
-    );
 
-    if (!_store.state.localUserData.containsKey(localUserId)) {
-      logger.fw(
-        'User $redactedId not yet registered. '
-        'This should never be the case! But here we are...',
-        className: runtimeType.toString(),
-        methodName: 'switchAccount',
-      );
-      return;
-    }
-    final localUserData = _store.state.localUserData[localUserId]!;
+    try {
+      await FileService.instance.initialize();
 
-    if (localUserData.isBiometricAuthenticationEnabled) {
-      final authenticated = await _localAuthService.authenticateLocalUser(
-        "Authenticate to switch your account.",
-      );
-      if (!authenticated) {
+      if (!_store.state.localUserData.containsKey(localUserId)) {
         logger.fw(
-          "User could not be authenticated.",
+          'User $redactedId not registered.',
           className: runtimeType.toString(),
           methodName: 'switchAccount',
         );
-        emit(VerifyingIdentity(userId: localUserId));
+        emit(const Unauthenticated(redirectToAccountSelection: true));
         return;
       }
-    }
-    final currentlyLoggedInUser = _store.state.loggedInAppUserId;
-    if (currentlyLoggedInUser != localUserId) {
-      await _notificationService.cancelUserNotifications(localUserId);
-    }
+      final localUserData = _store.state.localUserData[localUserId]!;
 
-    final credentialsExist = await _encryptedLocalStore.contains(localUserId);
-    if (!credentialsExist) {
-      logger.fw(
-        "Invalid authentication for $redactedId - credentials not found.",
+      if (localUserData.isBiometricAuthenticationEnabled) {
+        final authenticated = await _localAuthService.authenticateLocalUser(
+          "Authenticate to switch your account.",
+        );
+        if (!authenticated) {
+          emit(VerifyingIdentity(userId: localUserId));
+          return;
+        }
+      }
+
+      final currentlyLoggedInUser = _store.state.loggedInAppUserId;
+      if (currentlyLoggedInUser != localUserId) {
+        await _notificationService.cancelUserNotifications(localUserId);
+      }
+
+      final credentialsExist = await _encryptedLocalStore.contains(localUserId);
+      if (!credentialsExist) {
+        logger.fw(
+          "Credentials not found for $redactedId.",
+          className: runtimeType.toString(),
+          methodName: 'switchAccount',
+        );
+        emit(const Unauthenticated(redirectToAccountSelection: true));
+        return;
+      }
+      final decryptedState = (await _encryptedLocalStore.read(localUserId))!;
+
+      await _resetExternalState();
+      _sessionManager.updateSettings(
+        authToken: decryptedState.credentials.token,
+        clientCertificate: decryptedState.credentials.clientCertificate,
+        additionalHeaders: decryptedState.credentials.additionalHeaders,
+        baseUrl: localUserData.localUser.serverUrl,
+        broadcast: false,
+      );
+
+      _store.setLoggedInAppUserId(localUserId);
+
+      final isPaperlessServerReachable =
+          await _connectivityService.isPaperlessServerReachable(
+            localUserData.localUser.serverUrl,
+            decryptedState.credentials.clientCertificate,
+            decryptedState.credentials.additionalHeaders,
+          ) ==
+          ReachabilityStatus.reachable;
+
+      if (isPaperlessServerReachable) {
+        final apiVersion = await _getApiVersion(_sessionManager.client);
+        await _updateRemoteUser(
+          localUserId,
+          _sessionManager,
+          localUserData.localUser,
+          apiVersion,
+        );
+      } else {
+        logger.fw(
+          'Server not reachable during account switch for $redactedId.',
+          className: runtimeType.toString(),
+          methodName: 'switchAccount',
+        );
+        emit(
+          ConnectionFailure(
+            serverUrl: localUserData.localUser.serverUrl,
+            username: localUserData.localUser.profile.uiSettings.user.username,
+          ),
+        );
+        return;
+      }
+
+      emit(Authenticated(localUserId: localUserId));
+      logger.fd(
+        'Switched to user $redactedId.',
         className: runtimeType.toString(),
         methodName: 'switchAccount',
       );
-      return;
+    } catch (error, stackTrace) {
+      logger.fe(
+        "Failed to switch to account $redactedId.",
+        className: runtimeType.toString(),
+        methodName: 'switchAccount',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      emit(const Unauthenticated(redirectToAccountSelection: true));
     }
-
-    final decryptedState = (await _encryptedLocalStore.read(localUserId))!;
-
-    await _resetExternalState();
-    _sessionManager.updateSettings(
-      authToken: decryptedState.credentials.token,
-      clientCertificate: decryptedState.credentials.clientCertificate,
-      additionalHeaders: decryptedState.credentials.additionalHeaders,
-      baseUrl: localUserData.localUser.serverUrl,
-      broadcast: false,
-    );
-
-    _store.setLoggedInAppUserId(localUserId);
-
-    final apiVersion = await _getApiVersion(_sessionManager.client);
-
-    await _updateRemoteUser(
-      localUserId,
-      _sessionManager,
-      localUserData.localUser,
-      apiVersion,
-    );
-
-    emit(Authenticated(localUserId: localUserId));
   }
 
   Future<void> removeAccount(String userId) async {
-    final redactedId = redactUserId(userId);
-    logger.fd(
-      "Trying to remove account $redactedId...",
-      className: runtimeType.toString(),
-      methodName: 'removeAccount',
-    );
-    _store.removeUserData(userId);
-    await _encryptedLocalStore.clear(userId);
-    await FileService.instance.clearUserData(userId: userId);
-    if (_store.state.localUserData.keys.isEmpty) {
-      emit(Unauthenticated(redirectToAccountSelection: false));
+    try {
+      _store.removeUserData(userId);
+      await _encryptedLocalStore.clear(userId);
+      await FileService.instance.clearUserData(userId: userId);
+      if (_store.state.localUserData.keys.isEmpty) {
+        emit(const Unauthenticated(redirectToAccountSelection: false));
+      }
+    } catch (error, stackTrace) {
+      logger.fe(
+        "Failed to remove account ${redactUserId(userId)}.",
+        className: runtimeType.toString(),
+        methodName: 'removeAccount',
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
-  ///
   /// Restores the previous session if exists.
-  ///
   Future<void> restoreSession([String? userId]) async {
     emit(const RestoringSession());
-    logger.fd(
-      "Trying to restore previous session...",
-      className: runtimeType.toString(),
-      methodName: 'restoreSession',
-    );
-    final globalSettings = _store.state.globalSettings;
     final restoreSessionUserId = userId ?? _store.state.loggedInAppUserId;
-    // final localUserId = globalSettings.loggedInUserId;
+
     if (restoreSessionUserId == null ||
         !_store.state.localUserData.containsKey(restoreSessionUserId)) {
       logger.fd(
-        "There is nothing to restore.",
+        "No session to restore.",
         className: runtimeType.toString(),
         methodName: 'restoreSession',
       );
       final otherAccountsExist = _store.state.localUserData.isNotEmpty;
-      // If there is nothing to restore, we can quit here.
       emit(Unauthenticated(redirectToAccountSelection: otherAccountsExist));
       return;
     }
-    final localUserData = _store.state.localUserData[restoreSessionUserId]!;
-    if (localUserData.isBiometricAuthenticationEnabled) {
-      logger.fd(
-        "Verifying user identity...",
-        className: runtimeType.toString(),
-        methodName: 'restoreSession',
+
+    try {
+      final globalSettings = _store.state.globalSettings;
+      final localUserData = _store.state.localUserData[restoreSessionUserId]!;
+
+      if (localUserData.isBiometricAuthenticationEnabled) {
+        final authenticationMessage = (await S.delegate.load(
+          Locale(globalSettings.preferredLocaleSubtag),
+        )).verifyYourIdentity;
+        final localAuthSuccess = await _localAuthService.authenticateLocalUser(
+          authenticationMessage,
+        );
+        if (!localAuthSuccess) {
+          emit(VerifyingIdentity(userId: restoreSessionUserId));
+          return;
+        }
+      }
+
+      final decryptedState = await _encryptedLocalStore.read(
+        restoreSessionUserId,
       );
-      final authenticationMesage = (await S.delegate.load(
-        Locale(globalSettings.preferredLocaleSubtag),
-      )).verifyYourIdentity;
-      final localAuthSuccess = await _localAuthService.authenticateLocalUser(
-        authenticationMesage,
-      );
-      if (!localAuthSuccess) {
-        logger.fw(
-          "Identity could not be verified.",
+      if (decryptedState == null) {
+        logger.fe(
+          "Credentials not found for ${redactUserId(restoreSessionUserId)}.",
           className: runtimeType.toString(),
           methodName: 'restoreSession',
         );
-        emit(VerifyingIdentity(userId: restoreSessionUserId));
+        final otherAccountsExist = _store.state.localUserData.length > 1;
+        emit(Unauthenticated(redirectToAccountSelection: otherAccountsExist));
         return;
       }
+
+      _sessionManager.updateSettings(
+        clientCertificate: decryptedState.credentials.clientCertificate,
+        additionalHeaders: decryptedState.credentials.additionalHeaders,
+        authToken: decryptedState.credentials.token,
+        baseUrl: localUserData.localUser.serverUrl,
+        broadcast: false,
+      );
+
+      final isPaperlessServerReachable =
+          await _connectivityService.isPaperlessServerReachable(
+            localUserData.localUser.serverUrl,
+            decryptedState.credentials.clientCertificate,
+            decryptedState.credentials.additionalHeaders,
+          ) ==
+          ReachabilityStatus.reachable;
+
+      if (isPaperlessServerReachable) {
+        final apiVersion = await _getApiVersion(_sessionManager.client);
+        await _updateRemoteUser(
+          restoreSessionUserId,
+          _sessionManager,
+          localUserData.localUser,
+          apiVersion,
+        );
+      } else {
+        emit(
+          ConnectionFailure(
+            serverUrl: localUserData.localUser.serverUrl,
+            username: localUserData.localUser.profile.uiSettings.user.username,
+          ),
+        );
+        return;
+      }
+
+      _store.setLoggedInAppUserId(restoreSessionUserId);
+      emit(Authenticated(localUserId: restoreSessionUserId));
       logger.fd(
-        "Identity successfully verified.",
+        "Session restored for ${redactUserId(restoreSessionUserId)}.",
         className: runtimeType.toString(),
         methodName: 'restoreSession',
       );
-    }
-    logger.fd(
-      "Reading encrypted credentials...",
-      className: runtimeType.toString(),
-      methodName: 'restoreSession',
-    );
-    final decryptedState = await _encryptedLocalStore.read(
-      restoreSessionUserId,
-    );
-
-    if (decryptedState == null) {
+    } catch (error, stackTrace) {
       logger.fe(
-        "Credentials could not be read!",
+        "Failed to restore session.",
         className: runtimeType.toString(),
         methodName: 'restoreSession',
+        error: error,
+        stackTrace: stackTrace,
       );
-      throw Exception(
-        "User should be authenticated but no authentication information was found.",
-      );
-    }
-    logger.fd(
-      "Credentials successfully retrieved.",
-      className: runtimeType.toString(),
-      methodName: 'restoreSession',
-    );
-
-    logger.fd(
-      "Updating security context...",
-      className: runtimeType.toString(),
-      methodName: 'restoreSession',
-    );
-
-    _sessionManager.updateSettings(
-      clientCertificate: decryptedState.credentials.clientCertificate,
-      additionalHeaders: decryptedState.credentials.additionalHeaders,
-      authToken: decryptedState.credentials.token,
-      baseUrl: localUserData.localUser.serverUrl,
-      broadcast: false,
-    );
-    logger.fd(
-      "Security context successfully updated.",
-      className: runtimeType.toString(),
-      methodName: 'restoreSession',
-    );
-    final isPaperlessServerReachable =
-        await _connectivityService.isPaperlessServerReachable(
-          localUserData.localUser.serverUrl,
-          decryptedState.credentials.clientCertificate,
-          decryptedState.credentials.additionalHeaders,
-        ) ==
-        ReachabilityStatus.reachable;
-    logger.fd(
-      "Trying to update remote paperless user...",
-      className: runtimeType.toString(),
-      methodName: 'restoreSession',
-    );
-    if (isPaperlessServerReachable) {
-      final apiVersion = await _getApiVersion(_sessionManager.client);
-      await _updateRemoteUser(
-        restoreSessionUserId,
-        _sessionManager,
-        localUserData.localUser,
-        apiVersion,
-      );
-      logger.fd(
-        "Successfully updated remote paperless user.",
-        className: runtimeType.toString(),
-        methodName: 'restoreSession',
-      );
-    } else {
-      return emit(
+      emit(
         ConnectionFailure(
-          serverUrl: localUserData.localUser.serverUrl,
-          username: localUserData.localUser.profile.uiSettings.user.username,
+          serverUrl: _store
+              .state
+              .localUserData[restoreSessionUserId]!
+              .localUser
+              .serverUrl,
+          username: _store
+              .state
+              .localUserData[restoreSessionUserId]!
+              .localUser
+              .profile
+              .uiSettings
+              .user
+              .username,
         ),
       );
     }
-    _store.setLoggedInAppUserId(restoreSessionUserId);
-    emit(Authenticated(localUserId: restoreSessionUserId));
-
-    logger.fd(
-      "Previous session successfully restored.",
-      className: runtimeType.toString(),
-      methodName: 'restoreSession',
-    );
   }
 
   Future<void> logout([bool shouldRemoveAccount = false]) async {
     emit(const LoggingOutState());
     final userId = _store.state.loggedInAppUserId!;
-    final redactedId = redactUserId(userId);
 
-    logger.fd(
-      "Logging out $redactedId...",
-      className: runtimeType.toString(),
-      methodName: 'logout',
-    );
-    await _resetExternalState();
-    CachedQuery.instance.deleteCache();
+    try {
+      await _resetExternalState();
+      CachedQuery.instance.deleteCache();
+      await _notificationService.cancelUserNotifications(userId);
 
-    await _notificationService.cancelUserNotifications(userId);
+      final otherAccountsExist = _store.state.localUserData.keys.length > 1;
 
-    final otherAccountsExist = _store.state.localUserData.keys.length > 1;
+      if (shouldRemoveAccount) {
+        await removeAccount(userId);
+      }
 
-    emit(Unauthenticated(redirectToAccountSelection: otherAccountsExist));
-
-    if (shouldRemoveAccount) {
-      await removeAccount(userId);
+      _store.setLoggedInAppUserId(null);
+      emit(Unauthenticated(redirectToAccountSelection: otherAccountsExist));
+      logger.fd(
+        "User ${redactUserId(userId)} logged out.",
+        className: runtimeType.toString(),
+        methodName: 'logout',
+      );
+    } catch (error, stackTrace) {
+      logger.fe(
+        "Error during logout.",
+        className: runtimeType.toString(),
+        methodName: 'logout',
+        error: error,
+        stackTrace: stackTrace,
+      );
+      // Even on error, ensure user is logged out to avoid stuck state.
+      _store.setLoggedInAppUserId(null);
+      emit(const Unauthenticated());
     }
-
-    _store.setLoggedInAppUserId(null);
-
-    logger.fd(
-      "User successfully logged out.",
-      className: runtimeType.toString(),
-      methodName: 'logout',
-    );
   }
 
   Future<void> _resetExternalState() async {
-    logger.fd(
-      "Resetting security context...",
-      className: runtimeType.toString(),
-      methodName: '_resetExternalState',
-    );
     _sessionManager.resetSettings();
-    logger.fd(
-      "Security context reset.",
-      className: runtimeType.toString(),
-      methodName: '_resetExternalState',
-    );
-    logger.fd(
-      "Clearing local state...",
-      className: runtimeType.toString(),
-      methodName: '_resetExternalState',
-    );
     await HydratedBloc.storage.clear();
     CachedQuery.instance.deleteCache(deleteStorage: true);
-    logger.fd(
-      "Local state cleard.",
-      className: runtimeType.toString(),
-      methodName: '_resetExternalState',
-    );
   }
 
   ///
@@ -405,35 +396,12 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
 
     final userProfile = await _getUserProfile();
     final localUserId = _buildLocalUserId(userProfile, serverUrl);
-    final redactedId = redactUserId(localUserId);
-
-    logger.fd(
-      "Adding new user $redactedId..",
-      className: runtimeType.toString(),
-      methodName: '_addUser',
-    );
 
     if (_store.state.localUserData.containsKey(localUserId)) {
-      logger.fw(
-        "The user $redactedId already exists.",
-        className: runtimeType.toString(),
-        methodName: '_addUser',
-      );
       throw InfoMessageException(code: ErrorCode.userAlreadyExists);
     }
 
     final apiVersion = await _getApiVersion(sessionManager.client);
-    logger.fd(
-      "Trying to fetch remote paperless user for $redactedId.",
-      className: runtimeType.toString(),
-      methodName: '_addUser',
-    );
-
-    logger.fd(
-      "Persisting user data...",
-      className: runtimeType.toString(),
-      methodName: '_addUser',
-    );
 
     _store.setUserData(
       localUserId,
@@ -448,18 +416,6 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       ),
     );
 
-    logger.fd(
-      "User data successfully persisted.",
-      className: runtimeType.toString(),
-      methodName: '_addUser',
-    );
-
-    logger.fd(
-      "Saving user credentials inside encrypted storage...",
-      className: runtimeType.toString(),
-      methodName: '_addUser',
-    );
-
     _encryptedLocalStore.write(
       localUserId,
       EncryptedLocalStoreState(
@@ -469,11 +425,6 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
           additionalHeaders: additionalHeaders,
         ),
       ),
-    );
-    logger.fd(
-      "User credentials successfully saved.",
-      className: runtimeType.toString(),
-      methodName: '_addUser',
     );
 
     _store.updateGlobalSettings(
@@ -490,37 +441,21 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
 
   Future<int> _getApiVersion(
     Dio dio, {
-    Duration? timeout,
-    int defaultValue = 9,
+    int defaultValue = latestSupportedApiVersion,
   }) async {
-    logger.fd(
-      "Trying to fetch API version...",
-      className: runtimeType.toString(),
-      methodName: '_getApiVersion',
-    );
     try {
-      final response = await dio.head(
-        "/api/",
-        options: Options(sendTimeout: timeout),
-      );
+      final response = await dio.head("/api/remote_version/");
       int apiVersion = int.parse(
-        response.headers.value('x-api-version') ?? "9",
+        response.headers.value('x-api-version') ?? "$latestSupportedApiVersion",
       );
       if (apiVersion > latestSupportedApiVersion) {
         logger.fw(
-          "The server is running a newer API version ($apiVersion) than the app supports (v$latestSupportedApiVersion), falling back to latest supported version (v$latestSupportedApiVersion). "
-          "Warning: This might lead to unexpected behavior!",
+          "Server API version ($apiVersion) exceeds supported (v$latestSupportedApiVersion), falling back.",
           className: runtimeType.toString(),
           methodName: '_getApiVersion',
         );
         apiVersion = latestSupportedApiVersion;
       }
-      logger.fd(
-        "Successfully retrieved API version ($apiVersion).",
-        className: runtimeType.toString(),
-        methodName: '_getApiVersion',
-      );
-
       return apiVersion;
     } on DioException catch (_) {
       logger.fw(
@@ -532,18 +467,12 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
     }
   }
 
-  // Updates information about the current user in the local store.
   Future<void> _updateRemoteUser(
     String userId,
     SessionManager sessionManager,
     LocalUserAccount localUserAccount,
     int apiVersion,
   ) async {
-    logger.fd(
-      "Trying to update user information...",
-      className: runtimeType.toString(),
-      methodName: '_updateRemoteUser',
-    );
     final profile = await _getUserProfile();
     _store.updateUserData(
       userId,
@@ -553,11 +482,6 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
           apiVersion: apiVersion,
         ),
       ),
-    );
-    logger.fd(
-      "Successfully updated user information.",
-      className: runtimeType.toString(),
-      methodName: '_updateRemoteUser',
     );
   }
 

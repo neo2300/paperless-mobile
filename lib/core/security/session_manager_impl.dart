@@ -12,6 +12,7 @@ import 'package:paperless_mobile/core/interceptor/retry_on_connection_change_int
 import 'package:paperless_mobile/core/security/session_manager.dart';
 import 'package:paperless_mobile/features/login/model/client_certificate.dart';
 import 'package:paperless_mobile/features/login/server_connection/model/header_entry.dart';
+import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 /// Manages the security context, authentication and base request URL for
 /// an underlying [Dio] client which is injected into all services
@@ -34,8 +35,8 @@ class SessionManagerImpl extends ValueNotifier<Dio> implements SessionManager {
       ),
     );
     dio.options
-      ..receiveTimeout = const Duration(seconds: 30)
-      ..sendTimeout = const Duration(seconds: 60)
+      ..receiveTimeout = const Duration(seconds: 10)
+      ..sendTimeout = const Duration(seconds: 10)
       ..responseType = ResponseType.json;
     (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () =>
         HttpClient()
@@ -49,6 +50,7 @@ class SessionManagerImpl extends ValueNotifier<Dio> implements SessionManager {
       DioHttpErrorInterceptor(),
       DioOfflineInterceptor(),
       RetryOnConnectionChangeInterceptor(dio: dio),
+      PrettyDioLogger(),
     ]);
     return dio;
   }

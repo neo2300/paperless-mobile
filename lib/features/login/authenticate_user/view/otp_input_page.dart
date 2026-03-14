@@ -64,9 +64,9 @@ class _OtpInputPageState extends State<OtpInputPage> {
             _focusNode.requestFocus();
             break;
           case AuthenticateUserSuccess state:
-            SetActiveUserRoute(
+            AddUserRoute(
               serverUrl: state.serverUrl,
-              $extra: SetActiveUserRouteExtra(
+              $extra: AddUserRouteExtra(
                 token: state.token,
                 additionalHeaders: state.additionalHeaders,
                 clientCertificate: state.clientCertificate,

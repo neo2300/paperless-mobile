@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:paperless_mobile/core/global/os_error_codes.dart';
 import 'package:paperless_mobile/core/interceptor/server_reachability_error_interceptor.dart';
 import 'package:paperless_mobile/core/security/session_manager.dart';
@@ -92,11 +93,16 @@ class ConnectivityStatusServiceImpl implements ConnectivityStatusService {
             ..updateSettings(
               clientCertificate: clientCertificate,
               additionalHeaders: additionalHeaders,
-            )
-            ..client.options.connectTimeout = const Duration(seconds: 5)
-            ..client.options.receiveTimeout = const Duration(seconds: 5);
+            );
 
-      final response = await manager.client.get('$serverAddress/api/');
+      final response = await manager.client.get(
+        '$serverAddress/api/remote_version/',
+        options: Options(
+          receiveTimeout: 5.seconds,
+          sendTimeout: 5.seconds,
+          followRedirects: true,
+        ),
+      );
       if (response.statusCode == 200) {
         return ReachabilityStatus.reachable;
       }

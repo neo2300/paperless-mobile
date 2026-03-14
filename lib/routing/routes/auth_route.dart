@@ -12,7 +12,7 @@ import 'package:paperless_mobile/features/login/model/client_certificate.dart';
 import 'package:paperless_mobile/features/login/server_connection/cubit/server_connection_cubit.dart';
 import 'package:paperless_mobile/features/login/server_connection/model/header_entry.dart';
 import 'package:paperless_mobile/features/login/server_connection/view/server_connection_page.dart';
-import 'package:paperless_mobile/features/login/set_active_user/set_active_user_page.dart';
+import 'package:paperless_mobile/features/login/view/add_user_loading_page.dart';
 import 'package:paperless_mobile/features/login/view/select_account_page.dart';
 import 'package:paperless_mobile/features/login/view/verify_identity_page.dart';
 import 'package:paperless_mobile/features/login/view/widgets/login_transition_page.dart';
@@ -44,10 +44,7 @@ part 'auth_route.g.dart';
       path: 'select-account',
       name: R.loginToExistingAccount,
     ),
-    TypedGoRoute<SetActiveUserRoute>(
-      path: 'set-active-user',
-      name: R.setActiveUser,
-    ),
+    TypedGoRoute<AddUserRoute>(path: 'set-active-user', name: R.setActiveUser),
     // TypedGoRoute<AddAcc>(path: 'add-account', name: R.addAccount),
   ],
 )
@@ -81,12 +78,12 @@ class AuthRouteExtra {
   });
 }
 
-class SetActiveUserRouteExtra {
+class AddUserRouteExtra {
   final String token;
   final ClientCertificate? clientCertificate;
   final List<HeaderEntry>? additionalHeaders;
 
-  const SetActiveUserRouteExtra({
+  const AddUserRouteExtra({
     required this.token,
     this.clientCertificate,
     this.additionalHeaders,
@@ -171,15 +168,15 @@ class SwitchingAccountsRoute extends GoRouteData with $SwitchingAccountsRoute {
   }
 }
 
-class SetActiveUserRoute extends GoRouteData with $SetActiveUserRoute {
+class AddUserRoute extends GoRouteData with $AddUserRoute {
   final String serverUrl;
-  final SetActiveUserRouteExtra $extra;
+  final AddUserRouteExtra $extra;
 
-  SetActiveUserRoute({required this.serverUrl, required this.$extra});
+  AddUserRoute({required this.serverUrl, required this.$extra});
 
   @override
   Widget build(BuildContext context, GoRouterState state) {
-    return SetActiveUserPage(
+    return AddUserLoadingPage(
       serverUrl: serverUrl,
       token: $extra.token,
       clientCertificate: $extra.clientCertificate,

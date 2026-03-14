@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:paperless_mobile/api/constants/api_date_format.dart';
 import 'package:paperless_mobile/api/extensions/extensions.dart';
 import 'package:paperless_mobile/api/models/models.dart';
@@ -104,6 +105,7 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
       final response = await client.post<String>(
         '/api/documents/post_document/',
         data: formData,
+        options: Options(sendTimeout: 60.seconds),
         onSendProgress: (count, total) {
           onProgressChanged?.call(count.toDouble() / total.toDouble());
         },

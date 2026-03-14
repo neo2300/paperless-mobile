@@ -52,9 +52,9 @@ class _AuthenticateUserPageState extends State<AuthenticateUserPage> {
             :final token,
             :final additionalHeaders,
           ):
-            SetActiveUserRoute(
+            AddUserRoute(
               serverUrl: serverUrl,
-              $extra: SetActiveUserRouteExtra(
+              $extra: AddUserRouteExtra(
                 token: token,
                 additionalHeaders: additionalHeaders,
                 clientCertificate: clientCertificate,
