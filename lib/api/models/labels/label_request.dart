@@ -37,7 +37,7 @@ sealed class LabelRequest {
 }
 
 @CopyWith()
-@JsonSerializable(disallowUnrecognizedKeys: false, explicitToJson: true)
+@JsonSerializable(disallowUnrecognizedKeys: false)
 class CorrespondentRequest extends LabelRequest {
   CorrespondentRequest({
     required super.name,
@@ -55,7 +55,7 @@ class CorrespondentRequest extends LabelRequest {
 }
 
 @CopyWith()
-@JsonSerializable(disallowUnrecognizedKeys: false, explicitToJson: true)
+@JsonSerializable(disallowUnrecognizedKeys: false)
 class TagRequest extends LabelRequest {
   TagRequest({
     required super.name,
@@ -82,7 +82,7 @@ class TagRequest extends LabelRequest {
 }
 
 @CopyWith()
-@JsonSerializable(disallowUnrecognizedKeys: false, explicitToJson: true)
+@JsonSerializable(disallowUnrecognizedKeys: false)
 class DocumentTypeRequest extends LabelRequest {
   DocumentTypeRequest({
     required super.name,
@@ -100,7 +100,7 @@ class DocumentTypeRequest extends LabelRequest {
 }
 
 @CopyWith()
-@JsonSerializable(disallowUnrecognizedKeys: false, explicitToJson: true)
+@JsonSerializable(disallowUnrecognizedKeys: false)
 class StoragePathRequest extends LabelRequest {
   StoragePathRequest({
     required super.name,

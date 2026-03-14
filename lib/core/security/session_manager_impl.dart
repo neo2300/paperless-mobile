@@ -8,11 +8,11 @@ import 'package:paperless_mobile/api/paperless_api.dart';
 import 'package:paperless_mobile/core/interceptor/api_version_header.interceptor.dart';
 import 'package:paperless_mobile/core/interceptor/dio_offline_interceptor.dart';
 import 'package:paperless_mobile/core/interceptor/dio_unauthorized_interceptor.dart';
+import 'package:paperless_mobile/core/interceptor/persistent_logging_interceptor.dart';
 import 'package:paperless_mobile/core/interceptor/retry_on_connection_change_interceptor.dart';
 import 'package:paperless_mobile/core/security/session_manager.dart';
 import 'package:paperless_mobile/features/login/model/client_certificate.dart';
 import 'package:paperless_mobile/features/login/server_connection/model/header_entry.dart';
-import 'package:pretty_dio_logger/pretty_dio_logger.dart';
 
 /// Manages the security context, authentication and base request URL for
 /// an underlying [Dio] client which is injected into all services
@@ -50,7 +50,7 @@ class SessionManagerImpl extends ValueNotifier<Dio> implements SessionManager {
       DioHttpErrorInterceptor(),
       DioOfflineInterceptor(),
       RetryOnConnectionChangeInterceptor(dio: dio),
-      PrettyDioLogger(requestBody: false, responseBody: false, compact: true),
+      PersistentLoggingInterceptor(),
     ]);
     return dio;
   }

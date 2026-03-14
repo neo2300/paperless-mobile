@@ -443,18 +443,8 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
     int defaultValue = latestSupportedApiVersion,
   }) async {
     try {
-      final response = await dio.head("/api/remote_version/");
-      int apiVersion = int.parse(
-        response.headers.value('x-api-version') ?? "$latestSupportedApiVersion",
-      );
-      if (apiVersion > latestSupportedApiVersion) {
-        logger.fw(
-          "Server API version ($apiVersion) exceeds supported (v$latestSupportedApiVersion), falling back.",
-          className: runtimeType.toString(),
-          methodName: '_getApiVersion',
-        );
-        apiVersion = latestSupportedApiVersion;
-      }
+      final apiVersion = await _connectivityService
+          .getPaperlessServerApiVersion(dio.options.baseUrl);
       return apiVersion;
     } on DioException catch (_) {
       logger.fw(
