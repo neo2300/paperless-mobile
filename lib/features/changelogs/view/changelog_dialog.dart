@@ -54,6 +54,7 @@ class ChangelogDialog extends StatelessWidget {
 }
 
 const _versionNumbers = {
+  "6403": "4.3.0",
   "6203": "4.2.0-apikey-auth-rc1",
   "6103": "4.1.0",
   "6003": "4.0.6",
