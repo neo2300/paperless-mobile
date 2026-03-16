@@ -51,7 +51,9 @@ class ManageAccountsDialogContent extends StatelessWidget {
             Card(
               margin: EdgeInsets.zero,
               child: UserAccountListTile(
-                account: currentUser,
+                serverUrl: currentUser.serverUrl,
+                username: currentUser.profile.uiSettings.user.username,
+                displayName: currentUser.displayName,
                 trailing: IconButton(
                   tooltip: S.of(context)!.removeUserAndLogOut,
                   icon: const Icon(Icons.person_remove_outlined),
@@ -68,14 +70,16 @@ class ManageAccountsDialogContent extends StatelessWidget {
                 for (int index = 0; index < otherAccountIds.length; index++)
                   Builder(
                     builder: (context) {
-                      final user = accounts[otherAccountIds[index]]?.localUser;
+                      final user = accounts[otherAccountIds[index]];
                       if (user == null) {
                         return const SizedBox.shrink();
                       }
                       return Tooltip(
                         message: S.of(context)!.switchAccount,
                         child: UserAccountListTile(
-                          account: user,
+                          serverUrl: user.serverUrl,
+                          username: user.username,
+                          displayName: user.displayName,
                           onTap: () {
                             _onSwitchAccount(
                               context,

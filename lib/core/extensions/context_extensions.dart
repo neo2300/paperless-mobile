@@ -32,11 +32,6 @@ extension ContextExtensions on BuildContext {
 
   LocalUserData get loggedInUserData$ => localUserData$[loggedInAppUserId$]!;
   LocalUserData get loggedInUserData => localUserData[loggedInAppUserId]!;
-  LocalUserAccount get loggedInUser$ =>
-      localUserData$[loggedInAppUserId$]!.localUser;
-
-  LocalUserAccount get loggedInUser =>
-      localUserData[loggedInAppUserId]!.localUser;
 
   DocumentRepository get documentRepository => read<DocumentRepository>();
   SavedViewRepository get savedViewRepository => read<SavedViewRepository>();
@@ -61,8 +56,12 @@ extension ContextExtensions on BuildContext {
       .appState
       .currentDocumentFilter;
 
-  UiSettingsView get uiSettings$ => loggedInUser$.profile.uiSettings;
-  UiSettingsView get uiSettings => loggedInUser.profile.uiSettings;
+  LocalUserAccount get loggedInUser$ => watch<LocalUserAccount>();
+  LocalUserAccount get loggedInUser => read<LocalUserAccount>();
+
+  UiSettingsView get uiSettings$ =>
+      watch<LocalUserAccount>().profile.uiSettings;
+  UiSettingsView get uiSettings => read<LocalUserAccount>().profile.uiSettings;
 
   void refetchLabels() {
     tagRepository.getAllQuery().refetch();

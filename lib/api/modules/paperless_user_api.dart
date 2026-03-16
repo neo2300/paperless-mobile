@@ -9,6 +9,7 @@ abstract class PaperlessUserApi
   Future<User?> getCurrentUser();
   Future<String> deactivateTotp(int id);
   Future<Profile> getProfile();
+  Future<UiSettingsView> getUiSettings();
 }
 
 class PaperlessUserApiImpl extends PaperlessUserApi
@@ -87,6 +88,18 @@ class PaperlessUserApiImpl extends PaperlessUserApi
     } on DioException catch (exception) {
       throw exception.unravel(
         orElse: const PaperlessApiException(ErrorCode.profileGetError),
+      );
+    }
+  }
+
+  @override
+  Future<UiSettingsView> getUiSettings() async {
+    try {
+      final response = await client.get('/api/ui_settings/');
+      return UiSettingsView.fromJson(response.data!);
+    } on DioException catch (exception) {
+      throw exception.unravel(
+        orElse: const PaperlessApiException(ErrorCode.uiSettingsLoadFailed),
       );
     }
   }

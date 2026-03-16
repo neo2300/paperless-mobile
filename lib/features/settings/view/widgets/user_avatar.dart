@@ -1,25 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:paperless_mobile/api/extensions/profile_extension.dart';
-import 'package:paperless_mobile/core/store/slices/local_user_account.dart';
 
 class UserAvatar extends StatelessWidget {
-  final LocalUserAccount account;
+  final String appUserId;
+  final String displayName;
 
-  const UserAvatar({super.key, required this.account});
+  const UserAvatar({
+    super.key,
+    required this.appUserId,
+    required this.displayName,
+  });
 
   @override
   Widget build(BuildContext context) {
     final backgroundColor =
-        Colors.primaries[account.appUserId.hashCode % Colors.primaries.length];
+        Colors.primaries[appUserId.hashCode % Colors.primaries.length];
     final foregroundColor = backgroundColor.computeLuminance() > 0.5
         ? Colors.black
         : Colors.white;
-
-    final fullName = account.profile.profile.displayName;
-
-    final displayName = fullName.isEmpty
-        ? account.profile.uiSettings.user.username
-        : fullName;
 
     final initials = displayName
         .split(" ")

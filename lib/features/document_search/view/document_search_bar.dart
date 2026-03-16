@@ -107,7 +107,10 @@ class _DocumentSearchBarState extends State<DocumentSearchBar> {
   Widget _buildUserAvatar(BuildContext context) {
     return IconButton(
       padding: const EdgeInsets.all(6),
-      icon: UserAvatar(account: context.loggedInUser),
+      icon: UserAvatar(
+        appUserId: context.loggedInAppUserId$!,
+        displayName: context.loggedInUser$.displayName,
+      ),
       onPressed: () {
         showDialog(
           useRootNavigator: false,

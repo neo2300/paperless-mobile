@@ -21,11 +21,10 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final currentAccount = context.loggedInUser$;
-    final uiSettings = currentAccount.profile.uiSettings;
+    final uiSettings = context.uiSettings$;
     final username = uiSettings.user.username;
     final appVersion = packageInfo.version;
-    final serverUrl = currentAccount.serverUrl.replaceAll(
+    final serverUrl = context.loggedInUser$.serverUrl.replaceAll(
       RegExp(r'https?://'),
       '',
     );

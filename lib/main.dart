@@ -153,7 +153,6 @@ void main() async {
       await localNotificationService.initialize();
 
       final userApi = PaperlessUserApiImpl(sessionManager.client);
-      final serverStatsApi = PaperlessServerStatsApiImpl(sessionManager.client);
       final authenticationCubit = AuthenticationCubit(
         userApi,
         sessionManager,
@@ -162,7 +161,6 @@ void main() async {
         localNotificationService,
         localStore,
         encryptedLocalStore,
-        serverStatsApi,
       );
 
       runApp(

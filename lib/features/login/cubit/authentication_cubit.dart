@@ -1,20 +1,16 @@
 import 'package:cached_query_flutter/cached_query_flutter.dart';
-import 'package:dio/dio.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/widgets.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
-import 'package:paperless_mobile/constants.dart';
 import 'package:paperless_mobile/core/model/info_message_exception.dart';
 import 'package:paperless_mobile/core/security/session_manager.dart';
 import 'package:paperless_mobile/core/service/connectivity_status_service.dart';
 import 'package:paperless_mobile/core/service/file_service.dart';
 import 'package:paperless_mobile/core/store/encrypted_local_store.dart';
 import 'package:paperless_mobile/core/store/local_store.dart';
-import 'package:paperless_mobile/core/store/slices/local_user_account.dart';
 import 'package:paperless_mobile/core/store/slices/local_user_data.dart';
 import 'package:paperless_mobile/core/store/slices/user_credentials.dart';
-import 'package:paperless_mobile/core/store/slices/user_profile.dart';
 import 'package:paperless_mobile/features/logging/data/logger.dart';
 import 'package:paperless_mobile/features/logging/utils/redaction_utils.dart';
 import 'package:paperless_mobile/features/login/model/client_certificate.dart';
@@ -29,7 +25,6 @@ part 'authentication_state.dart';
 class AuthenticationCubit extends Cubit<AuthenticationState> {
   final LocalAuthenticationService _localAuthService;
   final PaperlessUserApi _usersApi;
-  final PaperlessServerStatsApi _serverStatsApi;
   final LocalStore _store;
   final EncryptedLocalStore _encryptedLocalStore;
   final SessionManager _sessionManager;
@@ -44,7 +39,6 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
     this._notificationService,
     this._store,
     this._encryptedLocalStore,
-    this._serverStatsApi,
   ) : super(const Unauthenticated());
 
   Future<void> addUser({
@@ -141,7 +135,7 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
         authToken: decryptedState.credentials.token,
         clientCertificate: decryptedState.credentials.clientCertificate,
         additionalHeaders: decryptedState.credentials.additionalHeaders,
-        baseUrl: localUserData.localUser.serverUrl,
+        baseUrl: localUserData.serverUrl,
         broadcast: false,
       );
 
@@ -149,32 +143,19 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
 
       final isPaperlessServerReachable =
           await _connectivityService.isPaperlessServerReachable(
-            localUserData.localUser.serverUrl,
+            localUserData.serverUrl,
             decryptedState.credentials.clientCertificate,
             decryptedState.credentials.additionalHeaders,
           ) ==
           ReachabilityStatus.reachable;
 
-      if (isPaperlessServerReachable) {
-        final apiVersion = await _getApiVersion(_sessionManager.client);
-        await _updateRemoteUser(
-          localUserId,
-          _sessionManager,
-          localUserData.localUser,
-          apiVersion,
-        );
-      } else {
+      if (!isPaperlessServerReachable) {
         logger.fw(
           'Server not reachable during account switch for $redactedId.',
           className: runtimeType.toString(),
           methodName: 'switchAccount',
         );
-        emit(
-          ConnectionFailure(
-            serverUrl: localUserData.localUser.serverUrl,
-            username: localUserData.localUser.profile.uiSettings.user.username,
-          ),
-        );
+        emit(ConnectionFailure(serverUrl: localUserData.serverUrl));
         return;
       }
 
@@ -267,33 +248,21 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
         clientCertificate: decryptedState.credentials.clientCertificate,
         additionalHeaders: decryptedState.credentials.additionalHeaders,
         authToken: decryptedState.credentials.token,
-        baseUrl: localUserData.localUser.serverUrl,
+        baseUrl: localUserData.serverUrl,
         broadcast: false,
       );
 
       final isPaperlessServerReachable =
           await _connectivityService.isPaperlessServerReachable(
-            localUserData.localUser.serverUrl,
+            localUserData.serverUrl,
             decryptedState.credentials.clientCertificate,
             decryptedState.credentials.additionalHeaders,
           ) ==
           ReachabilityStatus.reachable;
 
       if (isPaperlessServerReachable) {
-        final apiVersion = await _getApiVersion(_sessionManager.client);
-        await _updateRemoteUser(
-          restoreSessionUserId,
-          _sessionManager,
-          localUserData.localUser,
-          apiVersion,
-        );
       } else {
-        emit(
-          ConnectionFailure(
-            serverUrl: localUserData.localUser.serverUrl,
-            username: localUserData.localUser.profile.uiSettings.user.username,
-          ),
-        );
+        emit(ConnectionFailure(serverUrl: localUserData.serverUrl));
         return;
       }
 
@@ -314,19 +283,8 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       );
       emit(
         ConnectionFailure(
-          serverUrl: _store
-              .state
-              .localUserData[restoreSessionUserId]!
-              .localUser
-              .serverUrl,
-          username: _store
-              .state
-              .localUserData[restoreSessionUserId]!
-              .localUser
-              .profile
-              .uiSettings
-              .user
-              .username,
+          serverUrl:
+              _store.state.localUserData[restoreSessionUserId]!.serverUrl,
         ),
       );
     }
@@ -378,7 +336,7 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
   /// Adds the user to the local store and persists necessary data.
   /// Returns the user profile of the added user for convenience.
   ///
-  Future<UserProfile> _addUser(
+  Future<UiSettingsView> _addUser(
     String serverUrl,
     String token,
     ClientCertificate? clientCert,
@@ -393,25 +351,21 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       broadcast: false,
     );
 
-    final userProfile = await _getUserProfile();
-    final localUserId = _buildLocalUserId(userProfile, serverUrl);
+    final uiSettings = await _getUserProfile();
+    final localUserId = _buildLocalUserId(uiSettings, serverUrl);
 
     if (_store.state.localUserData.containsKey(localUserId)) {
       throw InfoMessageException(code: ErrorCode.userAlreadyExists);
     }
 
-    final apiVersion = await _getApiVersion(sessionManager.client);
-
     _store.setUserData(
       localUserId,
       LocalUserData(
         userId: localUserId,
-        localUser: LocalUserAccount(
-          appUserId: localUserId,
-          serverUrl: serverUrl,
-          apiVersion: apiVersion,
-          profile: userProfile,
-        ),
+        serverUrl: serverUrl,
+        username: uiSettings.user.username,
+        firstName: uiSettings.user.firstName,
+        lastName: uiSettings.user.lastName,
       ),
     );
 
@@ -435,52 +389,15 @@ class AuthenticationCubit extends Cubit<AuthenticationState> {
       ),
     );
 
-    return userProfile;
+    return uiSettings;
   }
 
-  Future<int> _getApiVersion(
-    Dio dio, {
-    int defaultValue = latestSupportedApiVersion,
-  }) async {
-    try {
-      final apiVersion = await _connectivityService
-          .getPaperlessServerApiVersion(dio.options.baseUrl);
-      return apiVersion;
-    } on DioException catch (_) {
-      logger.fw(
-        "Could not retrieve API version, using default ($defaultValue).",
-        className: runtimeType.toString(),
-        methodName: '_getApiVersion',
-      );
-      return defaultValue;
-    }
+  Future<UiSettingsView> _getUserProfile() async {
+    final uiSettings = await _usersApi.getUiSettings();
+    return uiSettings;
   }
 
-  Future<void> _updateRemoteUser(
-    String userId,
-    SessionManager sessionManager,
-    LocalUserAccount localUserAccount,
-    int apiVersion,
-  ) async {
-    final profile = await _getUserProfile();
-    _store.updateUserData(
-      userId,
-      (state) => state.copyWith(
-        localUser: localUserAccount.copyWith(
-          profile: profile,
-          apiVersion: apiVersion,
-        ),
-      ),
-    );
-  }
-
-  Future<UserProfile> _getUserProfile() async {
-    final profile = await _usersApi.getProfile();
-    final uiSettings = await _serverStatsApi.getUiSettings();
-    return UserProfile(profile: profile, uiSettings: uiSettings);
-  }
-
-  String _buildLocalUserId(UserProfile userProfile, String serverUrl) {
-    return '${userProfile.uiSettings.user.username}@$serverUrl';
+  String _buildLocalUserId(UiSettingsView uiSettings, String serverUrl) {
+    return '${uiSettings.user.username}@$serverUrl';
   }
 }

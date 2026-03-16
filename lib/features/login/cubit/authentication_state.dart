@@ -47,9 +47,8 @@ class SwitchingAccounts extends AuthenticationState {
 
 class ConnectionFailure extends AuthenticationState {
   final String serverUrl;
-  final String username;
 
-  ConnectionFailure({required this.serverUrl, required this.username});
+  ConnectionFailure({required this.serverUrl});
 }
 
 class AuthenticationError extends AuthenticationState with EquatableMixin {

@@ -1,3 +1,4 @@
+import 'package:cached_query_flutter/cached_query_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
@@ -11,27 +12,27 @@ import 'package:paperless_mobile/core/repository/search_repository.dart';
 import 'package:paperless_mobile/core/repository/server_statistics_repository.dart';
 import 'package:paperless_mobile/core/repository/storage_path_repository.dart';
 import 'package:paperless_mobile/core/repository/tag_repository.dart';
+import 'package:paperless_mobile/core/repository/user_profile_repository.dart';
 import 'package:paperless_mobile/core/repository/user_repository.dart';
 import 'package:paperless_mobile/core/security/session_manager.dart';
 import 'package:paperless_mobile/core/service/dio_file_service.dart';
 import 'package:paperless_mobile/core/store/local_store.dart';
+import 'package:paperless_mobile/core/store/slices/local_user_account.dart';
 import 'package:paperless_mobile/features/document_scan/cubit/document_scanner_cubit.dart';
 import 'package:paperless_mobile/features/tasks/model/pending_tasks_notifier.dart';
 import 'package:provider/provider.dart';
 
 class HomeShellWidget extends StatelessWidget {
   /// The id of the currently authenticated user (e.g. demo@paperless.example.com)
-  final String localUserId;
+  final String appUserId;
 
   /// The Paperless API version of the currently connected instance
-  final int paperlessApiVersion;
 
   final Widget child;
 
   const HomeShellWidget({
     super.key,
-    required this.paperlessApiVersion,
-    required this.localUserId,
+    required this.appUserId,
     required this.child,
   });
 
@@ -40,6 +41,7 @@ class HomeShellWidget extends StatelessWidget {
     final localStoreState = context.watch<LocalStore>().state;
     final currentUserId = localStoreState.loggedInAppUserId;
     final client = context.read<SessionManager>().client;
+
     return MultiProvider(
       key: ValueKey(currentUserId),
       providers: [
@@ -47,7 +49,7 @@ class HomeShellWidget extends StatelessWidget {
           create: (context) => CacheManager(
             Config(
               // Isolated cache per user.
-              localUserId,
+              appUserId,
               fileService: DioFileService(client),
             ),
           ),
@@ -123,11 +125,38 @@ class HomeShellWidget extends StatelessWidget {
               ),
               dispose: (_, repo) => repo.dispose(),
             ),
+            Provider(
+              create: (context) =>
+                  SessionDataRepository(context.read(), context.read()),
+            ),
             ChangeNotifierProvider(
               create: (context) => PendingTasksNotifier(context.read()),
             ),
           ],
-          child: child,
+          child: Builder(
+            builder: (context) => QueryBuilder(
+              query: context.read<SessionDataRepository>().userProfileQuery(
+                appUserId,
+              ),
+              builder: (context, state) {
+                if (state.isLoading) {
+                  return Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                } else if (state.isError) {
+                  return SizedBox.shrink(); // TODO: Show actual error
+                }
+                final sessionData = state.data!;
+                final localUserAccount = LocalUserAccount(
+                  appUserId: appUserId,
+                  serverUrl: client.options.baseUrl,
+                  apiVersion: sessionData.apiVersion,
+                  profile: sessionData.profile,
+                );
+                return Provider.value(value: localUserAccount, child: child);
+              },
+            ),
+          ),
         );
       },
     );

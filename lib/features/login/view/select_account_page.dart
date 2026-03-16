@@ -39,7 +39,9 @@ class SelectAccountPage extends StatelessWidget {
               final account = localAccounts.values.elementAt(index);
               return Card(
                 child: UserAccountListTile(
-                  account: account.localUser,
+                  serverUrl: account.serverUrl,
+                  username: account.username,
+                  displayName: account.displayName,
                   onTap: () {
                     context.read<AuthenticationCubit>().switchAccount(userId);
                   },
