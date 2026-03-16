@@ -1,23 +1,33 @@
+// ignore_for_file: invalid_annotation_target
+
+import 'package:copy_with_extension/copy_with_extension.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 import 'package:paperless_mobile/core/store/slices/local_user_app_state.dart';
 
-part 'local_user_data.freezed.dart';
 part 'local_user_data.g.dart';
 
-@freezed
-abstract class LocalUserData with _$LocalUserData {
-  const LocalUserData._();
+@CopyWith()
+@JsonSerializable(fieldRename: FieldRename.none)
+class LocalUserData {
+  final String userId;
+  final String serverUrl;
+  final String username;
+  final String? firstName;
+  final String? lastName;
+  final bool isBiometricAuthenticationEnabled;
+  final LocalUserAppState appState;
 
-  const factory LocalUserData({
-    required String userId,
-    required String serverUrl,
-    required String username,
-    String? firstName,
-    String? lastName,
-    @Default(false) bool isBiometricAuthenticationEnabled,
-    @Default(LocalUserAppState()) LocalUserAppState appState,
-  }) = _UserSettings;
+  const LocalUserData({
+    required this.userId,
+    required this.serverUrl,
+    required this.username,
+    this.firstName,
+    this.lastName,
+    this.isBiometricAuthenticationEnabled = false,
+    this.appState = const LocalUserAppState(),
+  });
 
+  Map<String, dynamic> toJson() => _$LocalUserDataToJson(this);
   factory LocalUserData.fromJson(Map<String, dynamic> json) =>
       _$LocalUserDataFromJson(json);
 

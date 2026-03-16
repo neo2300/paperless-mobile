@@ -9,6 +9,7 @@ import 'package:paperless_mobile/core/service/connectivity_status_service.dart';
 import 'package:paperless_mobile/core/service/file_service.dart';
 import 'package:paperless_mobile/core/store/encrypted_local_store.dart';
 import 'package:paperless_mobile/core/store/local_store.dart';
+import 'package:paperless_mobile/core/store/slices/global_settings.dart';
 import 'package:paperless_mobile/core/store/slices/local_user_data.dart';
 import 'package:paperless_mobile/core/store/slices/user_credentials.dart';
 import 'package:paperless_mobile/features/logging/data/logger.dart';
