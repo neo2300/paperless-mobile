@@ -6,12 +6,11 @@ import 'package:paperless_mobile/core/store/slices/local_user_app_state.dart';
 import 'package:paperless_mobile/core/store/slices/local_user_data.dart';
 
 part 'local_store_state_v1.g.dart';
-// Old version of the local store state, used for migration purposes. Do not use in the app.
 
 @Deprecated(
-  'Old version of the local store state, used for migration purposes. Do not use in the app.',
+  'Used for migration purposes. Do not use in the app. Use LocalStoreState instead.',
 )
-@JsonSerializable(fieldRename: FieldRename.none, createToJson: false)
+@JsonSerializable(createToJson: false)
 class _LocalStoreStateV1 {
   const _LocalStoreStateV1({
     this.loggedInAppUserId,
@@ -29,7 +28,7 @@ class _LocalStoreStateV1 {
       _$LocalStoreStateV1FromJson(json);
 }
 
-@JsonSerializable(fieldRename: FieldRename.none, createToJson: false)
+@JsonSerializable(createToJson: false)
 class _LocalUserDataV1 {
   final String userId;
   final _LocalUserAccountV1 localUser;
@@ -47,7 +46,7 @@ class _LocalUserDataV1 {
       _$LocalUserDataV1FromJson(json);
 }
 
-@JsonSerializable(fieldRename: FieldRename.none, createToJson: false)
+@JsonSerializable(createToJson: false)
 class _LocalUserAccountV1 {
   final String appUserId;
   final String serverUrl;

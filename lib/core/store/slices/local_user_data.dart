@@ -7,7 +7,7 @@ import 'package:paperless_mobile/core/store/slices/local_user_app_state.dart';
 part 'local_user_data.g.dart';
 
 @CopyWith()
-@JsonSerializable(fieldRename: FieldRename.none)
+@JsonSerializable()
 class LocalUserData {
   final String userId;
   final String serverUrl;

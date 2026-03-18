@@ -6,7 +6,7 @@ import 'package:paperless_mobile/features/settings/model/view_type.dart';
 part 'local_user_app_state.g.dart';
 
 @CopyWith()
-@JsonSerializable(fieldRename: FieldRename.none)
+@JsonSerializable()
 class LocalUserAppState {
   final DocumentFilter currentDocumentFilter;
   final List<String> documentSearchHistory;

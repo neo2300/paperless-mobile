@@ -6,7 +6,7 @@ import 'package:paperless_mobile/features/login/server_connection/model/header_e
 part 'user_credentials.g.dart';
 
 @CopyWith()
-@JsonSerializable(fieldRename: FieldRename.none)
+@JsonSerializable()
 class UserCredentials {
   final String token;
   final ClientCertificate? clientCertificate;

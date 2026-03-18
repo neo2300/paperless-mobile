@@ -1,7 +1,7 @@
 part of 'local_store.dart';
 
 @CopyWith()
-@JsonSerializable(fieldRename: FieldRename.none)
+@JsonSerializable()
 class LocalStoreState {
   const LocalStoreState({
     this.version = 2,

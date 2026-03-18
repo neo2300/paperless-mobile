@@ -9,7 +9,7 @@ import 'package:paperless_mobile/features/settings/model/file_download_type.dart
 part 'global_settings.g.dart';
 
 @CopyWith()
-@JsonSerializable(fieldRename: FieldRename.none)
+@JsonSerializable()
 class GlobalSettings {
   const GlobalSettings({
     required this.preferredLocaleSubtag,
