@@ -3,7 +3,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'user.freezed.dart';
 part 'user.g.dart';
 
-@Freezed(toJson: false, fromJson: true)
+@Freezed(toJson: true, fromJson: true)
 abstract class User with _$User {
   factory User({
     required int id,
