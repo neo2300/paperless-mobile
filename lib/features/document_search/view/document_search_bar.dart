@@ -97,6 +97,7 @@ class _DocumentSearchBarState extends State<DocumentSearchBar> {
               thumbnailUrl: context.documentRepository.getThumbnailUrl(
                 document.id,
               ),
+              heroTagPrefix: DocumentSearchPage.heroPrefix,
             ).push(context);
           },
         );

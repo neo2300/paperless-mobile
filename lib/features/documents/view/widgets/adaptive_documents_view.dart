@@ -15,7 +15,6 @@ abstract class AdaptiveDocumentsView extends StatelessWidget {
   final List<Document> documents;
   final bool isLoading;
   final bool hasLoaded;
-  final bool enableHeroAnimation;
   final List<int> selectedDocumentIds;
   final List<int> disabledIds;
   final ViewType viewType;
@@ -26,7 +25,7 @@ abstract class AdaptiveDocumentsView extends StatelessWidget {
   final void Function(int? id)? onCorrespondentSelected;
   final void Function(int? id)? onDocumentTypeSelected;
   final void Function(int? id)? onStoragePathSelected;
-
+  final String? heroTagPrefix;
   bool get showLoadingPlaceholder => !hasLoaded && isLoading;
 
   const AdaptiveDocumentsView({
@@ -44,7 +43,7 @@ abstract class AdaptiveDocumentsView extends StatelessWidget {
     this.onStoragePathSelected,
     required this.isLoading,
     required this.hasLoaded,
-    this.enableHeroAnimation = true,
+    this.heroTagPrefix,
   });
 
   AdaptiveDocumentsView.fromPagedState(
@@ -57,10 +56,10 @@ abstract class AdaptiveDocumentsView extends StatelessWidget {
     this.onStoragePathSelected,
     this.onTagSelected,
     this.isLabelClickable = true,
-    this.enableHeroAnimation = true,
     this.viewType = ViewType.list,
     this.selectedDocumentIds = const [],
     this.disabledIds = const [],
+    this.heroTagPrefix,
   }) : documents =
            queryState.data?.pages.expand((p) => p.results).toList() ?? [],
        isLoading = queryState.isLoading,
@@ -81,7 +80,7 @@ class SliverAdaptiveDocumentsView extends AdaptiveDocumentsView {
     super.selectedDocumentIds,
     super.disabledIds,
     super.viewType,
-    super.enableHeroAnimation,
+    super.heroTagPrefix,
     required super.isLoading,
     required super.hasLoaded,
   });
@@ -120,7 +119,6 @@ class SliverAdaptiveDocumentsView extends AdaptiveDocumentsView {
           onCorrespondentSelected: onCorrespondentSelected,
           onDocumentTypeSelected: onDocumentTypeSelected,
           onStoragePathSelected: onStoragePathSelected,
-          enableHeroAnimation: enableHeroAnimation,
         );
       }),
     );
@@ -149,7 +147,7 @@ class SliverAdaptiveDocumentsView extends AdaptiveDocumentsView {
           onCorrespondentSelected: onCorrespondentSelected,
           onDocumentTypeSelected: onDocumentTypeSelected,
           onStoragePathSelected: onStoragePathSelected,
-          enableHeroAnimation: enableHeroAnimation,
+          heroTagPrefix: heroTagPrefix,
         );
       }),
     );
@@ -181,7 +179,7 @@ class SliverAdaptiveDocumentsView extends AdaptiveDocumentsView {
           onCorrespondentSelected: onCorrespondentSelected,
           onDocumentTypeSelected: onDocumentTypeSelected,
           onStoragePathSelected: onStoragePathSelected,
-          enableHeroAnimation: enableHeroAnimation,
+          heroTagPrefix: heroTagPrefix,
         ).paddedSymmetrically(horizontal: 4);
       },
     );
@@ -206,7 +204,7 @@ class DefaultAdaptiveDocumentsView extends AdaptiveDocumentsView {
     super.selectedDocumentIds,
     super.disabledIds,
     super.viewType,
-    super.enableHeroAnimation = true,
+    super.heroTagPrefix,
   });
 
   @override
@@ -245,7 +243,7 @@ class DefaultAdaptiveDocumentsView extends AdaptiveDocumentsView {
           onCorrespondentSelected: onCorrespondentSelected,
           onDocumentTypeSelected: onDocumentTypeSelected,
           onStoragePathSelected: onStoragePathSelected,
-          enableHeroAnimation: enableHeroAnimation,
+          heroTagPrefix: heroTagPrefix,
         );
       },
     );
@@ -276,7 +274,7 @@ class DefaultAdaptiveDocumentsView extends AdaptiveDocumentsView {
           onCorrespondentSelected: onCorrespondentSelected,
           onDocumentTypeSelected: onDocumentTypeSelected,
           onStoragePathSelected: onStoragePathSelected,
-          enableHeroAnimation: enableHeroAnimation,
+          heroTagPrefix: heroTagPrefix,
         );
       },
     );
@@ -311,7 +309,7 @@ class DefaultAdaptiveDocumentsView extends AdaptiveDocumentsView {
           onCorrespondentSelected: onCorrespondentSelected,
           onDocumentTypeSelected: onDocumentTypeSelected,
           onStoragePathSelected: onStoragePathSelected,
-          enableHeroAnimation: enableHeroAnimation,
+          heroTagPrefix: heroTagPrefix,
         );
       },
     );

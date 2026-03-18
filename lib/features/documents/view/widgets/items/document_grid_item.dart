@@ -22,7 +22,7 @@ class DocumentGridItem extends DocumentItem {
     super.onStoragePathSelected,
     super.onTagSelected,
     super.onTap,
-    required super.enableHeroAnimation,
+    super.heroTagPrefix,
     super.isEnabled,
   });
 
@@ -35,10 +35,9 @@ class DocumentGridItem extends DocumentItem {
         child: Stack(
           children: [
             Card(
-              elevation: 1.0,
               color: isSelected
                   ? Theme.of(context).colorScheme.inversePrimary
-                  : Theme.of(context).cardColor,
+                  : null,
               child: InkWell(
                 borderRadius: BorderRadius.circular(12),
                 onTap: _onTap,
@@ -58,7 +57,7 @@ class DocumentGridItem extends DocumentItem {
                               child: DocumentPreview(
                                 documentId: document.id,
                                 borderRadius: 12.0,
-                                enableHero: enableHeroAnimation,
+                                heroTagPrefix: heroTagPrefix,
                                 title: document.title,
                               ),
                             ),

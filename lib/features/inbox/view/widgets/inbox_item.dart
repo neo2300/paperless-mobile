@@ -158,6 +158,7 @@ class _InboxItemState extends State<InboxItem> {
             documentId: widget.document.id,
             thumbnailUrl: widget.document.buildThumbnailUrl(context),
             isLabelClickable: false,
+            heroTagPrefix: 'inbox_item',
           ).push(context);
         },
         child: SizedBox(
@@ -175,7 +176,7 @@ class _InboxItemState extends State<InboxItem> {
                         title: widget.document.title,
                         fit: BoxFit.cover,
                         alignment: Alignment.topCenter,
-                        enableHero: false,
+                        heroTagPrefix: 'inbox_item',
                       ),
                     ).padded(),
                     Flexible(

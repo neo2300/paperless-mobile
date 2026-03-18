@@ -52,8 +52,8 @@ class _DocumentEditPageState extends State<DocumentEditPage>
   late final TabController _tabController;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
+  void initState() {
+    super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
@@ -324,6 +324,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                                 include: document.tags,
                               ),
                             ),
+                          SizedBox(height: 24),
                           // Custom fields
                           if (context.uiSettings$.canViewCustomFields)
                             FormBuilderCustomFieldsField(

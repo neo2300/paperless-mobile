@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:cached_query_flutter/cached_query_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
+import 'package:paperless_mobile/core/extensions/document_extensions.dart';
 import 'package:paperless_mobile/core/repository/change_notifier_mixin.dart';
 import 'package:paperless_mobile/core/service/file_service.dart';
 import 'package:paperless_mobile/features/logging/data/logger.dart';
@@ -338,11 +339,7 @@ class DocumentRepository with ChangeNotifierMixin {
           'document/$id',
         );
         if (query?.state.data != null) {
-          final patchedJson = arg.toJson();
-          query!.update(
-            (currentData) =>
-                Document.fromJson({...currentData!.toJson(), ...patchedJson}),
-          );
+          query!.update((currentData) => currentData!.mergePatchedRequest(arg));
         }
       },
       onSuccess: (res, arg) {
@@ -367,10 +364,7 @@ class DocumentRepository with ChangeNotifierMixin {
           'document/$id',
         );
         if (query?.state.data != null) {
-          query!.update(
-            (currentData) =>
-                Document.fromJson({...currentData!.toJson(), ...arg.toJson()}),
-          );
+          query!.update((currentData) => currentData!.mergeRequest(arg));
         }
       },
       onSuccess: (res, arg) {

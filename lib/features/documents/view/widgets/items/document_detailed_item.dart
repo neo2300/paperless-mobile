@@ -20,7 +20,7 @@ class DocumentDetailedItem extends DocumentItem {
     required super.isSelected,
     required super.isSelectionActive,
     required super.isLabelClickable,
-    required super.enableHeroAnimation,
+    super.heroTagPrefix,
     super.onCorrespondentSelected,
     super.onDocumentTypeSelected,
     super.onSelected,

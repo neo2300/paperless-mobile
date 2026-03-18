@@ -15,7 +15,7 @@ class DocumentPreview extends StatelessWidget {
   final BoxFit fit;
   final Alignment alignment;
   final double borderRadius;
-  final bool enableHero;
+  final String? heroTagPrefix;
   final double scale;
   final bool isClickable;
 
@@ -25,7 +25,7 @@ class DocumentPreview extends StatelessWidget {
     this.fit = BoxFit.cover,
     this.alignment = Alignment.topCenter,
     this.borderRadius = 12.0,
-    this.enableHero = true,
+    this.heroTagPrefix,
     this.scale = 1.1,
     this.isClickable = true,
     this.title,
@@ -46,13 +46,13 @@ class DocumentPreview extends StatelessWidget {
             : null,
         child: Builder(
           builder: (context) {
-            if (enableHero) {
-              return Hero(
-                tag: "thumb_$documentId",
+            return HeroMode(
+              enabled: heroTagPrefix != null,
+              child: Hero(
+                tag: "${heroTagPrefix}_$documentId",
                 child: _buildPreview(context),
-              );
-            }
-            return _buildPreview(context);
+              ),
+            );
           },
         ),
       ),

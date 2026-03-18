@@ -441,11 +441,13 @@ class _DocumentsPageState extends State<DocumentsPage> {
 
                     return SliverAdaptiveDocumentsView(
                       viewType: viewType,
+                      heroTagPrefix: 'documents_page',
                       onTap: (document) {
                         DocumentDetailsRoute(
                           documentId: document.id,
                           title: document.title,
                           thumbnailUrl: document.buildThumbnailUrl(context),
+                          heroTagPrefix: 'documents_page',
                         ).push(context);
                       },
                       onSelected: (document) {
