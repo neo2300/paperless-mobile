@@ -39,9 +39,7 @@ class DocumentOverviewWidget extends StatelessWidget {
           ),
         DetailsItem.text(
           document.created != null
-              ? DateFormat.yMMMMd(
-                  Localizations.localeOf(context).toString(),
-                ).format(document.created!)
+              ? context.displayDateFormat.format(document.created!)
               : null,
           context: context,
           label: S.of(context)!.createdAt,

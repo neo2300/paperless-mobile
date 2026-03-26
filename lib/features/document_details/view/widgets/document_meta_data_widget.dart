@@ -57,17 +57,13 @@ class DocumentMetaDataWidget extends StatelessWidget {
               ).paddedOnly(bottom: itemSpacing),
             if (document.modified != null)
               DetailsItem.text(
-                DateFormat.yMMMMd(
-                  Localizations.localeOf(context).toString(),
-                ).format(document.modified!),
+                context.displayDateFormat.format(document.modified!),
                 context: context,
                 label: S.of(context)!.modifiedAt,
               ).paddedOnly(bottom: itemSpacing),
             if (document.added != null)
               DetailsItem.text(
-                DateFormat.yMMMMd(
-                  Localizations.localeOf(context).toString(),
-                ).format(document.added!),
+                context.displayDateFormat.format(document.added!),
                 context: context,
                 label: S.of(context)!.addedAt,
               ).paddedOnly(bottom: itemSpacing),

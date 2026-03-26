@@ -7,9 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:intl/intl.dart';
+import 'package:paperless_mobile/core/extensions/context_extensions.dart';
 import 'package:paperless_mobile/core/extensions/flutter_extensions.dart';
 import 'package:paperless_mobile/features/landing/view/widgets/mime_types_pie_chart.dart';
 import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
+
+final _separatorRegex = RegExp(r'\d+(?<separator>\D+).*');
 
 class FormDateTime {
   final int? day;
@@ -44,7 +47,6 @@ class FormDateTime {
 /// A localized, segmented date input field.
 class FormBuilderLocalizedDatePicker extends StatefulWidget {
   final String name;
-  final Locale locale;
   final String labelText;
   final Widget? prefixIcon;
   final DateTime? initialValue;
@@ -61,7 +63,6 @@ class FormBuilderLocalizedDatePicker extends StatefulWidget {
     this.initialValue,
     required this.firstDate,
     required this.lastDate,
-    required this.locale,
     required this.labelText,
     this.prefixIcon,
     this.allowUnset = false,
@@ -75,6 +76,7 @@ class FormBuilderLocalizedDatePicker extends StatefulWidget {
 
 class _FormBuilderLocalizedDatePickerState
     extends State<FormBuilderLocalizedDatePicker> {
+  bool _initialized = false;
   late final String _separator;
   late final String _format;
 
@@ -83,12 +85,17 @@ class _FormBuilderLocalizedDatePickerState
   bool _temporarilyDisableListeners = false;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) {
+      return;
+    }
+    _initialized = true;
     final format = DateFormat.yMd(
-      widget.locale.toString(),
+      context.dateLocale,
     ).format(DateTime(1000, 11, 22));
-    _separator = format.replaceAll(RegExp(r'\d'), '').characters.first;
+    _separator =
+        _separatorRegex.firstMatch(format)?.namedGroup('separator') ?? '.';
     _format = format
         .replaceAll("1000", "yyyy")
         .replaceAll("11", "MM")
@@ -96,7 +103,10 @@ class _FormBuilderLocalizedDatePickerState
 
     final components = _format.split(_separator);
     for (int i = 0; i < components.length; i++) {
-      final formatString = components[i];
+      final formatString = components[i].replaceAll(
+        RegExp('[${RegExp.escape(_separator)}]'),
+        '',
+      );
       final initialText = widget.initialValue != null
           ? DateFormat(formatString).format(widget.initialValue!)
           : null;
@@ -331,7 +341,6 @@ class _FormBuilderLocalizedDatePickerState
             ),
           };
           field.setValue(newValue);
-          field.validate();
         } else if (value.length == controls.format.length) {
           final number = int.tryParse(value);
           if (number == null) {

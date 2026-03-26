@@ -142,9 +142,7 @@ class _InboxItemState extends State<InboxItem> {
   @override
   Widget build(BuildContext context) {
     final formattedCreatedDate = widget.document.created != null
-        ? DateFormat.yMMMMd(
-            Localizations.localeOf(context).toString(),
-          ).format(widget.document.created!)
+        ? context.displayDateFormat.format(widget.document.created!)
         : null;
     return ChipTheme(
       data: Theme.of(context).chipTheme.copyWith(
@@ -570,7 +568,7 @@ class _InboxItemState extends State<InboxItem> {
                       color: chipForegroundColor,
                     ),
                     label: Text(
-                      "${S.of(context)!.createdAt}: ${DateFormat.yMd().format(e)}",
+                      "${S.of(context)!.createdAt}: ${DateFormat.yMd(context.dateLocale).format(e)}",
                       style: TextStyle(color: chipForegroundColor),
                     ),
                     onPressed: () async {

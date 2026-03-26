@@ -7,7 +7,6 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
 import 'package:paperless_mobile/core/extensions/context_extensions.dart';
 import 'package:paperless_mobile/core/extensions/flutter_extensions.dart';
@@ -506,7 +505,6 @@ class _DocumentEditPageState extends State<DocumentEditPage>
           labelText: S.of(context)!.createdAt,
           firstDate: DateTime(1970, 1, 1),
           lastDate: DateTime(2100, 1, 1),
-          locale: Localizations.localeOf(context),
           prefixIcon: Icon(Icons.calendar_today),
           allowUnset: false,
         ),
@@ -514,11 +512,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
           _buildSuggestionsSkeleton<DateTime>(
             suggestions: filteredSuggestions!.dates.map(DateTime.parse),
             itemBuilder: (context, itemData) => ActionChip(
-              label: Text(
-                DateFormat.yMMMMd(
-                  Localizations.localeOf(context).toString(),
-                ).format(itemData),
-              ),
+              label: Text(context.displayDateFormat.format(itemData)),
               onPressed: () => _formKey.currentState?.fields[fkCreatedDate]
                   ?.didChange(FormDateTime.fromDateTime(itemData)),
             ),
