@@ -137,7 +137,7 @@ class DocumentOverviewWidget extends StatelessWidget {
               label: null,
             ),
           ),
-        if (document.tags.isNotEmpty && uiSettings.canViewTags)
+        if ((document.tags?.isNotEmpty ?? false) && uiSettings.canViewTags)
           DetailsItem(
             label: S.of(context)!.tags,
             content: TagsWidget(isClickable: false, tagIds: document.tags),

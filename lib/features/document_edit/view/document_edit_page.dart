@@ -125,7 +125,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
               fkCorrespondent: state.data!.correspondent,
               fkDocumentType: state.data!.documentType,
               fkStoragePath: state.data!.storagePath,
-              fkTags: IdsTagsQuery(include: state.data!.tags),
+              fkTags: IdsTagsQuery(include: state.data!.tags ?? []),
               fkCreatedDate: state.data!.created,
               fkContent: state.data!.content,
               fkCustomFields:
@@ -316,12 +316,12 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                               allowCreation: true,
                               allowExclude: false,
                               suggestions:
-                                  fieldSuggestions?.tags.whereNot(
-                                    document.tags.contains,
+                                  fieldSuggestions?.tags.toSet().difference(
+                                    document.tags?.toSet() ?? {},
                                   ) ??
-                                  [],
+                                  {},
                               initialValue: IdsTagsQuery(
-                                include: document.tags,
+                                include: document.tags ?? [],
                               ),
                             ),
                           SizedBox(height: 24),
@@ -497,6 +497,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
     DateTime? initialCreatedAtDate,
     Suggestions? filteredSuggestions,
   ) {
+    final hasSuggestedDates = filteredSuggestions?.dates.isNotEmpty ?? false;
     return Column(
       children: [
         FormBuilderLocalizedDatePicker(
@@ -509,7 +510,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
           prefixIcon: Icon(Icons.calendar_today),
           allowUnset: false,
         ),
-        if (filteredSuggestions?.hasSuggestedDates ?? false)
+        if (hasSuggestedDates)
           _buildSuggestionsSkeleton<DateTime>(
             suggestions: filteredSuggestions!.dates.map(DateTime.parse),
             itemBuilder: (context, itemData) => ActionChip(

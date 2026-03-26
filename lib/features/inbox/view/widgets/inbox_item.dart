@@ -290,7 +290,6 @@ class _InboxItemState extends State<InboxItem> {
     if (actions.isEmpty) {
       return SliverToBoxAdapter(child: const SizedBox.shrink());
     }
-
     return CustomScrollView(
       scrollDirection: Axis.horizontal,
       slivers: [
@@ -300,12 +299,19 @@ class _InboxItemState extends State<InboxItem> {
                 newState.timeCreated != oldState.timeCreated &&
                 newState.isSuccess,
             listener: (state) {
-              if (state.data != null &&
-                  !(state.data?.hasSuggestions ?? false)) {
-                showSnackBar(
-                  context,
-                  S.of(context)!.noSuggestionsForThisDocument,
-                );
+              if (state.data != null) {
+                final hasSuggestions =
+                    state.data!.correspondents.isNotEmpty ||
+                    state.data!.documentTypes.isNotEmpty ||
+                    state.data!.tags.isNotEmpty ||
+                    state.data!.storagePaths.isNotEmpty ||
+                    state.data!.dates.isNotEmpty;
+                if (hasSuggestions) {
+                  showSnackBar(
+                    context,
+                    S.of(context)!.noSuggestionsForThisDocument,
+                  );
+                }
               }
             },
             query: context.documentRepository.getFieldSuggestionsQuery(
@@ -477,7 +483,7 @@ class _InboxItemState extends State<InboxItem> {
                   ),
                 ),
             ...suggestions.tags
-                .whereNot((e) => widget.document.tags.contains(e))
+                .whereNot((e) => widget.document.tags?.contains(e) ?? false)
                 .map(
                   (e) => QueryBuilder(
                     query: context.tagRepository.getAllQuery(),
@@ -499,7 +505,7 @@ class _InboxItemState extends State<InboxItem> {
                               .mutate(
                                 PatchedDocumentRequest(
                                   tags: PatchedValue(
-                                    {...widget.document.tags, e}.toList(),
+                                    {...?widget.document.tags, e}.toList(),
                                   ),
                                 ),
                               );
