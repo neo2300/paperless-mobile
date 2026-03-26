@@ -337,7 +337,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
                           ).paddedOnly(top: 16),
                           const SizedBox(height: 140),
                         ]
-                        .expand((child) => [child, const SizedBox(height: 8)])
+                        .expand((child) => [child, const SizedBox(height: 16)])
                         .toList(),
               ),
             ),
@@ -507,6 +507,7 @@ class _DocumentEditPageState extends State<DocumentEditPage>
           lastDate: DateTime(2100, 1, 1),
           locale: Localizations.localeOf(context),
           prefixIcon: Icon(Icons.calendar_today),
+          allowUnset: false,
         ),
         if (filteredSuggestions?.hasSuggestedDates ?? false)
           _buildSuggestionsSkeleton<DateTime>(

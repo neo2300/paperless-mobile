@@ -94,7 +94,7 @@ class _InboxPageState extends State<InboxPage> {
                   return const InboxItemPlaceholder();
                 }
 
-                final documents = state.data!.pages.flattened;
+                final documents = state.data?.pages.flattened ?? [];
                 return FloatingActionButton.extended(
                   extendedPadding: _showExtendedFab
                       ? null
