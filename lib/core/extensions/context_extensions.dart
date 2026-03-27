@@ -64,9 +64,14 @@ extension ContextExtensions on BuildContext {
       watch<LocalUserAccount>().profile.uiSettings;
   UiSettingsView get uiSettings => read<LocalUserAccount>().profile.uiSettings;
 
-  String get dateLocale =>
-      uiSettings.settings?.dateDisplay?.dateLocale ??
-      Localizations.localeOf(this).toLanguageTag();
+  String get dateLocale {
+    final remoteLocale = uiSettings.settings?.dateDisplay?.dateLocale;
+    if (remoteLocale == null || remoteLocale.isEmpty) {
+      return Localizations.localeOf(this).toLanguageTag();
+    }
+
+    return remoteLocale;
+  }
 
   ///
   /// Returns the date format to be used for displaying dates in the app, based on the user's UI settings.
