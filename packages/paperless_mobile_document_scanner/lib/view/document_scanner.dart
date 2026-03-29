@@ -2,10 +2,11 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:paperless_mobile_document_scanner/data/debug_stage.dart';
-import 'package:paperless_mobile_document_scanner/data/document_frame.dart';
-import 'package:paperless_mobile_document_scanner/data/scan_result.dart';
+import 'package:paperless_mobile_document_scanner/models/debug_stage.dart';
+import 'package:paperless_mobile_document_scanner/models/document_frame.dart';
+import 'package:paperless_mobile_document_scanner/models/scan_result.dart';
 import 'package:paperless_mobile_document_scanner/processing/detect_edges_from_file.dart';
 import 'package:paperless_mobile_document_scanner/processing/image_edit.dart';
 import 'package:paperless_mobile_document_scanner/processing/perspective_transform.dart';
@@ -23,7 +24,7 @@ const _shutterButtonSize = 72.0;
 const _scanPreviewListHeight = 110.0;
 const _actionButtonRowHeight = 56.0;
 
-class DocumentScanner extends StatefulWidget {
+class PaperlessMobileDocumentScanner extends StatefulWidget {
   /// Called when the user completes the scan session.
   /// Receives all accepted scans as a list of image files.
   final ValueChanged<List<File>>? onFinished;
@@ -31,17 +32,24 @@ class DocumentScanner extends StatefulWidget {
   /// Called when the user cancels the scan session.
   final VoidCallback? onCancelled;
 
-  const DocumentScanner({super.key, this.onFinished, this.onCancelled});
+  const PaperlessMobileDocumentScanner({
+    super.key,
+    this.onFinished,
+    this.onCancelled,
+  });
 
   @override
-  State<DocumentScanner> createState() => _DocumentScannerState();
+  State<PaperlessMobileDocumentScanner> createState() =>
+      _PaperlessMobileDocumentScannerState();
 }
 
-class _DocumentScannerState extends State<DocumentScanner> {
+class _PaperlessMobileDocumentScannerState
+    extends State<PaperlessMobileDocumentScanner> {
   CameraController? _controller;
   DebugStage _debugStage = DebugStage.none;
-  ResolutionPreset _resolutionPreset = ResolutionPreset.medium;
+  ResolutionPreset _resolutionPreset = ResolutionPreset.high;
   bool _isTorchActive = false;
+  bool _liveEdgeDetectionEnabled = true;
 
   _ScanPhase _phase = _ScanPhase.liveDetection;
 
@@ -143,6 +151,7 @@ class _DocumentScannerState extends State<DocumentScanner> {
       existing.quarterTurns = result.quarterTurns;
       existing.colorFilter = result.colorFilter;
       existing.bwThreshold = result.bwThreshold;
+      existing.enhanced = result.enhanced;
       existing.thumbnailBytes = thumbnail;
     } else {
       // New scan: write the output file and create a ScanResult.
@@ -155,6 +164,7 @@ class _DocumentScannerState extends State<DocumentScanner> {
           quarterTurns: result.quarterTurns,
           colorFilter: result.colorFilter,
           bwThreshold: result.bwThreshold,
+          enhanced: result.enhanced,
           thumbnailBytes: thumbnail,
           outputFile: scanFile,
         ),
@@ -251,6 +261,7 @@ class _DocumentScannerState extends State<DocumentScanner> {
         initialQuarterTurns: scan.quarterTurns,
         initialColorFilter: scan.colorFilter,
         initialBwThreshold: scan.bwThreshold,
+        initialEnhanced: scan.enhanced,
         onConfirmed: _onImageEditConfirmed,
         onCancelled: _onImageEditCancelled,
       );
@@ -300,71 +311,80 @@ class _DocumentScannerState extends State<DocumentScanner> {
         return Scaffold(
           bottomNavigationBar: BottomAppBar(
             height: bottomBarHeight,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Shutter + torch row.
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: bottomBarVerticalPadding,
-                  ),
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      RepaintBoundary(
-                        child: ShutterButton(
+            child: RepaintBoundary(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Shutter + torch row.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: bottomBarVerticalPadding,
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        ShutterButton(
                           onPressed: _onShutterPressed,
                           size: _shutterButtonSize,
                         ),
-                      ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: RepaintBoundary(child: _buildTorchButton()),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                // Cancel / Done buttons.
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: SizedBox(
-                    height: _actionButtonRowHeight,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        TextButton(
-                          onPressed: widget.onCancelled,
-                          child: Text(
-                            MaterialLocalizations.of(context).cancelButtonLabel,
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 8),
+                            child: _buildEdgeDetectionToggle(),
                           ),
                         ),
-                        if (_scans.isNotEmpty)
-                          FilledButton.icon(
-                            onPressed: () {
-                              widget.onFinished?.call(
-                                _scans.map((s) => s.outputFile).toList(),
-                              );
-                            },
-                            icon: const Icon(Icons.done_all),
-                            label: Text('Done (${_scans.length})'),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _buildTorchButton(),
                           ),
+                        ),
                       ],
                     ),
                   ),
-                ),
-                // Scan preview list.
-                if (_scans.isNotEmpty)
-                  ScanPreviewList(
-                    scans: _scans,
-                    onDelete: _onScanDeleted,
-                    onTap: _onScanTapped,
-                    onReorder: _onScanReordered,
-                    height: _scanPreviewListHeight,
+                  // Cancel / Done buttons.
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: SizedBox(
+                      height: _actionButtonRowHeight,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          TextButton(
+                            onPressed: widget.onCancelled,
+                            child: Text(
+                              MaterialLocalizations.of(
+                                context,
+                              ).cancelButtonLabel,
+                            ),
+                          ),
+                          if (_scans.isNotEmpty)
+                            FilledButton.icon(
+                              onPressed: () {
+                                widget.onFinished?.call(
+                                  _scans.map((s) => s.outputFile).toList(),
+                                );
+                              },
+                              icon: const Icon(Icons.done_all),
+                              label: Text('Done (${_scans.length})'),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
-              ],
+                  // Scan preview list.
+                  if (_scans.isNotEmpty)
+                    ScanPreviewList(
+                      scans: _scans,
+                      onDelete: _onScanDeleted,
+                      onTap: _onScanTapped,
+                      onReorder: _onScanReordered,
+                      height: _scanPreviewListHeight,
+                    ),
+                ],
+              ),
             ),
           ),
           body: Stack(
@@ -379,8 +399,9 @@ class _DocumentScannerState extends State<DocumentScanner> {
                 debugStage: _debugStage,
                 resolutionPreset: _resolutionPreset,
                 onFrameChanged: _onFrameChanged,
+                liveEdgeDetectionEnabled: _liveEdgeDetectionEnabled,
               ),
-              _buildDebugControls(),
+              if (!kDebugMode) _buildDebugControls(),
             ],
           ),
         );
@@ -408,6 +429,22 @@ class _DocumentScannerState extends State<DocumentScanner> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEdgeDetectionToggle() {
+    return IconButton.filledTonal(
+      onPressed: () {
+        setState(() {
+          _liveEdgeDetectionEnabled = !_liveEdgeDetectionEnabled;
+        });
+      },
+      icon: Icon(
+        _liveEdgeDetectionEnabled
+            ? Icons.center_focus_strong
+            : Icons.center_focus_weak,
+        size: 32,
       ),
     );
   }

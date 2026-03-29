@@ -1,7 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:paperless_mobile_document_scanner/data/document_frame.dart';
+import 'package:paperless_mobile_document_scanner/models/document_frame.dart';
 
 /// Paints the edge overlay with draggable corner handles on the captured image.
 ///
@@ -28,7 +28,7 @@ class DraggableFrameOverlayPainter extends CustomPainter {
   static const double _loupeRadius = 60.0;
 
   /// How much the image is zoomed inside the loupe.
-  static const double _loupeZoom = 3.0;
+  static const double _loupeZoom = 2.0;
 
   DraggableFrameOverlayPainter({
     required this.frame,

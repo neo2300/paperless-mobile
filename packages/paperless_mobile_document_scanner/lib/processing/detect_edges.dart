@@ -4,9 +4,9 @@ import 'dart:ui' as ui;
 import 'package:camera/camera.dart';
 import 'package:flutter/services.dart';
 import 'package:opencv_dart/opencv_dart.dart' as cv4;
-import 'package:paperless_mobile_document_scanner/data/debug_stage.dart';
-import 'package:paperless_mobile_document_scanner/data/document_frame.dart';
-import 'package:paperless_mobile_document_scanner/data/input_image.dart';
+import 'package:paperless_mobile_document_scanner/models/debug_stage.dart';
+import 'package:paperless_mobile_document_scanner/models/document_frame.dart';
+import 'package:paperless_mobile_document_scanner/models/input_image.dart';
 import 'package:paperless_mobile_document_scanner/utils/utils.dart';
 
 final _orientations = {
@@ -15,6 +15,57 @@ final _orientations = {
   DeviceOrientation.portraitDown: 180,
   DeviceOrientation.landscapeRight: 270,
 };
+
+/// Computes the rotation compensation needed based on device and sensor
+/// orientation. Returns null if inputs are insufficient.
+int? computeRotationCompensation(
+  int? sensorOrientation,
+  DeviceOrientation deviceOrientation,
+  CameraLensDirection lensDirection,
+) {
+  var rotationCompensation = _orientations[deviceOrientation];
+  if (rotationCompensation == null || sensorOrientation == null) return null;
+  if (lensDirection == CameraLensDirection.front) {
+    rotationCompensation = (sensorOrientation + rotationCompensation) % 360;
+  } else {
+    rotationCompensation =
+        (sensorOrientation - rotationCompensation + 360) % 360;
+  }
+  return rotationCompensation;
+}
+
+/// Extracts RGBA bytes and rotation compensation from a [CameraImage].
+/// Returns null if the format is unsupported or rotation cannot be computed.
+({Uint8List bytes, int width, int height, int rotation})? prepareCameraImage(
+  CameraImage image,
+  int? sensorOrientation,
+  DeviceOrientation deviceOrientation,
+  CameraLensDirection lensDirection,
+) {
+  final format = InputImageFormatValue.fromRawValue(image.format.raw);
+  if (format == null) return null;
+
+  final bytes = switch (format) {
+    InputImageFormat.yuv_420_888 => yuv420ToRGBA8888(image),
+    InputImageFormat.nv21 => nv21ToRGBA8888(image),
+    InputImageFormat.bgra8888 => bgraToRgbaInPlace(image.planes.first.bytes),
+    _ => throw UnimplementedError(),
+  };
+
+  final rotation = computeRotationCompensation(
+    sensorOrientation,
+    deviceOrientation,
+    lensDirection,
+  );
+  if (rotation == null) return null;
+
+  return (
+    bytes: bytes,
+    width: image.width,
+    height: image.height,
+    rotation: rotation,
+  );
+}
 
 void processImage(
   CameraImage image,
@@ -42,24 +93,26 @@ void processImage(
     bytes,
   );
 
-  var rotationCompensation = _orientations[deviceOrientation];
-  if (rotationCompensation == null || sensorOrientation == null) return;
-  if (lensDirection == CameraLensDirection.front) {
-    // front-facing
-    rotationCompensation = (sensorOrientation + rotationCompensation) % 360;
-  } else {
-    // back-facing
-    rotationCompensation =
-        (sensorOrientation - rotationCompensation + 360) % 360;
-  }
+  final rotationCompensation = computeRotationCompensation(
+    sensorOrientation,
+    deviceOrientation,
+    lensDirection,
+  );
+  if (rotationCompensation == null) return;
+
   switch (rotationCompensation) {
     case 90:
       await cv4.rotateAsync(mat, cv4.ROTATE_90_CLOCKWISE, dst: mat);
+      break;
     case 180:
       await cv4.rotateAsync(mat, cv4.ROTATE_180, dst: mat);
+      break;
     case 270:
       await cv4.rotateAsync(mat, cv4.ROTATE_90_COUNTERCLOCKWISE, dst: mat);
+      break;
     default:
+      // no rotation needed
+      break;
   }
 
   final (frame, debugImage) = await detectDocumentEdges(
@@ -73,13 +126,11 @@ void processImage(
   }
 }
 
-// ---------------------------------------------------------------------------
-// Detection parameters (adapted from OSS-DocumentScanner)
-// ---------------------------------------------------------------------------
+// Detection parameters (adapted from OSS-DocumentScanner):
 
 /// Maximum dimension for the processing image. Downscaling speeds up detection
 /// and acts as implicit noise reduction. Coordinates are scaled back afterwards.
-const _resizeThreshold = 300;
+const _resizeThreshold = 200;
 
 /// Border padding added around the resized image so that documents extending to
 /// the camera frame edges are detected correctly.
@@ -124,12 +175,12 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
   cv4.Mat mat, {
   DebugStage debugStage = DebugStage.none,
 }) async {
-  // 1. Convert RGBA → BGR for multi-channel processing.
-  final bgr = await cv4.cvtColorAsync(mat, cv4.COLOR_RGBA2BGR);
+  // 1. Convert RGBA → grayscale for single-channel processing.
+  final gray = await cv4.cvtColorAsync(mat, cv4.COLOR_RGBA2GRAY);
 
   // 2. Resize to processing resolution for speed.
-  final originalWidth = bgr.cols.toDouble();
-  final originalHeight = bgr.rows.toDouble();
+  final originalWidth = gray.cols.toDouble();
+  final originalHeight = gray.rows.toDouble();
   final maxDim = math.max(originalWidth, originalHeight);
   final double resizeScaleX;
   final double resizeScaleY;
@@ -140,13 +191,13 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
     final newH = (originalHeight / approxScale).floor();
     resizeScaleX = originalWidth / newW;
     resizeScaleY = originalHeight / newH;
-    resized = await cv4.resizeAsync(bgr, (newW, newH));
+    resized = await cv4.resizeAsync(gray, (newW, newH));
   } else {
     resizeScaleX = 1.0;
     resizeScaleY = 1.0;
-    resized = bgr.clone();
+    resized = gray.clone();
   }
-  bgr.dispose();
+  gray.dispose();
 
   // 3. Add border padding so documents at frame edges are found.
   final bordered = await cv4.copyMakeBorderAsync(
@@ -168,9 +219,7 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
 
   // Debug: grayscale stage shows the first channel after blur.
   if (debugStage == DebugStage.grayscale) {
-    final ch = await cv4.extractChannelAsync(blurred, 0);
-    final dbg = await _grayMatToUiImage(ch);
-    ch.dispose();
+    final dbg = await _grayMatToUiImage(blurred);
     final result = await _scanPoint(
       blurred,
       bordered,
@@ -185,9 +234,7 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
   }
 
   if (debugStage == DebugStage.blurred) {
-    final ch = await cv4.extractChannelAsync(blurred, 0);
-    final dbg = await _grayMatToUiImage(ch);
-    ch.dispose();
+    final dbg = await _grayMatToUiImage(blurred);
     final result = await _scanPoint(
       blurred,
       bordered,
@@ -203,10 +250,8 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
 
   // Debug stages for intermediate processing.
   if (debugStage == DebugStage.canny || debugStage == DebugStage.morphClosed) {
-    // Show the first channel's threshold + canny edge map.
-    final ch = await cv4.extractChannelAsync(blurred, 0);
     final (_, edged) = await cv4.thresholdAsync(
-      ch,
+      blurred,
       _threshValue,
       _threshMax,
       cv4.THRESH_BINARY,
@@ -228,7 +273,6 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
     final dbg = await _grayMatToUiImage(
       debugStage == DebugStage.canny ? edged : dilated,
     );
-    ch.dispose();
     edged.dispose();
     closed.dispose();
     dilated.dispose();
@@ -276,9 +320,9 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
 
 /// Core detection pipeline adapted from OSS-DocumentScanner.
 ///
-/// For each BGR color channel:
+/// On the single grayscale channel:
 ///   1. Binary threshold → morphological close → dilate → find quads
-///   2. Multiple Canny passes (t from 60 down to 10) → dilate → find quads
+///   2. Canny passes at t=50,30,10 → dilate → find quads
 ///
 /// Threshold-based contours get higher weight than Canny-based ones.
 /// The best candidate is chosen by a score combining area, weight, and angle.
@@ -313,7 +357,7 @@ Future<DocumentFrame?> _scanPoint(
   return _orderCornerOffsets(scaled);
 }
 
-/// Collects all valid quad candidates across channels and detection methods.
+/// Collects all valid quad candidates from the single grayscale channel.
 Future<List<_QuadCandidate>> _collectCandidates(
   cv4.Mat blurred,
   double width,
@@ -328,57 +372,46 @@ Future<List<_QuadCandidate>> _collectCandidates(
     _dilateAnchorSize,
   ));
 
-  final channelsCount = math.min(blurred.channels, 3);
   final List<_QuadCandidate> allCandidates = [];
-  // Higher weight = higher priority. Threshold gets highest weight.
   var weight = 3000000.0;
   final maxAllowedArea =
       (width - 2 * _borderSize) * (height - 2 * _borderSize) * 0.92;
 
   try {
-    for (var ch = channelsCount - 1; ch >= 0; ch--) {
-      final channel = await cv4.extractChannelAsync(blurred, ch);
+    // --- Pass 1: Binary threshold ---
+    final (_, threshed) = await cv4.thresholdAsync(
+      blurred,
+      _threshValue,
+      _threshMax,
+      cv4.THRESH_BINARY,
+    );
+    final closed1 = await cv4.morphologyExAsync(
+      threshed,
+      cv4.MORPH_CLOSE,
+      morphKernel,
+    );
+    threshed.dispose();
+    final dilated1 = await cv4.dilateAsync(closed1, dilateKernel);
+    closed1.dispose();
 
-      // --- Pass 1: Binary threshold ---
-      final (_, threshed) = await cv4.thresholdAsync(
-        channel,
-        _threshValue,
-        _threshMax,
-        cv4.THRESH_BINARY,
-      );
-      final closed1 = await cv4.morphologyExAsync(
-        threshed,
-        cv4.MORPH_CLOSE,
-        morphKernel,
-      );
-      threshed.dispose();
-      final dilated1 = await cv4.dilateAsync(closed1, dilateKernel);
-      closed1.dispose();
+    _findSquares(
+      dilated1,
+      width,
+      height,
+      maxAllowedArea,
+      allCandidates,
+      weight,
+    );
+    dilated1.dispose();
+    weight -= 1;
 
-      _findSquares(
-        dilated1,
-        width,
-        height,
-        maxAllowedArea,
-        allCandidates,
-        weight,
-      );
-      dilated1.dispose();
-      weight -= 1;
-
-      // Early exit if we already have an optimal candidate.
-      if (_hasOptimalCandidate(allCandidates, width, height)) {
-        channel.dispose();
-        break;
-      }
-
-      // --- Pass 2: Canny with decreasing thresholds ---
-      var t = 60;
-      while (t >= 10) {
+    // --- Pass 2: Canny with fewer threshold steps ---
+    if (!_hasOptimalCandidate(allCandidates, width, height)) {
+      for (final t in [50, 30, 10]) {
         final lowThreshold = t * _cannyFactor;
         final highThreshold = lowThreshold * 2;
         final edges = await cv4.cannyAsync(
-          channel,
+          blurred,
           lowThreshold,
           highThreshold,
         );
@@ -397,11 +430,7 @@ Future<List<_QuadCandidate>> _collectCandidates(
         weight -= 1;
 
         if (_hasOptimalCandidate(allCandidates, width, height)) break;
-        t -= 10;
       }
-
-      channel.dispose();
-      if (_hasOptimalCandidate(allCandidates, width, height)) break;
     }
   } finally {
     morphKernel.dispose();

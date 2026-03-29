@@ -15,6 +15,9 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: const DocumentScanner(), theme: ThemeData.dark());
+    return MaterialApp(
+      home: const PaperlessMobileDocumentScanner(),
+      theme: ThemeData.dark(),
+    );
   }
 }

@@ -2,7 +2,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
-import 'package:paperless_mobile_document_scanner/data/document_frame.dart';
+import 'package:paperless_mobile_document_scanner/models/document_frame.dart';
 import 'package:paperless_mobile_document_scanner/processing/perspective_transform.dart';
 import 'package:paperless_mobile_document_scanner/view/widgets/draggable_frame_overlay_painter.dart';
 
@@ -240,6 +240,36 @@ class _EdgeAdjustmentViewState extends State<EdgeAdjustmentView> {
     return inside;
   }
 
+  /// Returns whether the four corners of [frame] form a convex quadrilateral.
+  ///
+  /// Uses the cross-product sign of consecutive edge vectors. A polygon is
+  /// convex iff all cross products have the same sign.
+  bool _isConvexQuad(DocumentFrame frame) {
+    final pts = [
+      frame.topLeft,
+      frame.topRight,
+      frame.bottomRight,
+      frame.bottomLeft,
+    ];
+
+    bool? positive;
+    for (var i = 0; i < 4; i++) {
+      final a = pts[i];
+      final b = pts[(i + 1) % 4];
+      final c = pts[(i + 2) % 4];
+      final cross =
+          (b.dx - a.dx) * (c.dy - b.dy) - (b.dy - a.dy) * (c.dx - b.dx);
+      if (cross.abs() < 1e-6) continue; // collinear edge, skip
+      final sign = cross > 0;
+      if (positive == null) {
+        positive = sign;
+      } else if (sign != positive) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   void _onPanUpdate(DragUpdateDetails details, BoxConstraints constraints) {
     if (_activeCorner == null && !_isDraggingFrame) return;
 
@@ -271,17 +301,22 @@ class _EdgeAdjustmentViewState extends State<EdgeAdjustmentView> {
       (currentPos.dy + imageDelta.dy).clamp(0.0, widget.imageSize.height),
     );
 
+    final candidate = DocumentFrame(
+      topLeft: _activeCorner == _Corner.topLeft ? newPos : _frame.topLeft,
+      topRight: _activeCorner == _Corner.topRight ? newPos : _frame.topRight,
+      bottomRight: _activeCorner == _Corner.bottomRight
+          ? newPos
+          : _frame.bottomRight,
+      bottomLeft: _activeCorner == _Corner.bottomLeft
+          ? newPos
+          : _frame.bottomLeft,
+    );
+
+    // Only accept the move if the quad stays convex.
+    if (!_isConvexQuad(candidate)) return;
+
     setState(() {
-      _frame = DocumentFrame(
-        topLeft: _activeCorner == _Corner.topLeft ? newPos : _frame.topLeft,
-        topRight: _activeCorner == _Corner.topRight ? newPos : _frame.topRight,
-        bottomRight: _activeCorner == _Corner.bottomRight
-            ? newPos
-            : _frame.bottomRight,
-        bottomLeft: _activeCorner == _Corner.bottomLeft
-            ? newPos
-            : _frame.bottomLeft,
-      );
+      _frame = candidate;
     });
   }
 

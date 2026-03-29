@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:paperless_mobile_document_scanner/data/debug_stage.dart';
+import 'package:paperless_mobile_document_scanner/models/debug_stage.dart';
 
 class DebugStageSwitcher extends StatelessWidget {
   final DebugStage value;

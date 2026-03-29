@@ -60,7 +60,16 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
       }
       cameraController.dispose();
     } else if (state == AppLifecycleState.resumed) {
-      _initializeCameraController(_controller!);
+      final newController = CameraController(
+        widget.camera,
+        widget.resolutionPreset,
+        enableAudio: false,
+        imageFormatGroup: Platform.isAndroid
+            ? ImageFormatGroup.nv21
+            : ImageFormatGroup.bgra8888,
+      );
+      _controller = newController;
+      _initializeCameraController(newController);
     }
   }
 
@@ -72,7 +81,8 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
     }
     return SizedBox.expand(
       child: FittedBox(
-        fit: BoxFit.contain,
+        fit: BoxFit.cover,
+        clipBehavior: Clip.hardEdge,
         child: SizedBox(
           width: cameraController.value.previewSize!.height,
           height: cameraController.value.previewSize!.width,
@@ -108,6 +118,7 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
 
     try {
       await cameraController.initialize();
+      cameraController.setFlashMode(FlashMode.off);
       widget.onCameraReady(
         cameraController,
         cameraController.value.previewSize!.width.toInt(),

@@ -2,8 +2,8 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:paperless_mobile_document_scanner/data/document_frame.dart';
-import 'package:paperless_mobile_document_scanner/data/scan_result.dart';
+import 'package:paperless_mobile_document_scanner/models/document_frame.dart';
+import 'package:paperless_mobile_document_scanner/models/scan_result.dart';
 import 'package:paperless_mobile_document_scanner/processing/image_edit.dart';
 import 'package:paperless_mobile_document_scanner/processing/perspective_transform.dart';
 import 'package:paperless_mobile_document_scanner/view/edge_adjustment_view.dart';
@@ -14,6 +14,7 @@ class ImageEditResult {
   final int quarterTurns;
   final ScanColorFilter colorFilter;
   final double bwThreshold;
+  final bool enhanced;
   final Uint8List editedBytes;
 
   ImageEditResult({
@@ -21,6 +22,7 @@ class ImageEditResult {
     required this.quarterTurns,
     required this.colorFilter,
     required this.bwThreshold,
+    required this.enhanced,
     required this.editedBytes,
   });
 }
@@ -60,6 +62,9 @@ class ImageEditView extends StatefulWidget {
   /// Initial B&W threshold.
   final double initialBwThreshold;
 
+  /// Whether auto-enhance is initially enabled.
+  final bool initialEnhanced;
+
   /// Whether to play the entry animation (scale + opacity).
   final bool animateEntry;
 
@@ -79,6 +84,7 @@ class ImageEditView extends StatefulWidget {
     this.initialQuarterTurns = 0,
     this.initialColorFilter = ScanColorFilter.none,
     this.initialBwThreshold = 10,
+    this.initialEnhanced = false,
     this.animateEntry = false,
     required this.onConfirmed,
     required this.onCancelled,
@@ -100,8 +106,13 @@ class _ImageEditViewState extends State<ImageEditView>
   late ScanColorFilter _colorFilter;
   late double _bwThreshold;
   late int _quarterTurns;
+  late bool _enhanced;
   bool _processing = false;
   bool _loading = false;
+
+  // Pinch-to-zoom & double-tap-to-reset.
+  final TransformationController _transformController =
+      TransformationController();
 
   // Entry animation (only when animateEntry is true).
   AnimationController? _animController;
@@ -115,13 +126,16 @@ class _ImageEditViewState extends State<ImageEditView>
     _quarterTurns = widget.initialQuarterTurns;
     _colorFilter = widget.initialColorFilter;
     _bwThreshold = widget.initialBwThreshold;
+    _enhanced = widget.initialEnhanced;
 
     if (widget.originalImageBytes != null) {
       // New capture — bytes already available.
       _originalBytes = widget.originalImageBytes;
       _croppedBytes = widget.initialCroppedBytes;
       _displayBytes = _croppedBytes;
-      if (_quarterTurns != 0 || _colorFilter != ScanColorFilter.none) {
+      if (_quarterTurns != 0 ||
+          _colorFilter != ScanColorFilter.none ||
+          _enhanced) {
         _applyEdits();
       }
     } else {
@@ -157,7 +171,9 @@ class _ImageEditViewState extends State<ImageEditView>
       _originalBytes = bytes;
       _croppedBytes = cropped;
 
-      if (_quarterTurns != 0 || _colorFilter != ScanColorFilter.none) {
+      if (_quarterTurns != 0 ||
+          _colorFilter != ScanColorFilter.none ||
+          _enhanced) {
         // _applyEdits will set _displayBytes and _loading = false.
         if (mounted) setState(() => _loading = false);
         await _applyEdits();
@@ -178,6 +194,7 @@ class _ImageEditViewState extends State<ImageEditView>
   @override
   void dispose() {
     _animController?.dispose();
+    _transformController.dispose();
     super.dispose();
   }
 
@@ -192,6 +209,10 @@ class _ImageEditViewState extends State<ImageEditView>
     try {
       // Always start from the cropped bytes to avoid compounding quality loss.
       Uint8List result = _croppedBytes!;
+
+      if (_enhanced) {
+        result = await autoEnhance(result);
+      }
 
       if (_quarterTurns % 4 != 0) {
         result = await rotateImage(result, _quarterTurns);
@@ -233,6 +254,11 @@ class _ImageEditViewState extends State<ImageEditView>
     _applyEdits();
   }
 
+  void _toggleEnhance() {
+    _enhanced = !_enhanced;
+    _applyEdits();
+  }
+
   Future<void> _onCropPressed() async {
     if (_originalBytes == null) return;
     final result = await Navigator.of(context).push<(Uint8List, DocumentFrame)>(
@@ -268,9 +294,14 @@ class _ImageEditViewState extends State<ImageEditView>
         quarterTurns: _quarterTurns,
         colorFilter: _colorFilter,
         bwThreshold: _bwThreshold,
+        enhanced: _enhanced,
         editedBytes: _displayBytes!,
       ),
     );
+  }
+
+  void _resetZoom() {
+    _transformController.value = Matrix4.identity();
   }
 
   @override
@@ -288,7 +319,7 @@ class _ImageEditViewState extends State<ImageEditView>
       imageWidget = Padding(
         padding: const EdgeInsets.all(24),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(4),
           child: Image.memory(
             _displayBytes!,
             fit: BoxFit.contain,
@@ -312,148 +343,175 @@ class _ImageEditViewState extends State<ImageEditView>
       );
     }
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(title: const Text('Edit')),
-      bottomNavigationBar: BottomAppBar(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            TextButton(
-              onPressed: widget.onCancelled,
-              child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
-            ),
-            FilledButton.icon(
-              onPressed: (_processing || showLoading) ? null : _onDone,
-              icon: const Icon(Icons.check),
-              label: const Text('Apply'),
-            ),
-          ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          widget.onCancelled();
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        appBar: AppBar(title: const Text('Edit')),
+        bottomNavigationBar: BottomAppBar(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(onPressed: widget.onCancelled, child: Text('Discard')),
+              FilledButton.icon(
+                onPressed: (_processing || showLoading) ? null : _onDone,
+                icon: const Icon(Icons.check),
+                label: const Text('Apply'),
+              ),
+            ],
+          ),
         ),
-      ),
-      body: Column(
-        children: [
-          // Image preview.
-          Expanded(
-            child: Center(
+        body: Column(
+          children: [
+            // Image preview.
+            Expanded(
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  imageWidget,
+                  SizedBox.expand(
+                    child: GestureDetector(
+                      onDoubleTap: _resetZoom,
+                      child: InteractiveViewer(
+                        transformationController: _transformController,
+                        minScale: 1.0,
+                        maxScale: 5.0,
+                        child: imageWidget,
+                      ),
+                    ),
+                  ),
                   if (_processing)
                     const CircularProgressIndicator(color: Colors.white),
                 ],
               ),
             ),
-          ),
-          // Editing controls.
-          SafeArea(
-            top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_colorFilter == ScanColorFilter.blackAndWhite)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.brightness_low,
-                          color: Colors.white70,
-                          size: 20,
-                        ),
-                        Expanded(
-                          child: Slider(
-                            value: _bwThreshold,
-                            min: 2,
-                            max: 30,
-                            divisions: 28,
-                            label: _bwThreshold.round().toString(),
-                            onChanged: _processing
-                                ? null
-                                : (value) {
-                                    setState(() => _bwThreshold = value);
-                                  },
-                            onChangeEnd: _processing
-                                ? null
-                                : (_) => _applyEdits(),
+            // Editing controls.
+            SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_colorFilter == ScanColorFilter.blackAndWhite)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.brightness_low,
+                            color: Colors.white70,
+                            size: 20,
                           ),
+                          Expanded(
+                            child: Slider(
+                              value: _bwThreshold,
+                              min: 2,
+                              max: 30,
+                              divisions: 28,
+                              label: _bwThreshold.round().toString(),
+                              onChanged: _processing
+                                  ? null
+                                  : (value) {
+                                      setState(() => _bwThreshold = value);
+                                    },
+                              onChangeEnd: _processing
+                                  ? null
+                                  : (_) => _applyEdits(),
+                            ),
+                          ),
+                          const Icon(
+                            Icons.brightness_high,
+                            color: Colors.white70,
+                            size: 20,
+                          ),
+                        ],
+                      ),
+                    ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color:
+                          theme.bottomAppBarTheme.color ??
+                          theme.colorScheme.surfaceContainer,
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                    ),
+                    child: Scrollbar(
+                      interactive: false,
+                      thumbVisibility: true,
+                      radius: const Radius.circular(2),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.max,
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            _EditButton(
+                              icon: Icons.crop,
+                              label: 'Crop',
+                              onPressed: _processing ? null : _onCropPressed,
+                            ),
+                            _EditButton(
+                              icon: Icons.rotate_90_degrees_ccw,
+                              label: 'Rotate left',
+                              onPressed: _processing
+                                  ? null
+                                  : _rotateCounterClockwise,
+                            ),
+                            _EditButton(
+                              icon: Icons.rotate_90_degrees_cw,
+                              label: 'Rotate right',
+                              onPressed: _processing ? null : _rotateClockwise,
+                            ),
+                            _EditButton(
+                              icon: Icons.auto_fix_high,
+                              label: 'Enhance',
+                              isActive: _enhanced,
+                              onPressed: _processing ? null : _toggleEnhance,
+                              activeColor: theme.colorScheme.primary,
+                            ),
+                            _EditButton(
+                              icon: Icons.filter_b_and_w,
+                              label: 'B & W',
+                              isActive:
+                                  _colorFilter == ScanColorFilter.blackAndWhite,
+                              onPressed: _processing
+                                  ? null
+                                  : () => _setColorFilter(
+                                      ScanColorFilter.blackAndWhite,
+                                    ),
+                              activeColor: theme.colorScheme.primary,
+                            ),
+                            _EditButton(
+                              icon: Icons.gradient,
+                              label: 'Greyscale',
+                              isActive:
+                                  _colorFilter == ScanColorFilter.greyscale,
+                              onPressed: _processing
+                                  ? null
+                                  : () => _setColorFilter(
+                                      ScanColorFilter.greyscale,
+                                    ),
+                              activeColor: theme.colorScheme.primary,
+                            ),
+                          ],
                         ),
-                        const Icon(
-                          Icons.brightness_high,
-                          color: Colors.white70,
-                          size: 20,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color:
-                        theme.bottomAppBarTheme.color ??
-                        theme.colorScheme.surfaceContainer,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                    ),
-                  ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.max,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        _EditButton(
-                          icon: Icons.crop,
-                          label: 'Crop',
-                          onPressed: _processing ? null : _onCropPressed,
-                        ),
-                        _EditButton(
-                          icon: Icons.rotate_90_degrees_ccw,
-                          label: 'Rotate left',
-                          onPressed: _processing
-                              ? null
-                              : _rotateCounterClockwise,
-                        ),
-                        _EditButton(
-                          icon: Icons.rotate_90_degrees_cw,
-                          label: 'Rotate right',
-                          onPressed: _processing ? null : _rotateClockwise,
-                        ),
-                        _EditButton(
-                          icon: Icons.gradient,
-                          label: 'Greyscale',
-                          isActive: _colorFilter == ScanColorFilter.greyscale,
-                          onPressed: _processing
-                              ? null
-                              : () =>
-                                    _setColorFilter(ScanColorFilter.greyscale),
-                          activeColor: theme.colorScheme.primary,
-                        ),
-                        _EditButton(
-                          icon: Icons.filter_b_and_w,
-                          label: 'B & W',
-                          isActive:
-                              _colorFilter == ScanColorFilter.blackAndWhite,
-                          onPressed: _processing
-                              ? null
-                              : () => _setColorFilter(
-                                  ScanColorFilter.blackAndWhite,
-                                ),
-                          activeColor: theme.colorScheme.primary,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

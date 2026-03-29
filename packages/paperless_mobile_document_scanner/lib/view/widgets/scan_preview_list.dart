@@ -2,7 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:paperless_mobile_document_scanner/data/scan_result.dart';
+import 'package:paperless_mobile_document_scanner/models/scan_result.dart';
 
 /// A horizontal scrollable list of scanned document thumbnails.
 ///
