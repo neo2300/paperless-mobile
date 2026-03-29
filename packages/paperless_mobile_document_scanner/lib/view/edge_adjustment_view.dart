@@ -48,6 +48,7 @@ class _EdgeAdjustmentViewState extends State<EdgeAdjustmentView> {
   late DocumentFrame _frame;
   bool _isProcessing = false;
   _Corner? _activeCorner;
+  bool _isDraggingFrame = false;
   ui.Image? _decodedImage;
 
   @override
@@ -118,41 +119,51 @@ class _EdgeAdjustmentViewState extends State<EdgeAdjustmentView> {
           ],
         ),
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return GestureDetector(
-            onPanStart: (details) => _onPanStart(details, constraints),
-            onPanUpdate: (details) => _onPanUpdate(details, constraints),
-            onPanEnd: (_) => setState(() => _activeCorner = null),
-            child: Stack(
-              children: [
-                // Rendered image.
-                Center(
-                  child: Image.memory(
-                    widget.imageBytes,
-                    fit: BoxFit.contain,
-                    width: constraints.maxWidth,
-                    height: constraints.maxHeight,
-                  ),
-                ),
-                // Edge overlay with draggable corners.
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: DraggableFrameOverlayPainter(
-                      frame: _frame,
-                      imageSize: widget.imageSize,
-                      frameColor: Theme.of(context).colorScheme.primary,
-                      activeCornerIndex: _activeCorner != null
-                          ? _Corner.values.indexOf(_activeCorner!)
-                          : null,
-                      sourceImage: _decodedImage,
+      body: SafeArea(
+        child: Padding(
+          // Inset from screen edges so dragging corners doesn't trigger the
+          // system back gesture.
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return GestureDetector(
+                onPanStart: (details) => _onPanStart(details, constraints),
+                onPanUpdate: (details) => _onPanUpdate(details, constraints),
+                onPanEnd: (_) => setState(() {
+                  _activeCorner = null;
+                  _isDraggingFrame = false;
+                }),
+                child: Stack(
+                  children: [
+                    // Rendered image.
+                    Center(
+                      child: Image.memory(
+                        widget.imageBytes,
+                        fit: BoxFit.contain,
+                        width: constraints.maxWidth,
+                        height: constraints.maxHeight,
+                      ),
                     ),
-                  ),
+                    // Edge overlay with draggable corners.
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: DraggableFrameOverlayPainter(
+                          frame: _frame,
+                          imageSize: widget.imageSize,
+                          frameColor: Theme.of(context).colorScheme.primary,
+                          activeCornerIndex: _activeCorner != null
+                              ? _Corner.values.indexOf(_activeCorner!)
+                              : null,
+                          sourceImage: _decodedImage,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          );
-        },
+              );
+            },
+          ),
+        ),
       ),
     );
   }
@@ -172,7 +183,6 @@ class _EdgeAdjustmentViewState extends State<EdgeAdjustmentView> {
   void _onPanStart(DragStartDetails details, BoxConstraints constraints) {
     final touchPos = details.localPosition;
 
-    // Find the closest corner to the touch point (no hit-radius restriction).
     final corners = {
       _Corner.topLeft: _imageToWidget(_frame.topLeft, constraints),
       _Corner.topRight: _imageToWidget(_frame.topRight, constraints),
@@ -180,6 +190,8 @@ class _EdgeAdjustmentViewState extends State<EdgeAdjustmentView> {
       _Corner.bottomLeft: _imageToWidget(_frame.bottomLeft, constraints),
     };
 
+    // If close to a corner, drag that corner.
+    const cornerHitRadius = 40.0;
     double? minDist;
     _Corner? closest;
     for (final entry in corners.entries) {
@@ -190,15 +202,49 @@ class _EdgeAdjustmentViewState extends State<EdgeAdjustmentView> {
       }
     }
 
+    if (minDist != null && minDist <= cornerHitRadius) {
+      _activeCorner = closest;
+      _isDraggingFrame = false;
+      return;
+    }
+
+    // If inside the quadrilateral, drag the whole frame.
+    final polygon = [
+      corners[_Corner.topLeft]!,
+      corners[_Corner.topRight]!,
+      corners[_Corner.bottomRight]!,
+      corners[_Corner.bottomLeft]!,
+    ];
+    if (_isPointInPolygon(touchPos, polygon)) {
+      _isDraggingFrame = true;
+      _activeCorner = null;
+      return;
+    }
+
+    // Outside the frame – fall back to nearest corner.
     _activeCorner = closest;
+    _isDraggingFrame = false;
+  }
+
+  /// Ray-casting point-in-polygon test.
+  bool _isPointInPolygon(Offset point, List<Offset> polygon) {
+    var inside = false;
+    for (var i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      final xi = polygon[i].dx, yi = polygon[i].dy;
+      final xj = polygon[j].dx, yj = polygon[j].dy;
+      if (((yi > point.dy) != (yj > point.dy)) &&
+          (point.dx < (xj - xi) * (point.dy - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+    return inside;
   }
 
   void _onPanUpdate(DragUpdateDetails details, BoxConstraints constraints) {
-    if (_activeCorner == null) return;
+    if (_activeCorner == null && !_isDraggingFrame) return;
 
-    // Convert the gesture delta to image-space and apply it to the corner.
-    // Dampen the movement so precision adjustments are easier.
-    const dampingFactor = 0.3;
+    // Convert the gesture delta to image-space.
+    const dampingFactor = 0.5;
     final size = Size(constraints.maxWidth, constraints.maxHeight);
     final scaleX = size.width / widget.imageSize.width;
     final scaleY = size.height / widget.imageSize.height;
@@ -207,6 +253,11 @@ class _EdgeAdjustmentViewState extends State<EdgeAdjustmentView> {
       details.delta.dx / scale * dampingFactor,
       details.delta.dy / scale * dampingFactor,
     );
+
+    if (_isDraggingFrame) {
+      _moveEntireFrame(imageDelta);
+      return;
+    }
 
     final currentPos = switch (_activeCorner!) {
       _Corner.topLeft => _frame.topLeft,
@@ -230,6 +281,34 @@ class _EdgeAdjustmentViewState extends State<EdgeAdjustmentView> {
         bottomLeft: _activeCorner == _Corner.bottomLeft
             ? newPos
             : _frame.bottomLeft,
+      );
+    });
+  }
+
+  void _moveEntireFrame(Offset imageDelta) {
+    final maxW = widget.imageSize.width;
+    final maxH = widget.imageSize.height;
+
+    // Clamp the delta so no corner goes out of bounds.
+    var dx = imageDelta.dx;
+    var dy = imageDelta.dy;
+    for (final pt in [
+      _frame.topLeft,
+      _frame.topRight,
+      _frame.bottomRight,
+      _frame.bottomLeft,
+    ]) {
+      dx = dx.clamp(-pt.dx, maxW - pt.dx);
+      dy = dy.clamp(-pt.dy, maxH - pt.dy);
+    }
+
+    final delta = Offset(dx, dy);
+    setState(() {
+      _frame = DocumentFrame(
+        topLeft: _frame.topLeft + delta,
+        topRight: _frame.topRight + delta,
+        bottomRight: _frame.bottomRight + delta,
+        bottomLeft: _frame.bottomLeft + delta,
       );
     });
   }

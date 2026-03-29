@@ -70,3 +70,33 @@ Future<Uint8List> toBlackAndWhite(
   bw.dispose();
   return encoded.$2;
 }
+
+/// Generates a thumbnail of [imageBytes] (PNG) with a maximum dimension of
+/// [maxDimension] pixels (preserving the aspect ratio).
+///
+/// Returns the resized image as PNG-encoded bytes.
+Future<Uint8List> generateThumbnail(
+  Uint8List imageBytes, {
+  int maxDimension = 200,
+}) async {
+  final mat = cv4.imdecode(imageBytes, cv4.IMREAD_COLOR);
+  final w = mat.width;
+  final h = mat.height;
+  final maxDim = w > h ? w : h;
+
+  if (maxDim <= maxDimension) {
+    final encoded = cv4.imencode('.png', mat);
+    mat.dispose();
+    return encoded.$2;
+  }
+
+  final scale = maxDimension / maxDim;
+  final newW = (w * scale).round();
+  final newH = (h * scale).round();
+  final resized = await cv4.resizeAsync(mat, (newW, newH));
+
+  final encoded = cv4.imencode('.png', resized);
+  mat.dispose();
+  resized.dispose();
+  return encoded.$2;
+}

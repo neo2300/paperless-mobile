@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
 class ShutterButton extends StatefulWidget {
+  final double size;
   final VoidCallback? onPressed;
 
-  const ShutterButton({super.key, this.onPressed});
+  const ShutterButton({super.key, this.onPressed, this.size = 72});
 
   @override
   State<ShutterButton> createState() => _ShutterButtonState();
@@ -14,6 +15,8 @@ class _ShutterButtonState extends State<ShutterButton> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.onSurface.withAlpha(200);
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
       onTapUp: (_) {
@@ -25,18 +28,15 @@ class _ShutterButtonState extends State<ShutterButton> {
         opacity: _pressed ? 0.7 : 1.0,
         duration: const Duration(milliseconds: 100),
         child: Container(
-          width: 72,
-          height: 72,
+          width: widget.size,
+          height: widget.size,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 4),
+            border: Border.all(color: color, width: widget.size * 0.055),
           ),
-          padding: const EdgeInsets.all(4),
+          padding: EdgeInsets.all(widget.size * 0.055),
           child: Container(
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white,
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
           ),
         ),
       ),
