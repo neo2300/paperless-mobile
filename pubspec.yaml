@@ -97,7 +97,6 @@ dependencies:
   synchronized: ^3.1.0
   extended_masked_text: ^3.0.1
   font_awesome_flutter: ^10.6.0
-  # camerawesome: ^2.0.0-dev.1
   pdfx: ^2.9.2
   markdown: ^7.1.1
   path: ^1.9.1
@@ -112,6 +111,8 @@ dependencies:
   fpdart: ^1.2.0
   open_file: ^3.5.11
   jiffy: ^6.4.4
+  paperless_mobile_document_scanner:
+    path: packages/paperless_mobile_document_scanner
 
 dev_dependencies:
   integration_test:

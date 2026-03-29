@@ -30,14 +30,6 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
       widget.camera,
       widget.resolutionPreset,
       enableAudio: false,
-      fps: switch (widget.resolutionPreset) {
-        ResolutionPreset.low => null,
-        ResolutionPreset.medium => null,
-        ResolutionPreset.high => 60,
-        ResolutionPreset.veryHigh => 30,
-        ResolutionPreset.ultraHigh => 24,
-        ResolutionPreset.max => 24,
-      },
       imageFormatGroup: Platform.isAndroid
           ? ImageFormatGroup.nv21
           : ImageFormatGroup.bgra8888,
@@ -78,24 +70,22 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
     if (cameraController == null || !cameraController.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
-    return ClipRect(
-      child: SizedBox.expand(
-        child: FittedBox(
-          fit: BoxFit.cover,
-          child: SizedBox(
-            width: cameraController.value.previewSize!.height,
-            height: cameraController.value.previewSize!.width,
-            child: CameraPreview(
-              cameraController,
-              child: LayoutBuilder(
-                builder: (BuildContext context, BoxConstraints constraints) {
-                  return GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTapDown: (TapDownDetails details) =>
-                        onViewFinderTap(details, constraints),
-                  );
-                },
-              ),
+    return SizedBox.expand(
+      child: FittedBox(
+        fit: BoxFit.contain,
+        child: SizedBox(
+          width: cameraController.value.previewSize!.height,
+          height: cameraController.value.previewSize!.width,
+          child: CameraPreview(
+            cameraController,
+            child: LayoutBuilder(
+              builder: (BuildContext context, BoxConstraints constraints) {
+                return GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTapDown: (TapDownDetails details) =>
+                      onViewFinderTap(details, constraints),
+                );
+              },
             ),
           ),
         ),

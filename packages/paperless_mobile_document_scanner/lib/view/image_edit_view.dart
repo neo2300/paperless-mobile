@@ -1,48 +1,184 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:paperless_mobile_document_scanner/data/document_frame.dart';
+import 'package:paperless_mobile_document_scanner/data/scan_result.dart';
 import 'package:paperless_mobile_document_scanner/processing/image_edit.dart';
+import 'package:paperless_mobile_document_scanner/processing/perspective_transform.dart';
+import 'package:paperless_mobile_document_scanner/view/edge_adjustment_view.dart';
 
-enum _ColorFilter { none, greyscale, blackAndWhite }
+/// Result returned by [ImageEditView] when the user confirms their edits.
+class ImageEditResult {
+  final DocumentFrame cropFrame;
+  final int quarterTurns;
+  final ScanColorFilter colorFilter;
+  final double bwThreshold;
+  final Uint8List editedBytes;
 
-/// Post-crop editing view that allows the user to rotate the image (90° steps)
-/// and apply a greyscale or black-and-white filter before accepting.
+  ImageEditResult({
+    required this.cropFrame,
+    required this.quarterTurns,
+    required this.colorFilter,
+    required this.bwThreshold,
+    required this.editedBytes,
+  });
+}
+
+/// Combined editing view: crop adjustment (via edge adjustment sub-page),
+/// rotation, and colour filters.
+///
+/// For a **new capture**, pass [originalImageBytes] and [initialCroppedBytes]
+/// directly.  For a **re-edit** of an existing scan, pass [originalImageFile]
+/// instead — the bytes will be loaded from disk on demand.
 class ImageEditView extends StatefulWidget {
-  /// The cropped image (PNG bytes) to edit.
-  final Uint8List imageBytes;
+  /// Raw bytes of the original captured image (new capture path).
+  /// Mutually exclusive with [originalImageFile].
+  final Uint8List? originalImageBytes;
+
+  /// Original image file on disk (re-edit path). The bytes will be loaded
+  /// lazily. Mutually exclusive with [originalImageBytes].
+  final File? originalImageFile;
+
+  /// Pixel dimensions of the original image.
+  final Size originalImageSize;
+
+  /// The initial crop frame (from detection or a previous edit).
+  final DocumentFrame initialCropFrame;
+
+  /// Pre-computed perspective-transformed bytes for [initialCropFrame].
+  /// Required when [originalImageBytes] is set (new capture). When null,
+  /// the view will compute it from the file on init.
+  final Uint8List? initialCroppedBytes;
+
+  /// Initial rotation (0–3 quarter turns clockwise).
+  final int initialQuarterTurns;
+
+  /// Initial color filter.
+  final ScanColorFilter initialColorFilter;
+
+  /// Initial B&W threshold.
+  final double initialBwThreshold;
+
+  /// Whether to play the entry animation (scale + opacity).
+  final bool animateEntry;
 
   /// Called when the user confirms the edits.
-  final ValueChanged<Uint8List> onConfirmed;
+  final ValueChanged<ImageEditResult> onConfirmed;
 
-  /// Called when the user cancels editing and wants to go back.
+  /// Called when the user cancels / discards.
   final VoidCallback onCancelled;
 
   const ImageEditView({
     super.key,
-    required this.imageBytes,
+    this.originalImageBytes,
+    this.originalImageFile,
+    required this.originalImageSize,
+    required this.initialCropFrame,
+    this.initialCroppedBytes,
+    this.initialQuarterTurns = 0,
+    this.initialColorFilter = ScanColorFilter.none,
+    this.initialBwThreshold = 10,
+    this.animateEntry = false,
     required this.onConfirmed,
     required this.onCancelled,
-  });
+  }) : assert(
+         originalImageBytes != null || originalImageFile != null,
+         'Either originalImageBytes or originalImageFile must be provided',
+       );
 
   @override
   State<ImageEditView> createState() => _ImageEditViewState();
 }
 
-class _ImageEditViewState extends State<ImageEditView> {
-  late Uint8List _displayBytes;
-  _ColorFilter _colorFilter = _ColorFilter.none;
+class _ImageEditViewState extends State<ImageEditView>
+    with SingleTickerProviderStateMixin {
+  late DocumentFrame _cropFrame;
+  Uint8List? _originalBytes;
+  Uint8List? _croppedBytes;
+  Uint8List? _displayBytes;
+  late ScanColorFilter _colorFilter;
+  late double _bwThreshold;
+  late int _quarterTurns;
   bool _processing = false;
+  bool _loading = false;
 
-  /// B&W adaptive threshold constant (2–30). Higher = more black.
-  double _bwThreshold = 10;
-
-  /// How many 90° clockwise turns have been applied (0–3).
-  int _quarterTurns = 0;
+  // Entry animation (only when animateEntry is true).
+  AnimationController? _animController;
+  Animation<double>? _scaleAnimation;
+  Animation<double>? _opacityAnimation;
 
   @override
   void initState() {
     super.initState();
-    _displayBytes = widget.imageBytes;
+    _cropFrame = widget.initialCropFrame;
+    _quarterTurns = widget.initialQuarterTurns;
+    _colorFilter = widget.initialColorFilter;
+    _bwThreshold = widget.initialBwThreshold;
+
+    if (widget.originalImageBytes != null) {
+      // New capture — bytes already available.
+      _originalBytes = widget.originalImageBytes;
+      _croppedBytes = widget.initialCroppedBytes;
+      _displayBytes = _croppedBytes;
+      if (_quarterTurns != 0 || _colorFilter != ScanColorFilter.none) {
+        _applyEdits();
+      }
+    } else {
+      // Re-edit — load from file and recompute.
+      _loading = true;
+      _loadFromFile();
+    }
+
+    if (widget.animateEntry) {
+      _animController = AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 400),
+      );
+      _scaleAnimation = CurvedAnimation(
+        parent: _animController!,
+        curve: Curves.easeOutCubic,
+      );
+      _opacityAnimation = CurvedAnimation(
+        parent: _animController!,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeIn),
+      );
+      _animController!.forward();
+    }
+  }
+
+  Future<void> _loadFromFile() async {
+    try {
+      final bytes = await widget.originalImageFile!.readAsBytes();
+      final cropped = await perspectiveTransform(
+        imageBytes: bytes,
+        frame: _cropFrame,
+      );
+      _originalBytes = bytes;
+      _croppedBytes = cropped;
+
+      if (_quarterTurns != 0 || _colorFilter != ScanColorFilter.none) {
+        // _applyEdits will set _displayBytes and _loading = false.
+        if (mounted) setState(() => _loading = false);
+        await _applyEdits();
+      } else {
+        if (mounted) {
+          setState(() {
+            _displayBytes = _croppedBytes;
+            _loading = false;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Failed to load original image: $e');
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _animController?.dispose();
+    super.dispose();
   }
 
   // -----------------------------------------------------------------------
@@ -50,25 +186,23 @@ class _ImageEditViewState extends State<ImageEditView> {
   // -----------------------------------------------------------------------
 
   Future<void> _applyEdits() async {
-    if (_processing) return;
+    if (_processing || _croppedBytes == null) return;
     setState(() => _processing = true);
 
     try {
-      // Always start from the original to avoid compounding quality loss.
-      Uint8List result = widget.imageBytes;
+      // Always start from the cropped bytes to avoid compounding quality loss.
+      Uint8List result = _croppedBytes!;
 
       if (_quarterTurns % 4 != 0) {
         result = await rotateImage(result, _quarterTurns);
       }
 
       switch (_colorFilter) {
-        case _ColorFilter.greyscale:
+        case ScanColorFilter.greyscale:
           result = await toGrayscale(result);
-          break;
-        case _ColorFilter.blackAndWhite:
+        case ScanColorFilter.blackAndWhite:
           result = await toBlackAndWhite(result, constant: _bwThreshold);
-          break;
-        case _ColorFilter.none:
+        case ScanColorFilter.none:
           break;
       }
 
@@ -94,15 +228,90 @@ class _ImageEditViewState extends State<ImageEditView> {
     _applyEdits();
   }
 
-  void _setColorFilter(_ColorFilter filter) {
-    // Toggle off if already active, otherwise switch.
-    _colorFilter = _colorFilter == filter ? _ColorFilter.none : filter;
+  void _setColorFilter(ScanColorFilter filter) {
+    _colorFilter = _colorFilter == filter ? ScanColorFilter.none : filter;
     _applyEdits();
+  }
+
+  Future<void> _onCropPressed() async {
+    if (_originalBytes == null) return;
+    final result = await Navigator.of(context).push<(Uint8List, DocumentFrame)>(
+      MaterialPageRoute(
+        builder: (navContext) => EdgeAdjustmentView(
+          imageBytes: _originalBytes!,
+          initialFrame: _cropFrame,
+          imageSize: widget.originalImageSize,
+          onConfirmed: (bytes, frame) {
+            Navigator.of(navContext).pop((bytes, frame));
+          },
+          onCancelled: () {
+            Navigator.of(navContext).pop();
+          },
+        ),
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _croppedBytes = result.$1;
+        _cropFrame = result.$2;
+      });
+      _applyEdits();
+    }
+  }
+
+  void _onDone() {
+    if (_displayBytes == null) return;
+    widget.onConfirmed(
+      ImageEditResult(
+        cropFrame: _cropFrame,
+        quarterTurns: _quarterTurns,
+        colorFilter: _colorFilter,
+        bwThreshold: _bwThreshold,
+        editedBytes: _displayBytes!,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    final bool showLoading = _loading || _displayBytes == null;
+
+    Widget imageWidget;
+    if (showLoading) {
+      imageWidget = const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    } else {
+      imageWidget = Padding(
+        padding: const EdgeInsets.all(24),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Image.memory(
+            _displayBytes!,
+            fit: BoxFit.contain,
+            gaplessPlayback: true,
+          ),
+        ),
+      );
+    }
+
+    // Wrap with entry animation when requested.
+    if (_animController != null) {
+      imageWidget = AnimatedBuilder(
+        animation: _animController!,
+        builder: (context, child) {
+          return Opacity(
+            opacity: _opacityAnimation!.value,
+            child: ScaleTransition(scale: _scaleAnimation!, child: child),
+          );
+        },
+        child: imageWidget,
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(title: const Text('Edit')),
@@ -112,14 +321,12 @@ class _ImageEditViewState extends State<ImageEditView> {
           children: [
             TextButton(
               onPressed: widget.onCancelled,
-              child: Text(MaterialLocalizations.of(context).backButtonTooltip),
+              child: Text(MaterialLocalizations.of(context).cancelButtonLabel),
             ),
             FilledButton.icon(
-              onPressed: _processing
-                  ? null
-                  : () => widget.onConfirmed(_displayBytes),
+              onPressed: (_processing || showLoading) ? null : _onDone,
               icon: const Icon(Icons.check),
-              label: Text('Done'),
+              label: const Text('Apply'),
             ),
           ],
         ),
@@ -132,17 +339,7 @@ class _ImageEditViewState extends State<ImageEditView> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.memory(
-                        _displayBytes,
-                        fit: BoxFit.contain,
-                        gaplessPlayback: true,
-                      ),
-                    ),
-                  ),
+                  imageWidget,
                   if (_processing)
                     const CircularProgressIndicator(color: Colors.white),
                 ],
@@ -155,7 +352,7 @@ class _ImageEditViewState extends State<ImageEditView> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (_colorFilter == _ColorFilter.blackAndWhite)
+                if (_colorFilter == ScanColorFilter.blackAndWhite)
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Row(
@@ -191,49 +388,66 @@ class _ImageEditViewState extends State<ImageEditView> {
                     ),
                   ),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color:
                         theme.bottomAppBarTheme.color ??
                         theme.colorScheme.surfaceContainer,
-                    borderRadius: BorderRadius.only(
+                    borderRadius: const BorderRadius.only(
                       topLeft: Radius.circular(12),
                       topRight: Radius.circular(12),
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.max,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _EditButton(
-                        icon: Icons.rotate_90_degrees_ccw,
-                        onPressed: _processing ? null : _rotateCounterClockwise,
-                        label: "Rotate left",
-                      ),
-                      _EditButton(
-                        icon: Icons.rotate_90_degrees_cw,
-                        onPressed: _processing ? null : _rotateClockwise,
-                        label: "Rotate right",
-                      ),
-                      _EditButton(
-                        icon: Icons.gradient,
-                        label: 'Greyscale',
-                        isActive: _colorFilter == _ColorFilter.greyscale,
-                        onPressed: _processing
-                            ? null
-                            : () => _setColorFilter(_ColorFilter.greyscale),
-                        activeColor: theme.colorScheme.primary,
-                      ),
-                      _EditButton(
-                        icon: Icons.filter_b_and_w,
-                        label: 'B & W',
-                        isActive: _colorFilter == _ColorFilter.blackAndWhite,
-                        onPressed: _processing
-                            ? null
-                            : () => _setColorFilter(_ColorFilter.blackAndWhite),
-                        activeColor: theme.colorScheme.primary,
-                      ),
-                    ],
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        _EditButton(
+                          icon: Icons.crop,
+                          label: 'Crop',
+                          onPressed: _processing ? null : _onCropPressed,
+                        ),
+                        _EditButton(
+                          icon: Icons.rotate_90_degrees_ccw,
+                          label: 'Rotate left',
+                          onPressed: _processing
+                              ? null
+                              : _rotateCounterClockwise,
+                        ),
+                        _EditButton(
+                          icon: Icons.rotate_90_degrees_cw,
+                          label: 'Rotate right',
+                          onPressed: _processing ? null : _rotateClockwise,
+                        ),
+                        _EditButton(
+                          icon: Icons.gradient,
+                          label: 'Greyscale',
+                          isActive: _colorFilter == ScanColorFilter.greyscale,
+                          onPressed: _processing
+                              ? null
+                              : () =>
+                                    _setColorFilter(ScanColorFilter.greyscale),
+                          activeColor: theme.colorScheme.primary,
+                        ),
+                        _EditButton(
+                          icon: Icons.filter_b_and_w,
+                          label: 'B & W',
+                          isActive:
+                              _colorFilter == ScanColorFilter.blackAndWhite,
+                          onPressed: _processing
+                              ? null
+                              : () => _setColorFilter(
+                                  ScanColorFilter.blackAndWhite,
+                                ),
+                          activeColor: theme.colorScheme.primary,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],

@@ -5,11 +5,11 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:paperless_mobile_document_scanner/data/debug_stage.dart';
 import 'package:paperless_mobile_document_scanner/data/document_frame.dart';
+import 'package:paperless_mobile_document_scanner/data/scan_result.dart';
 import 'package:paperless_mobile_document_scanner/processing/detect_edges_from_file.dart';
+import 'package:paperless_mobile_document_scanner/processing/image_edit.dart';
 import 'package:paperless_mobile_document_scanner/processing/perspective_transform.dart';
-import 'package:paperless_mobile_document_scanner/view/auto_crop_preview_view.dart';
 import 'package:paperless_mobile_document_scanner/view/document_scanner_view.dart';
-import 'package:paperless_mobile_document_scanner/view/edge_adjustment_view.dart';
 import 'package:paperless_mobile_document_scanner/view/image_edit_view.dart';
 import 'package:paperless_mobile_document_scanner/view/widgets/debug_stage_switcher.dart';
 import 'package:paperless_mobile_document_scanner/view/widgets/resolution_switcher.dart';
@@ -17,23 +17,11 @@ import 'package:paperless_mobile_document_scanner/view/widgets/scan_preview_list
 import 'package:paperless_mobile_document_scanner/view/widgets/shutter_button.dart';
 import 'package:path/path.dart' as p;
 
-/// The phases of the scanning workflow.
-enum _ScanPhase {
-  /// Live camera preview with edge detection.
-  liveDetection,
+enum _ScanPhase { liveDetection, processing, imageEditing }
 
-  /// Processing the captured image (edge detection + perspective transform).
-  processing,
-
-  /// Showing the auto-cropped result for accept/edit decision.
-  autoCropPreview,
-
-  /// Manual edge adjustment mode.
-  edgeAdjustment,
-
-  /// Post-crop image editing (rotate, B&W filter, etc.).
-  imageEditing,
-}
+const _shutterButtonSize = 72.0;
+const _scanPreviewListHeight = 110.0;
+const _actionButtonRowHeight = 56.0;
 
 class DocumentScanner extends StatefulWidget {
   /// Called when the user completes the scan session.
@@ -57,25 +45,22 @@ class _DocumentScannerState extends State<DocumentScanner> {
 
   _ScanPhase _phase = _ScanPhase.liveDetection;
 
-  // Last detected frame from the live preview.
   DocumentFrame? _lastLiveFrame;
 
-  // Captured image data.
+  // --- State for a new capture (used until the user confirms or discards). ---
   Uint8List? _capturedImageBytes;
   Size? _capturedImageSize;
   DocumentFrame? _capturedFrame;
-
-  // Auto-cropped result.
-  Uint8List? _autoCroppedBytes;
-
-  // Bytes entering the image-edit phase (from auto-crop or edge adjustment).
-  Uint8List? _editingBytes;
-
-  // Path of the original captured image file (from takePicture).
   String? _capturedFilePath;
+  Uint8List? _initialCroppedBytes;
 
-  // Accumulated scan files.
-  final List<File> _scans = [];
+  // --- Re-edit state ---
+  /// Index into [_scans] when re-editing an existing scan, or `null` for a
+  /// fresh capture.
+  int? _editingIndex;
+
+  // Accumulated scan results.
+  final List<ScanResult> _scans = [];
 
   // -----------------------------------------------------------------------
   // Capture flow
@@ -135,8 +120,9 @@ class _DocumentScannerState extends State<DocumentScanner> {
 
       if (mounted) {
         setState(() {
-          _autoCroppedBytes = cropped;
-          _phase = _ScanPhase.autoCropPreview;
+          _initialCroppedBytes = cropped;
+          _editingIndex = null;
+          _phase = _ScanPhase.imageEditing;
         });
       }
     } catch (e) {
@@ -145,61 +131,69 @@ class _DocumentScannerState extends State<DocumentScanner> {
     }
   }
 
-  void _onAutoCropAccepted() {
-    if (_autoCroppedBytes != null) {
-      setState(() {
-        _editingBytes = _autoCroppedBytes;
-        _phase = _ScanPhase.imageEditing;
-      });
+  Future<void> _onImageEditConfirmed(ImageEditResult result) async {
+    // Generate a lightweight thumbnail for the preview list.
+    final thumbnail = await generateThumbnail(result.editedBytes);
+
+    if (_editingIndex != null) {
+      // Re-edit: update the existing scan in place.
+      final existing = _scans[_editingIndex!];
+      await existing.outputFile.writeAsBytes(result.editedBytes, flush: true);
+      existing.cropFrame = result.cropFrame;
+      existing.quarterTurns = result.quarterTurns;
+      existing.colorFilter = result.colorFilter;
+      existing.bwThreshold = result.bwThreshold;
+      existing.thumbnailBytes = thumbnail;
+    } else {
+      // New scan: write the output file and create a ScanResult.
+      final scanFile = await _writeScanFile(result.editedBytes);
+      _scans.add(
+        ScanResult(
+          originalFile: File(_capturedFilePath!),
+          originalImageSize: _capturedImageSize!,
+          cropFrame: result.cropFrame,
+          quarterTurns: result.quarterTurns,
+          colorFilter: result.colorFilter,
+          bwThreshold: result.bwThreshold,
+          thumbnailBytes: thumbnail,
+          outputFile: scanFile,
+        ),
+      );
     }
-  }
 
-  void _onAutoCropEditRequested() {
-    setState(() => _phase = _ScanPhase.edgeAdjustment);
-  }
-
-  void _onAutoCropDiscarded() {
-    _deleteOriginalCapture();
-    _returnToLiveDetection();
-  }
-
-  void _onEdgeAdjustmentConfirmed(
-    Uint8List transformedBytes,
-    DocumentFrame adjustedFrame,
-  ) {
-    // Update the cropped preview and frame, then return to auto-crop view.
-    setState(() {
-      _autoCroppedBytes = transformedBytes;
-      _capturedFrame = adjustedFrame;
-      _phase = _ScanPhase.autoCropPreview;
-    });
-  }
-
-  Future<void> _onImageEditConfirmed(Uint8List editedBytes) async {
-    // Write the finished scan to a file.
-    final scanFile = await _writeScanFile(editedBytes);
-    _scans.add(scanFile);
-    _deleteOriginalCapture();
+    _editingIndex = null;
     _returnToLiveDetection();
   }
 
   void _onImageEditCancelled() {
-    // Return to auto-crop preview so the user can re-decide.
+    if (_editingIndex == null) {
+      // New capture discarded — delete the original capture file.
+      _deleteOriginalCapture();
+    }
+    _editingIndex = null;
+    _returnToLiveDetection();
+  }
+
+  void _onScanTapped(int index) {
     setState(() {
-      _editingBytes = null;
-      _phase = _ScanPhase.autoCropPreview;
+      _editingIndex = index;
+      _phase = _ScanPhase.imageEditing;
     });
   }
 
-  void _onEdgeAdjustmentCancelled() {
-    // Go back to auto-crop preview (the auto-cropped image is still available).
-    setState(() => _phase = _ScanPhase.autoCropPreview);
+  void _onScanDeleted(int index) {
+    final scan = _scans.removeAt(index);
+    scan.outputFile.delete().catchError((_) => scan.outputFile);
+    scan.originalFile.delete().catchError((_) => scan.originalFile);
+    setState(() {});
   }
 
-  void _onScanDeleted(int index) {
-    final file = _scans.removeAt(index);
-    file.delete().catchError((_) => file);
-    setState(() {});
+  void _onScanReordered(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) newIndex--;
+      final scan = _scans.removeAt(oldIndex);
+      _scans.insert(newIndex, scan);
+    });
   }
 
   void _returnToLiveDetection() {
@@ -208,8 +202,7 @@ class _DocumentScannerState extends State<DocumentScanner> {
       _capturedImageBytes = null;
       _capturedImageSize = null;
       _capturedFrame = null;
-      _autoCroppedBytes = null;
-      _editingBytes = null;
+      _initialCroppedBytes = null;
       _capturedFilePath = null;
     });
   }
@@ -234,10 +227,6 @@ class _DocumentScannerState extends State<DocumentScanner> {
     _lastLiveFrame = frame;
   }
 
-  // -----------------------------------------------------------------------
-  // Build
-  // -----------------------------------------------------------------------
-
   @override
   Widget build(BuildContext context) {
     return switch (_phase) {
@@ -245,29 +234,42 @@ class _DocumentScannerState extends State<DocumentScanner> {
         backgroundColor: Colors.black,
         body: Center(child: CircularProgressIndicator()),
       ),
-      _ScanPhase.autoCropPreview => AutoCropPreviewView(
-        croppedImageBytes: _autoCroppedBytes!,
-        onAccepted: _onAutoCropAccepted,
-        onEditRequested: _onAutoCropEditRequested,
-        onDiscarded: _onAutoCropDiscarded,
-      ),
-      _ScanPhase.edgeAdjustment => EdgeAdjustmentView(
-        imageBytes: _capturedImageBytes!,
-        initialFrame: _capturedFrame!,
-        imageSize: _capturedImageSize!,
-        onConfirmed: _onEdgeAdjustmentConfirmed,
-        onCancelled: _onEdgeAdjustmentCancelled,
-      ),
-      _ScanPhase.imageEditing => ImageEditView(
-        imageBytes: _editingBytes!,
-        onConfirmed: _onImageEditConfirmed,
-        onCancelled: _onImageEditCancelled,
-      ),
+      _ScanPhase.imageEditing => _buildImageEditing(),
       _ScanPhase.liveDetection => _buildLiveDetection(),
     };
   }
 
+  Widget _buildImageEditing() {
+    final scan = _editingIndex != null ? _scans[_editingIndex!] : null;
+
+    if (scan != null) {
+      // Re-edit: load from file on demand.
+      return ImageEditView(
+        originalImageFile: scan.originalFile,
+        originalImageSize: scan.originalImageSize,
+        initialCropFrame: scan.cropFrame,
+        initialQuarterTurns: scan.quarterTurns,
+        initialColorFilter: scan.colorFilter,
+        initialBwThreshold: scan.bwThreshold,
+        onConfirmed: _onImageEditConfirmed,
+        onCancelled: _onImageEditCancelled,
+      );
+    }
+
+    // New capture: bytes already in memory.
+    return ImageEditView(
+      originalImageBytes: _capturedImageBytes!,
+      originalImageSize: _capturedImageSize!,
+      initialCropFrame: _capturedFrame!,
+      initialCroppedBytes: _initialCroppedBytes!,
+      animateEntry: true,
+      onConfirmed: _onImageEditConfirmed,
+      onCancelled: _onImageEditCancelled,
+    );
+  }
+
   Widget _buildLiveDetection() {
+    final bottomViewPadding = MediaQuery.of(context).viewPadding.bottom;
     return FutureBuilder(
       future: availableCameras(),
       builder: (context, snapshot) {
@@ -282,25 +284,85 @@ class _DocumentScannerState extends State<DocumentScanner> {
         if (cameras.isEmpty) {
           return const Center(child: Text('No cameras found'));
         }
-        final camera = cameras.first;
+        final camera = cameras.firstWhere(
+          (camera) => camera.lensDirection == CameraLensDirection.back,
+          orElse: () => cameras.first,
+        );
+        const bottomBarVerticalPadding = 8.0;
+        final bottomBarHeight =
+            _shutterButtonSize +
+            _actionButtonRowHeight +
+            (_scans.isNotEmpty ? _scanPreviewListHeight : 0) +
+            2 *
+                bottomBarVerticalPadding // x2 since it's applied both above and below the shutter row
+                +
+            bottomViewPadding;
         return Scaffold(
           bottomNavigationBar: BottomAppBar(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            height: bottomBarHeight,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                TextButton(
-                  onPressed: widget.onCancelled,
-                  child: Text(
-                    MaterialLocalizations.of(context).cancelButtonLabel,
+                // Shutter + torch row.
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    vertical: bottomBarVerticalPadding,
+                  ),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      RepaintBoundary(
+                        child: ShutterButton(
+                          onPressed: _onShutterPressed,
+                          size: _shutterButtonSize,
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: RepaintBoundary(child: _buildTorchButton()),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                // Cancel / Done buttons.
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  child: SizedBox(
+                    height: _actionButtonRowHeight,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: widget.onCancelled,
+                          child: Text(
+                            MaterialLocalizations.of(context).cancelButtonLabel,
+                          ),
+                        ),
+                        if (_scans.isNotEmpty)
+                          FilledButton.icon(
+                            onPressed: () {
+                              widget.onFinished?.call(
+                                _scans.map((s) => s.outputFile).toList(),
+                              );
+                            },
+                            icon: const Icon(Icons.done_all),
+                            label: Text('Done (${_scans.length})'),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                // Scan preview list.
                 if (_scans.isNotEmpty)
-                  FilledButton.icon(
-                    onPressed: () {
-                      widget.onFinished?.call(List.of(_scans));
-                    },
-                    icon: const Icon(Icons.done_all),
-                    label: Text('Done (${_scans.length})'),
+                  ScanPreviewList(
+                    scans: _scans,
+                    onDelete: _onScanDeleted,
+                    onTap: _onScanTapped,
+                    onReorder: _onScanReordered,
+                    height: _scanPreviewListHeight,
                   ),
               ],
             ),
@@ -318,66 +380,35 @@ class _DocumentScannerState extends State<DocumentScanner> {
                 resolutionPreset: _resolutionPreset,
                 onFrameChanged: _onFrameChanged,
               ),
-              // Scan preview list at the top.
-              if (_scans.isNotEmpty)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: SafeArea(
-                    bottom: false,
-                    child: ScanPreviewList(
-                      scans: _scans,
-                      onDelete: _onScanDeleted,
-                    ),
-                  ),
-                ),
-              // Shutter button.
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 32),
-                  child: RepaintBoundary(
-                    child: ShutterButton(onPressed: _onShutterPressed),
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 48, right: 16),
-                  // The repaint boundary prevents aliasing artifacts when rendered on top of a platform view.
-                  child: RepaintBoundary(child: _buildTorchButton()),
-                ),
-              ),
-              // Debug/resolution controls.
-              Positioned(
-                top: _scans.isNotEmpty ? 100 : 8,
-                right: 8,
-                child: SafeArea(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      DebugStageSwitcher(
-                        value: _debugStage,
-                        onChanged: (stage) =>
-                            setState(() => _debugStage = stage),
-                      ),
-                      const SizedBox(height: 8),
-                      ResolutionSwitcher(
-                        value: _resolutionPreset,
-                        onChanged: (preset) =>
-                            setState(() => _resolutionPreset = preset),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+              _buildDebugControls(),
             ],
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDebugControls() {
+    return Positioned(
+      top: 8,
+      right: 8,
+      child: SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            DebugStageSwitcher(
+              value: _debugStage,
+              onChanged: (stage) => setState(() => _debugStage = stage),
+            ),
+            const SizedBox(height: 8),
+            ResolutionSwitcher(
+              value: _resolutionPreset,
+              onChanged: (preset) => setState(() => _resolutionPreset = preset),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
