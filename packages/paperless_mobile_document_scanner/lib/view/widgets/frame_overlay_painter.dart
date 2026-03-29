@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:paperless_mobile_document_scanner/data/document_frame.dart';
+import 'package:paperless_mobile_document_scanner/models/document_frame.dart';
 
 class FrameOverlayPainter extends CustomPainter {
   final Color frameColor;

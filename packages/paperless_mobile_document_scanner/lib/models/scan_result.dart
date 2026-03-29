@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui';
 
-import 'package:paperless_mobile_document_scanner/data/document_frame.dart';
+import 'package:paperless_mobile_document_scanner/models/document_frame.dart';
 
 /// Color filter options for scanned images.
 enum ScanColorFilter { none, greyscale, blackAndWhite }
@@ -30,6 +30,9 @@ class ScanResult {
   /// [ScanColorFilter.blackAndWhite]).
   double bwThreshold;
 
+  /// Whether auto-enhance was applied.
+  bool enhanced;
+
   /// A small thumbnail of the final edited image (kept in memory for the
   /// preview list).
   Uint8List thumbnailBytes;
@@ -44,6 +47,7 @@ class ScanResult {
     required this.quarterTurns,
     required this.colorFilter,
     required this.bwThreshold,
+    required this.enhanced,
     required this.thumbnailBytes,
     required this.outputFile,
   });

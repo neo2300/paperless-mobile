@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:opencv_dart/opencv_dart.dart' as cv4;
-import 'package:paperless_mobile_document_scanner/data/document_frame.dart';
+import 'package:paperless_mobile_document_scanner/models/document_frame.dart';
 
 /// Applies a perspective (four-point) transform to [imageBytes] so that the
 /// quadrilateral defined by [frame] is warped into an axis-aligned rectangle.
