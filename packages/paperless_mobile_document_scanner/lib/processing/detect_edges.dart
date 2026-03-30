@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:opencv_dart/opencv_dart.dart' as cv4;
 import 'package:paperless_mobile_document_scanner/models/debug_stage.dart';
 import 'package:paperless_mobile_document_scanner/models/document_frame.dart';
+import 'package:paperless_mobile_document_scanner/models/edge_detection_config.dart';
 import 'package:paperless_mobile_document_scanner/models/input_image.dart';
 import 'package:paperless_mobile_document_scanner/utils/utils.dart';
 
@@ -126,18 +127,7 @@ void processImage(
   }
 }
 
-// Detection parameters (adapted from OSS-DocumentScanner):
-
-/// Maximum dimension for the processing image. Downscaling speeds up detection
-/// and acts as implicit noise reduction. Coordinates are scaled back afterwards.
-const _resizeThreshold = 200;
-
-/// Border padding added around the resized image so that documents extending to
-/// the camera frame edges are detected correctly.
-const _borderSize = 10;
-
-/// Polygon approximation factor (fraction of arc-length used as epsilon).
-const _contoursApproxEpsilonFactor = 0.02;
+// Fixed algorithm constants (not configurable per-preset):
 
 /// Maximum cosine of interior angles for a valid quadrilateral. Angles close to
 /// 90° have cosine close to 0; 0.4 allows moderate perspective.
@@ -147,22 +137,12 @@ const _expectedMaxCosine = 0.4;
 /// [_expectedAreaFactor] of the image, we stop searching early.
 const _expectedOptimalMaxCosine = 0.3;
 
-/// Minimum area as a fraction of the (resized) image to accept a contour.
-const _areaScaleMinFactor = 0.04;
-
 /// Area fraction for the "optimal early-exit" heuristic.
 const _expectedAreaFactor = 0.20;
-
-/// Median blur kernel size for initial noise reduction (must be odd).
-const _medianBlurValue = 9;
 
 /// Binary threshold value used in the threshold-based detection pass.
 const _threshValue = 160.0;
 const _threshMax = 256.0;
-
-/// Morphological structuring element sizes.
-const _morphologyAnchorSize = 4;
-const _dilateAnchorSize = 3;
 
 /// Canny factor: for a base value `t`, low threshold = `t * cannyFactor`,
 /// high threshold = `t * cannyFactor * 2`.
@@ -173,6 +153,7 @@ typedef _QuadCandidate = (List<cv4.Point>, double, double, double, double);
 
 Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
   cv4.Mat mat, {
+  EdgeDetectionConfig config = EdgeDetectionConfig.fast,
   DebugStage debugStage = DebugStage.none,
 }) async {
   // 1. Convert RGBA → grayscale for single-channel processing.
@@ -185,8 +166,8 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
   final double resizeScaleX;
   final double resizeScaleY;
   cv4.Mat resized;
-  if (_resizeThreshold > 0 && maxDim > _resizeThreshold) {
-    final approxScale = maxDim / _resizeThreshold;
+  if (config.resizeThreshold > 0 && maxDim > config.resizeThreshold) {
+    final approxScale = maxDim / config.resizeThreshold;
     final newW = (originalWidth / approxScale).floor();
     final newH = (originalHeight / approxScale).floor();
     resizeScaleX = originalWidth / newW;
@@ -202,10 +183,10 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
   // 3. Add border padding so documents at frame edges are found.
   final bordered = await cv4.copyMakeBorderAsync(
     resized,
-    _borderSize,
-    _borderSize,
-    _borderSize,
-    _borderSize,
+    config.borderSize,
+    config.borderSize,
+    config.borderSize,
+    config.borderSize,
     cv4.BORDER_CONSTANT,
     value: cv4.Scalar.black,
   );
@@ -215,7 +196,7 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
   final height = bordered.rows.toDouble();
 
   // 4. Median blur to reduce noise while preserving edges.
-  final blurred = await cv4.medianBlurAsync(bordered, _medianBlurValue);
+  final blurred = await cv4.medianBlurAsync(bordered, config.medianBlurKernel);
 
   // Debug: grayscale stage shows the first channel after blur.
   if (debugStage == DebugStage.grayscale) {
@@ -227,6 +208,7 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
       height,
       resizeScaleX,
       resizeScaleY,
+      config,
     );
     blurred.dispose();
     bordered.dispose();
@@ -242,6 +224,7 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
       height,
       resizeScaleX,
       resizeScaleY,
+      config,
     );
     blurred.dispose();
     bordered.dispose();
@@ -257,12 +240,12 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
       cv4.THRESH_BINARY,
     );
     final morphKernel = cv4.getStructuringElement(cv4.MORPH_RECT, (
-      _morphologyAnchorSize,
-      _morphologyAnchorSize,
+      config.morphologyKernel,
+      config.morphologyKernel,
     ));
     final dilateKernel = cv4.getStructuringElement(cv4.MORPH_RECT, (
-      _dilateAnchorSize,
-      _dilateAnchorSize,
+      config.dilateKernel,
+      config.dilateKernel,
     ));
     final closed = await cv4.morphologyExAsync(
       edged,
@@ -285,6 +268,7 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
       height,
       resizeScaleX,
       resizeScaleY,
+      config,
     );
     blurred.dispose();
     bordered.dispose();
@@ -299,6 +283,7 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
       height,
       resizeScaleX,
       resizeScaleY,
+      config,
     );
     blurred.dispose();
     bordered.dispose();
@@ -312,6 +297,7 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
     height,
     resizeScaleX,
     resizeScaleY,
+    config,
   );
   blurred.dispose();
   bordered.dispose();
@@ -333,8 +319,9 @@ Future<DocumentFrame?> _scanPoint(
   double height,
   double resizeScaleX,
   double resizeScaleY,
+  EdgeDetectionConfig config,
 ) async {
-  final candidates = await _collectCandidates(blurred, width, height);
+  final candidates = await _collectCandidates(blurred, width, height, config);
   if (candidates.isEmpty) return null;
 
   // Sort by score: area + weight * (1 - maxCosine).
@@ -349,8 +336,8 @@ Future<DocumentFrame?> _scanPoint(
 
   // Remove border offset and scale back to original coordinates.
   final scaled = points.map((p) {
-    final x = (p.x - _borderSize) * resizeScaleX;
-    final y = (p.y - _borderSize) * resizeScaleY;
+    final x = (p.x - config.borderSize) * resizeScaleX;
+    final y = (p.y - config.borderSize) * resizeScaleY;
     return Offset(math.max(0, x), math.max(0, y));
   }).toList();
 
@@ -362,20 +349,21 @@ Future<List<_QuadCandidate>> _collectCandidates(
   cv4.Mat blurred,
   double width,
   double height,
+  EdgeDetectionConfig config,
 ) async {
   final morphKernel = cv4.getStructuringElement(cv4.MORPH_RECT, (
-    _morphologyAnchorSize,
-    _morphologyAnchorSize,
+    config.morphologyKernel,
+    config.morphologyKernel,
   ));
   final dilateKernel = cv4.getStructuringElement(cv4.MORPH_RECT, (
-    _dilateAnchorSize,
-    _dilateAnchorSize,
+    config.dilateKernel,
+    config.dilateKernel,
   ));
 
   final List<_QuadCandidate> allCandidates = [];
   var weight = 3000000.0;
   final maxAllowedArea =
-      (width - 2 * _borderSize) * (height - 2 * _borderSize) * 0.92;
+      (width - 2 * config.borderSize) * (height - 2 * config.borderSize) * 0.92;
 
   try {
     // --- Pass 1: Binary threshold ---
@@ -401,6 +389,7 @@ Future<List<_QuadCandidate>> _collectCandidates(
       maxAllowedArea,
       allCandidates,
       weight,
+      config,
     );
     dilated1.dispose();
     weight -= 1;
@@ -425,6 +414,7 @@ Future<List<_QuadCandidate>> _collectCandidates(
           maxAllowedArea,
           allCandidates,
           weight,
+          config,
         );
         dilatedEdge.dispose();
         weight -= 1;
@@ -467,6 +457,7 @@ void _findSquares(
   double maxAllowedArea,
   List<_QuadCandidate> squares,
   double weight,
+  EdgeDetectionConfig config,
 ) {
   final (contours, hierarchy) = cv4.findContours(
     binaryImage,
@@ -479,12 +470,12 @@ void _findSquares(
     final arcLen = cv4.arcLength(contour, true);
     final area = cv4.contourArea(contour);
     if (arcLen < 100 ||
-        area < (scaledWidth * scaledHeight) * _areaScaleMinFactor ||
+        area < (scaledWidth * scaledHeight) * config.minAreaFactor ||
         area >= maxAllowedArea) {
       continue;
     }
 
-    final epsilon = arcLen * _contoursApproxEpsilonFactor;
+    final epsilon = arcLen * config.approxEpsilonFactor;
     final approx = cv4.approxPolyDP(contour, epsilon, true);
     if (approx.length != 4 || !cv4.isContourConvex(approx)) {
       approx.dispose();
@@ -492,7 +483,7 @@ void _findSquares(
     }
 
     // Check that no corner is too close to the border.
-    final marge = (scaledWidth * 0.0).toInt() + _borderSize;
+    final marge = (scaledWidth * 0.0).toInt() + config.borderSize;
     var shouldIgnore = false;
     for (var j = 0; j < 4; j++) {
       final p = approx[j];
@@ -584,10 +575,11 @@ Future<(DocumentFrame?, ui.Image?)> _scanPointWithDebug(
   double height,
   double resizeScaleX,
   double resizeScaleY,
+  EdgeDetectionConfig config,
 ) async {
   final canvas = cv4.Mat.zeros(image.rows, image.cols, cv4.MatType.CV_8UC4);
 
-  final candidates = await _collectCandidates(blurred, width, height);
+  final candidates = await _collectCandidates(blurred, width, height, config);
 
   if (candidates.isEmpty) {
     final dbg = await canvas.toUiImage();
@@ -632,8 +624,8 @@ Future<(DocumentFrame?, ui.Image?)> _scanPointWithDebug(
 
   final points = best.$1;
   final scaled = points.map((p) {
-    final x = (p.x - _borderSize) * resizeScaleX;
-    final y = (p.y - _borderSize) * resizeScaleY;
+    final x = (p.x - config.borderSize) * resizeScaleX;
+    final y = (p.y - config.borderSize) * resizeScaleY;
     return Offset(math.max(0, x), math.max(0, y));
   }).toList();
 
