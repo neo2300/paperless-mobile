@@ -1,14 +1,20 @@
 import 'dart:typed_data';
-import 'dart:ui';
 
 import 'package:opencv_dart/opencv_dart.dart' as cv4;
 import 'package:paperless_mobile_document_scanner/models/document_frame.dart';
+import 'package:paperless_mobile_document_scanner/models/edge_detection_config.dart';
 import 'package:paperless_mobile_document_scanner/processing/detect_edges.dart';
 
 /// Detects document edges from a static image (PNG/JPEG bytes).
 ///
+/// Uses [EdgeDetectionConfig.accurate] by default for higher-quality detection
+/// on a captured still image. Pass a custom [config] to override.
+///
 /// Returns the detected [DocumentFrame] if a document quad is found, or `null`.
-Future<DocumentFrame?> detectEdgesFromImageBytes(Uint8List imageBytes) async {
+Future<DocumentFrame?> detectEdgesFromImageBytes(
+  Uint8List imageBytes, {
+  EdgeDetectionConfig config = EdgeDetectionConfig.accurate,
+}) async {
   final mat = cv4.imdecode(imageBytes, cv4.IMREAD_COLOR);
   if (mat.isEmpty) return null;
 
@@ -16,22 +22,9 @@ Future<DocumentFrame?> detectEdgesFromImageBytes(Uint8List imageBytes) async {
   final rgba = await cv4.cvtColorAsync(mat, cv4.COLOR_BGR2RGBA);
   mat.dispose();
 
-  final (frame, debugImage) = await detectDocumentEdges(rgba);
+  final (frame, debugImage) = await detectDocumentEdges(rgba, config: config);
   debugImage?.dispose();
-
-  // If no frame was found, return a default frame covering the full image.
-  if (frame == null) {
-    final w = rgba.cols.toDouble();
-    final h = rgba.rows.toDouble();
-    rgba.dispose();
-    return DocumentFrame(
-      topLeft: Offset.zero,
-      topRight: Offset(w, 0),
-      bottomRight: Offset(w, h),
-      bottomLeft: Offset(0, h),
-    );
-  }
-
   rgba.dispose();
+
   return frame;
 }

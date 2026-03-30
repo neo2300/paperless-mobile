@@ -26,6 +26,7 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     final cameraController = CameraController(
       widget.camera,
       widget.resolutionPreset,
@@ -40,6 +41,7 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller?.stopImageStream();
     _controller?.dispose();
     super.dispose();
@@ -59,6 +61,7 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
         cameraController.stopImageStream();
       }
       cameraController.dispose();
+      _controller = null;
     } else if (state == AppLifecycleState.resumed) {
       final newController = CameraController(
         widget.camera,

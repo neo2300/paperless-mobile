@@ -74,6 +74,9 @@ class ImageEditView extends StatefulWidget {
   /// Called when the user cancels / discards.
   final VoidCallback onCancelled;
 
+  /// Whether this view is for a new capture or re-editing an existing
+  final bool isNewCapture;
+
   const ImageEditView({
     super.key,
     this.originalImageBytes,
@@ -88,6 +91,7 @@ class ImageEditView extends StatefulWidget {
     this.animateEntry = false,
     required this.onConfirmed,
     required this.onCancelled,
+    required this.isNewCapture,
   }) : assert(
          originalImageBytes != null || originalImageFile != null,
          'Either originalImageBytes or originalImageFile must be provided',
@@ -357,7 +361,12 @@ class _ImageEditViewState extends State<ImageEditView>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TextButton(onPressed: widget.onCancelled, child: Text('Discard')),
+              TextButton(
+                onPressed: widget.onCancelled,
+                child: widget.isNewCapture
+                    ? const Text('Discard')
+                    : const Text('Cancel'),
+              ),
               FilledButton.icon(
                 onPressed: (_processing || showLoading) ? null : _onDone,
                 icon: const Icon(Icons.check),

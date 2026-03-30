@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:paperless_mobile_document_scanner/view/document_scanner.dart';
+import 'package:paperless_mobile_document_scanner/paperless_mobile_document_scanner.dart';
 
 void main() {
   runApp(const MyApp());

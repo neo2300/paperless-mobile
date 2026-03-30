@@ -1,9 +1,11 @@
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:paperless_mobile_document_scanner/constants/constants.dart';
+import 'package:paperless_mobile_document_scanner/models/auto_capture_config.dart';
 import 'package:paperless_mobile_document_scanner/models/debug_stage.dart';
 import 'package:paperless_mobile_document_scanner/models/document_frame.dart';
 import 'package:paperless_mobile_document_scanner/models/scan_result.dart';
@@ -34,12 +36,22 @@ class PaperlessMobileDocumentScanner extends StatefulWidget {
   final bool enableLiveDetection;
   final ResolutionPreset resolutionPreset;
 
+  /// Configuration for auto-capture behaviour. When enabled, the scanner
+  /// automatically takes a picture once the detected frame is stable.
+  final AutoCaptureConfig autoCaptureConfig;
+
   const PaperlessMobileDocumentScanner({
     super.key,
     this.onFinished,
     this.onCancelled,
     this.enableLiveDetection = true,
-    this.resolutionPreset = ResolutionPreset.max,
+    this.resolutionPreset = ResolutionPreset.high,
+    this.autoCaptureConfig = const AutoCaptureConfig(
+      enabled: true,
+      preStableDelay: Duration(milliseconds: 500),
+      stableDuration: Duration(milliseconds: 1000),
+      minConsecutiveSimilarFrames: 4,
+    ),
   });
 
   @override
@@ -64,6 +76,11 @@ class _PaperlessMobileDocumentScannerState
   _ScanPhase _phase = _ScanPhase.liveDetection;
 
   DocumentFrame? _lastLiveFrame;
+  Size? _lastLiveImageSize;
+
+  /// Set when auto-capture fires, providing a high-confidence fallback frame.
+  DocumentFrame? _autoCaptureFallbackFrame;
+  Size? _autoCaptureFallbackImageSize;
 
   // --- State for a new capture (used until the user confirms or discards). ---
   Uint8List? _capturedImageBytes;
@@ -88,6 +105,15 @@ class _PaperlessMobileDocumentScannerState
   void initState() {
     super.initState();
     _resolutionPreset = widget.resolutionPreset;
+  }
+
+  @override
+  void dispose() {
+    // Null out the reference to the CameraController so that any in-flight
+    // async work (_onShutterPressed) will bail out on the mounted check
+    // rather than using a disposed controller.
+    _controller = null;
+    super.dispose();
   }
 
   Future<void> _onShutterPressed() async {
@@ -116,10 +142,52 @@ class _PaperlessMobileDocumentScannerState
       );
       decoded.dispose();
 
-      // Detect edges on the captured (full-res) image. Use the live-detected
-      // frame as a sensible fallback if static detection fails.
-      final detectedFrame = await detectEdgesFromImageBytes(bytes);
-      final frame = detectedFrame ?? _lastLiveFrame;
+      // Detect edges on the captured (full-res) image using the accurate
+      // detection config (higher resolution, finer parameters).
+      var detectedFrame = await detectEdgesFromImageBytes(bytes);
+
+      // If the user triggered this via auto-capture, the stable frame is the
+      // frame they visually "agreed" to. If the accurate detection produced a
+      // result that's drastically different (wrong document, background edge,
+      // etc.), prefer the stable fallback.
+      final fallback = _autoCaptureFallbackFrame;
+      final fallbackSize = _autoCaptureFallbackImageSize;
+      if (detectedFrame != null &&
+          fallback != null &&
+          fallbackSize != null &&
+          !fallback.isPlausibleMatch(
+            detectedFrame,
+            thisImageSize: fallbackSize,
+            candidateImageSize: imageSize,
+          )) {
+        debugPrint(
+          'Accurate detection diverged from stable frame — using fallback.',
+        );
+        detectedFrame =
+            null; // discard; fallback chain picks up the stable frame
+      }
+
+      // Fallback chain:
+      //   1. Accurate detection on captured image (if plausible)
+      //   2. Auto-capture stable frame (if auto-capture triggered this)
+      //   3. Last live-detected frame
+      //   4. Full image rectangle
+      //
+      // Fallback frames are in live-camera image coordinates, so they must
+      // be scaled to the captured image's (full-res) coordinate space.
+      DocumentFrame? frame = detectedFrame;
+      if (frame == null) {
+        final liveFallback = _autoCaptureFallbackFrame ?? _lastLiveFrame;
+        final liveFallbackSize = _autoCaptureFallbackFrame != null
+            ? _autoCaptureFallbackImageSize
+            : _lastLiveImageSize;
+        if (liveFallback != null && liveFallbackSize != null) {
+          frame = liveFallback.scale(
+            imageSize.width / liveFallbackSize.width,
+            imageSize.height / liveFallbackSize.height,
+          );
+        }
+      }
 
       if (frame == null) {
         // No frame found at all — fallback to full image rectangle.
@@ -132,6 +200,10 @@ class _PaperlessMobileDocumentScannerState
       } else {
         _capturedFrame = frame;
       }
+
+      // Clear the one-shot auto-capture fallback.
+      _autoCaptureFallbackFrame = null;
+      _autoCaptureFallbackImageSize = null;
 
       _capturedImageBytes = bytes;
       _capturedImageSize = imageSize;
@@ -252,6 +324,7 @@ class _PaperlessMobileDocumentScannerState
   void _onFrameChanged(DocumentFrame? frame, Size? imageSize) {
     // Keep a reference to the last detected frame for the capture fallback.
     _lastLiveFrame = frame;
+    _lastLiveImageSize = imageSize;
   }
 
   @override
@@ -281,6 +354,7 @@ class _PaperlessMobileDocumentScannerState
         initialEnhanced: scan.enhanced,
         onConfirmed: _onImageEditConfirmed,
         onCancelled: _onImageEditCancelled,
+        isNewCapture: false,
       );
     }
 
@@ -293,6 +367,7 @@ class _PaperlessMobileDocumentScannerState
       animateEntry: true,
       onConfirmed: _onImageEditConfirmed,
       onCancelled: _onImageEditCancelled,
+      isNewCapture: true,
     );
   }
 
@@ -411,12 +486,18 @@ class _PaperlessMobileDocumentScannerState
                   _setController(controller);
                 },
                 camera: camera,
-                debugStage: _debugStage,
+                debugStage: kDebugMode ? _debugStage : DebugStage.none,
                 resolutionPreset: _resolutionPreset,
                 onFrameChanged: _onFrameChanged,
                 liveEdgeDetectionEnabled: widget.enableLiveDetection,
+                autoCaptureConfig: widget.autoCaptureConfig,
+                onAutoCaptureTriggered: (stableFrame) {
+                  _autoCaptureFallbackFrame = stableFrame;
+                  _autoCaptureFallbackImageSize = _lastLiveImageSize;
+                  _onShutterPressed();
+                },
               ),
-              _buildDebugControls(),
+              if (kDebugMode) _buildDebugControls(),
             ],
           ),
         );
@@ -459,7 +540,10 @@ class _PaperlessMobileDocumentScannerState
         );
         setState(() => _isTorchActive = wantTorch);
       },
-      icon: Icon(_isTorchActive ? Icons.flash_off : Icons.flash_on, size: 32),
+      icon: Icon(
+        _isTorchActive ? Icons.flashlight_off : Icons.flashlight_on,
+        size: 32,
+      ),
     );
   }
 }

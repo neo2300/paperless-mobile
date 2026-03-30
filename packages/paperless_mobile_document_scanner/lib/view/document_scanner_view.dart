@@ -2,11 +2,15 @@ import 'dart:ui' as ui;
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:paperless_mobile_document_scanner/models/auto_capture_config.dart';
 import 'package:paperless_mobile_document_scanner/models/debug_stage.dart';
 import 'package:paperless_mobile_document_scanner/models/document_frame.dart';
 import 'package:paperless_mobile_document_scanner/processing/detect_edges.dart';
 import 'package:paperless_mobile_document_scanner/processing/edge_detection_isolate.dart';
+import 'package:paperless_mobile_document_scanner/processing/frame_stability_tracker.dart';
 import 'package:paperless_mobile_document_scanner/view/focusable_camera_view.dart';
+import 'package:paperless_mobile_document_scanner/view/widgets/auto_capture_overlay_painter.dart';
 import 'package:paperless_mobile_document_scanner/view/widgets/frame_overlay_painter.dart';
 
 class DocumentScannerView extends StatefulWidget {
@@ -24,6 +28,14 @@ class DocumentScannerView extends StatefulWidget {
   /// no frame overlay is shown. Useful on lower-end devices.
   final bool liveEdgeDetectionEnabled;
 
+  /// Configuration for auto-capture behaviour.
+  final AutoCaptureConfig autoCaptureConfig;
+
+  /// Called when the frame has been stable long enough and auto-capture fires.
+  /// Passes the stable [DocumentFrame] that triggered the capture, which can
+  /// be used as a reliable fallback if detection on the final image fails.
+  final void Function(DocumentFrame stableFrame) onAutoCaptureTriggered;
+
   const DocumentScannerView({
     super.key,
     required this.camera,
@@ -32,13 +44,16 @@ class DocumentScannerView extends StatefulWidget {
     required this.onCameraReady,
     this.onFrameChanged,
     required this.liveEdgeDetectionEnabled,
+    this.autoCaptureConfig = const AutoCaptureConfig(),
+    required this.onAutoCaptureTriggered,
   });
 
   @override
   State<DocumentScannerView> createState() => _DocumentScannerViewState();
 }
 
-class _DocumentScannerViewState extends State<DocumentScannerView> {
+class _DocumentScannerViewState extends State<DocumentScannerView>
+    with SingleTickerProviderStateMixin {
   CameraController? _controller;
   DocumentFrame? _currentFrame;
   Size? _imageSize;
@@ -62,10 +77,24 @@ class _DocumentScannerViewState extends State<DocumentScannerView> {
 
   DocumentFrame? _smoothedFrame;
 
+  // --- Auto-capture ---
+  late FrameStabilityTracker _stabilityTracker;
+  late AnimationController _autoCaptureAnimController;
+  bool _autoCaptureTriggered = false;
+  DateTime _lastHapticTime = DateTime(0);
+
   @override
   void initState() {
     super.initState();
     _runner.start();
+    _stabilityTracker = FrameStabilityTracker(widget.autoCaptureConfig);
+    _autoCaptureAnimController =
+        AnimationController(
+            vsync: this,
+            duration: widget.autoCaptureConfig.stableDuration,
+          )
+          ..addListener(_onAutoCaptureAnimTick)
+          ..addStatusListener(_onAutoCaptureAnimStatus);
   }
 
   @override
@@ -80,12 +109,20 @@ class _DocumentScannerViewState extends State<DocumentScannerView> {
         _stopImageStream(controller);
       }
     }
+    // Update tracker config if it changed.
+    if (oldWidget.autoCaptureConfig != widget.autoCaptureConfig) {
+      _stabilityTracker = FrameStabilityTracker(widget.autoCaptureConfig);
+      _autoCaptureAnimController.duration =
+          widget.autoCaptureConfig.stableDuration;
+      _resetAutoCapture();
+    }
   }
 
   @override
   void dispose() {
     _debugUiImage?.dispose();
     _runner.dispose();
+    _autoCaptureAnimController.dispose();
     super.dispose();
   }
 
@@ -114,6 +151,27 @@ class _DocumentScannerViewState extends State<DocumentScannerView> {
                       imageSize: _imageSize!,
                       frameColor: Colors.white,
                     ),
+                  ),
+                ),
+              // Auto-capture circular fill overlay.
+              if (widget.autoCaptureConfig.enabled &&
+                  _currentFrame != null &&
+                  _imageSize != null)
+                Positioned.fill(
+                  child: AnimatedBuilder(
+                    animation: _autoCaptureAnimController,
+                    builder: (context, _) {
+                      return CustomPaint(
+                        painter: AutoCaptureOverlayPainter(
+                          frame: _currentFrame!,
+                          imageSize: _imageSize!,
+                          progress: _autoCaptureAnimController.value,
+                          fillColor: Theme.of(
+                            context,
+                          ).colorScheme.secondaryContainer.withOpacity(0.25),
+                        ),
+                      );
+                    },
                   ),
                 ),
             ],
@@ -200,6 +258,7 @@ class _DocumentScannerViewState extends State<DocumentScannerView> {
       _smoothedFrame = null;
       _detectionHistory.clear();
     });
+    _resetAutoCapture();
     widget.onFrameChanged?.call(null, null);
   }
 
@@ -228,6 +287,9 @@ class _DocumentScannerViewState extends State<DocumentScannerView> {
       stable ? smoothed : null,
       stable ? imageSize : null,
     );
+
+    // --- Auto-capture tracking ---
+    _updateAutoCapture(stable ? smoothed : null);
   }
 
   void _onFrameMissed() {
@@ -239,6 +301,71 @@ class _DocumentScannerViewState extends State<DocumentScannerView> {
         _imageSize = null;
       });
       widget.onFrameChanged?.call(null, null);
+    }
+    _updateAutoCapture(null);
+  }
+
+  // -----------------------------------------------------------------------
+  // Auto-capture helpers
+  // -----------------------------------------------------------------------
+
+  void _updateAutoCapture(DocumentFrame? frame) {
+    if (!widget.autoCaptureConfig.enabled || _autoCaptureTriggered) return;
+
+    _stabilityTracker.update(frame);
+
+    if (frame == null) {
+      // No frame — stop the animation and reset.
+      _resetAutoCapture();
+      return;
+    }
+
+    if (_stabilityTracker.progress > 0 &&
+        !_autoCaptureAnimController.isAnimating) {
+      // Start the fill animation from wherever stability began.
+      _autoCaptureAnimController.forward(from: 0.0);
+    } else if (_stabilityTracker.progress <= 0 &&
+        _autoCaptureAnimController.isAnimating) {
+      _resetAutoCapture();
+    }
+  }
+
+  void _resetAutoCapture() {
+    _autoCaptureAnimController.reset();
+    _stabilityTracker.reset();
+    _autoCaptureTriggered = false;
+  }
+
+  void _onAutoCaptureAnimTick() {
+    final progress = _autoCaptureAnimController.value;
+    if (progress <= 0) return;
+
+    // Haptic interval decreases as progress increases:
+    // ~300ms at start → ~40ms near completion.
+    final intervalMs = (300 - 260 * progress).round().clamp(40, 300);
+    final now = DateTime.now();
+    if (now.difference(_lastHapticTime).inMilliseconds < intervalMs) return;
+    _lastHapticTime = now;
+
+    if (progress < 0.33) {
+      HapticFeedback.selectionClick();
+    } else if (progress < 0.66) {
+      HapticFeedback.lightImpact();
+    } else if (progress < 0.9) {
+      HapticFeedback.mediumImpact();
+    } else {
+      HapticFeedback.heavyImpact();
+    }
+  }
+
+  void _onAutoCaptureAnimStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed && !_autoCaptureTriggered) {
+      _autoCaptureTriggered = true;
+      _stabilityTracker.markCaptured();
+      final stableFrame = _stabilityTracker.stableFrame;
+      if (stableFrame != null) {
+        widget.onAutoCaptureTriggered(stableFrame);
+      }
     }
   }
 
