@@ -49,20 +49,18 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final CameraController? cameraController = _controller;
-
-    // App state changed before we got the chance to initialize.
-    if (cameraController == null || !cameraController.value.isInitialized) {
-      return;
-    }
-
     if (state == AppLifecycleState.inactive) {
+      final cameraController = _controller;
+      if (cameraController == null || !cameraController.value.isInitialized) {
+        return;
+      }
       if (cameraController.value.isStreamingImages) {
         cameraController.stopImageStream();
       }
       cameraController.dispose();
       _controller = null;
     } else if (state == AppLifecycleState.resumed) {
+      if (_controller != null) return; // Already active, nothing to do.
       final newController = CameraController(
         widget.camera,
         widget.resolutionPreset,

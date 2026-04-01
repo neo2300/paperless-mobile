@@ -76,7 +76,6 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
   final List<bool> _detectionHistory = [];
 
   DocumentFrame? _smoothedFrame;
-
   // --- Auto-capture ---
   late FrameStabilityTracker _stabilityTracker;
   late AnimationController _autoCaptureAnimController;
@@ -137,6 +136,7 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
           child: Stack(
             children: [
               FocusableCameraView(
+                key: ValueKey(widget.camera),
                 camera: widget.camera,
                 resolutionPreset: widget.resolutionPreset,
                 onCameraReady: onCameraReady,
