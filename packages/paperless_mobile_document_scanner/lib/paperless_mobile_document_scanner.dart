@@ -22,6 +22,8 @@ import 'package:path/path.dart' as p;
 
 enum _ScanPhase { liveDetection, processing, imageEditing }
 
+enum _SegmentedButtonOption { liveDetection, autoCapture }
+
 const _shutterButtonSize = 72.0;
 const _scanPreviewListHeight = 110.0;
 const _actionButtonRowHeight = 56.0;
@@ -32,8 +34,8 @@ class PaperlessMobileDocumentScanner extends StatefulWidget {
   final ValueChanged<List<File>>? onFinished;
 
   /// Called when the user cancels the scan session.
-  final VoidCallback? onCancelled;
-  final bool enableLiveDetection;
+  final void Function(int scanCount) onCancelled;
+  final bool liveDetectionInitiallyEnabled;
   final ResolutionPreset resolutionPreset;
 
   /// Configuration for auto-capture behaviour. When enabled, the scanner
@@ -43,8 +45,8 @@ class PaperlessMobileDocumentScanner extends StatefulWidget {
   const PaperlessMobileDocumentScanner({
     super.key,
     this.onFinished,
-    this.onCancelled,
-    this.enableLiveDetection = true,
+    required this.onCancelled,
+    this.liveDetectionInitiallyEnabled = true,
     this.resolutionPreset = ResolutionPreset.high,
     this.autoCaptureConfig = const AutoCaptureConfig(
       enabled: true,
@@ -61,6 +63,8 @@ class PaperlessMobileDocumentScanner extends StatefulWidget {
 
 class _PaperlessMobileDocumentScannerState
     extends State<PaperlessMobileDocumentScanner> {
+  late bool _liveDetectionEnabled;
+  late AutoCaptureConfig _autoCaptureConfig;
   CameraController? _controller;
   DebugStage _debugStage = DebugStage.none;
   late ResolutionPreset _resolutionPreset;
@@ -74,7 +78,7 @@ class _PaperlessMobileDocumentScannerState
   }
 
   _ScanPhase _phase = _ScanPhase.liveDetection;
-
+  Future<List<CameraDescription>>? _availableCameras;
   DocumentFrame? _lastLiveFrame;
   Size? _lastLiveImageSize;
 
@@ -105,6 +109,10 @@ class _PaperlessMobileDocumentScannerState
   void initState() {
     super.initState();
     _resolutionPreset = widget.resolutionPreset;
+    _liveDetectionEnabled = widget.liveDetectionInitiallyEnabled;
+    _autoCaptureConfig = widget.autoCaptureConfig;
+    _availableCameras = availableCameras();
+    SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   }
 
   @override
@@ -113,6 +121,7 @@ class _PaperlessMobileDocumentScannerState
     // async work (_onShutterPressed) will bail out on the mounted check
     // rather than using a disposed controller.
     _controller = null;
+    SystemChrome.setPreferredOrientations([]);
     super.dispose();
   }
 
@@ -374,7 +383,7 @@ class _PaperlessMobileDocumentScannerState
   Widget _buildLiveDetection() {
     final bottomViewPadding = MediaQuery.of(context).viewPadding.bottom;
     return FutureBuilder(
-      future: availableCameras(),
+      future: _availableCameras,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -405,6 +414,7 @@ class _PaperlessMobileDocumentScannerState
                 +
             bottomViewPadding;
         return Scaffold(
+          key: ValueKey(camera),
           bottomNavigationBar: BottomAppBar(
             height: bottomBarHeight,
             child: Column(
@@ -422,6 +432,50 @@ class _PaperlessMobileDocumentScannerState
                         child: ShutterButton(
                           onPressed: _onShutterPressed,
                           size: _shutterButtonSize,
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: RepaintBoundary(
+                          child: SegmentedButton<_SegmentedButtonOption>(
+                            multiSelectionEnabled: true,
+                            emptySelectionAllowed: true,
+                            onSelectionChanged: (newSelection) {
+                              setState(() {
+                                _liveDetectionEnabled = newSelection.contains(
+                                  _SegmentedButtonOption.liveDetection,
+                                );
+                                _autoCaptureConfig = widget.autoCaptureConfig
+                                    .copyWith(
+                                      enabled: newSelection.contains(
+                                        _SegmentedButtonOption.autoCapture,
+                                      ),
+                                    );
+                              });
+                            },
+                            showSelectedIcon: false,
+                            segments: [
+                              ButtonSegment(
+                                value: _SegmentedButtonOption.liveDetection,
+                                icon: Icon(Icons.document_scanner),
+                                tooltip: 'Live Detection',
+                              ),
+                              ButtonSegment(
+                                value: _SegmentedButtonOption.autoCapture,
+                                icon: Icon(Icons.motion_photos_auto),
+                                enabled: _liveDetectionEnabled,
+
+                                tooltip: 'Auto Capture',
+                              ),
+                            ],
+                            selected: {
+                              if (_liveDetectionEnabled)
+                                _SegmentedButtonOption.liveDetection,
+                              if (_autoCaptureConfig.enabled &&
+                                  _liveDetectionEnabled)
+                                _SegmentedButtonOption.autoCapture,
+                            },
+                          ),
                         ),
                       ),
                       Align(
@@ -443,7 +497,7 @@ class _PaperlessMobileDocumentScannerState
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         TextButton(
-                          onPressed: widget.onCancelled,
+                          onPressed: () => widget.onCancelled(_scans.length),
                           child: Text(
                             MaterialLocalizations.of(context).cancelButtonLabel,
                           ),
@@ -480,17 +534,14 @@ class _PaperlessMobileDocumentScannerState
               DocumentScannerView(
                 key: ValueKey(_resolutionPreset),
                 onCameraReady: (controller, width, height) {
-                  controller.lockCaptureOrientation(
-                    DeviceOrientation.portraitUp,
-                  );
                   _setController(controller);
                 },
                 camera: camera,
                 debugStage: kDebugMode ? _debugStage : DebugStage.none,
                 resolutionPreset: _resolutionPreset,
                 onFrameChanged: _onFrameChanged,
-                liveEdgeDetectionEnabled: widget.enableLiveDetection,
-                autoCaptureConfig: widget.autoCaptureConfig,
+                liveEdgeDetectionEnabled: _liveDetectionEnabled,
+                autoCaptureConfig: _autoCaptureConfig,
                 onAutoCaptureTriggered: (stableFrame) {
                   _autoCaptureFallbackFrame = stableFrame;
                   _autoCaptureFallbackImageSize = _lastLiveImageSize;
