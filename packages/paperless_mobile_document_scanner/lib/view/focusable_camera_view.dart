@@ -6,41 +6,46 @@ import 'package:flutter/material.dart';
 class FocusableCameraView extends StatefulWidget {
   final CameraDescription camera;
   final ResolutionPreset resolutionPreset;
-  final void Function(CameraController controller, int width, int height)
-  onCameraReady;
+  final ValueChanged<CameraController> onControllerInitialized;
   const FocusableCameraView({
     super.key,
     required this.camera,
     this.resolutionPreset = ResolutionPreset.medium,
-    required this.onCameraReady,
+    required this.onControllerInitialized,
   });
 
   @override
   State<FocusableCameraView> createState() => _FocusableCameraViewState();
 }
 
+const _focusIndicatorSize = 72.0;
+
 class _FocusableCameraViewState extends State<FocusableCameraView>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   CameraController? _controller;
+
+  late final AnimationController _focusAnimController;
+  Offset? _focusPosition;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    final cameraController = CameraController(
-      widget.camera,
-      widget.resolutionPreset,
-      enableAudio: false,
-      imageFormatGroup: Platform.isAndroid
-          ? ImageFormatGroup.nv21
-          : ImageFormatGroup.bgra8888,
-    );
-    _controller = cameraController;
-    _initializeCameraController(cameraController);
+    _focusAnimController =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 600),
+        )..addStatusListener((status) {
+          if (status == AnimationStatus.completed) {
+            setState(() => _focusPosition = null);
+          }
+        });
+    _initializeCameraController();
   }
 
   @override
   void dispose() {
+    _focusAnimController.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _controller?.stopImageStream();
     _controller?.dispose();
@@ -49,8 +54,10 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    final cameraController = _controller;
+
     if (state == AppLifecycleState.inactive) {
-      final cameraController = _controller;
+      // Nothing to tear down if the controller was never initialized.
       if (cameraController == null || !cameraController.value.isInitialized) {
         return;
       }
@@ -60,17 +67,10 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
       cameraController.dispose();
       _controller = null;
     } else if (state == AppLifecycleState.resumed) {
-      if (_controller != null) return; // Already active, nothing to do.
-      final newController = CameraController(
-        widget.camera,
-        widget.resolutionPreset,
-        enableAudio: false,
-        imageFormatGroup: Platform.isAndroid
-            ? ImageFormatGroup.nv21
-            : ImageFormatGroup.bgra8888,
-      );
-      _controller = newController;
-      _initializeCameraController(newController);
+      // Re-initialize the controller if it was disposed during inactive.
+      if (cameraController == null) {
+        _initializeCameraController();
+      }
     }
   }
 
@@ -80,33 +80,79 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
     if (cameraController == null || !cameraController.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
-    return SizedBox.expand(
-      child: FittedBox(
-        fit: BoxFit.cover,
-        clipBehavior: Clip.hardEdge,
-        child: SizedBox(
-          width: cameraController.value.previewSize!.height,
-          height: cameraController.value.previewSize!.width,
-          child: CameraPreview(
-            cameraController,
-            child: LayoutBuilder(
-              builder: (BuildContext context, BoxConstraints constraints) {
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTapDown: (TapDownDetails details) =>
-                      onViewFinderTap(details, constraints),
-                );
-              },
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        SizedBox.expand(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            clipBehavior: Clip.hardEdge,
+            child: SizedBox(
+              width: cameraController.value.previewSize!.height,
+              height: cameraController.value.previewSize!.width,
+              child: CameraPreview(
+                cameraController,
+                child: LayoutBuilder(
+                  builder: (BuildContext context, BoxConstraints constraints) {
+                    return GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTapDown: (TapDownDetails details) =>
+                          onViewFinderTap(details, constraints),
+                    );
+                  },
+                ),
+              ),
             ),
           ),
         ),
-      ),
+        if (_focusPosition != null)
+          AnimatedBuilder(
+            animation: _focusAnimController,
+            builder: (context, child) {
+              final t = _focusAnimController.value;
+              // Scale: 1.5 → 1.0 over first 30%.
+              final scaleT = (t / 0.3).clamp(0.0, 1.0);
+              final scale = 1.5 - 0.5 * Curves.easeOut.transform(scaleT);
+              // Opacity: 1.0 for first 70%, then fade to 0.
+              final opacityT = ((t - 0.7) / 0.3).clamp(0.0, 1.0);
+              final opacity = 1.0 - Curves.easeIn.transform(opacityT);
+              return Positioned(
+                left: _focusPosition!.dx - _focusIndicatorSize / 2,
+                top: _focusPosition!.dy - _focusIndicatorSize / 2,
+                child: IgnorePointer(
+                  child: Opacity(
+                    opacity: opacity,
+                    child: Transform.scale(scale: scale, child: child),
+                  ),
+                ),
+              );
+            },
+            child: SizedBox(
+              width: _focusIndicatorSize,
+              height: _focusIndicatorSize,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.5),
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
-  Future<void> _initializeCameraController(
-    CameraController cameraController,
-  ) async {
+  Future<void> _initializeCameraController() async {
+    CameraController cameraController;
+    _controller = CameraController(
+      widget.camera,
+      widget.resolutionPreset,
+      enableAudio: false,
+      imageFormatGroup: Platform.isAndroid
+          ? ImageFormatGroup.nv21
+          : ImageFormatGroup.bgra8888,
+    );
+    cameraController = _controller!;
     // If the controller is updated then update the UI.
     cameraController.addListener(() {
       if (mounted) {
@@ -119,12 +165,8 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
 
     try {
       await cameraController.initialize();
-      cameraController.setFlashMode(FlashMode.off);
-      widget.onCameraReady(
-        cameraController,
-        cameraController.value.previewSize!.width.toInt(),
-        cameraController.value.previewSize!.height.toInt(),
-      );
+      await cameraController.setFlashMode(FlashMode.off);
+      widget.onControllerInitialized(cameraController);
     } on CameraException catch (e) {
       switch (e.code) {
         case 'CameraAccessDenied':
@@ -171,5 +213,14 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
     );
     cameraController.setExposurePoint(offset);
     cameraController.setFocusPoint(offset);
+
+    // Show focus indicator at the tap position in screen coordinates.
+    final RenderBox? box = context.findRenderObject() as RenderBox?;
+    if (box != null) {
+      setState(() {
+        _focusPosition = box.globalToLocal(details.globalPosition);
+      });
+      _focusAnimController.forward(from: 0.0);
+    }
   }
 }

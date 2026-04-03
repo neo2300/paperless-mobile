@@ -16,7 +16,10 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: PaperlessMobileDocumentScanner(onCancelled: (scanCount) {}),
+      home: PaperlessMobileDocumentScanner(
+        onDone: (value) {},
+        onCancelled: (value) {},
+      ),
       theme: ThemeData.dark(),
     );
   }
