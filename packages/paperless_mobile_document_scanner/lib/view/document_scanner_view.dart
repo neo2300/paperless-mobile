@@ -17,8 +17,7 @@ class DocumentScannerView extends StatefulWidget {
   final CameraDescription camera;
   final DebugStage debugStage;
   final ResolutionPreset resolutionPreset;
-  final void Function(CameraController controller, int width, int height)
-  onCameraReady;
+  final ValueChanged<CameraController> onControllerInitialized;
 
   /// Called whenever the detected frame or image size changes.
   /// Passes the current smoothed frame (or null) and the image size (or null).
@@ -41,7 +40,7 @@ class DocumentScannerView extends StatefulWidget {
     required this.camera,
     this.debugStage = DebugStage.none,
     this.resolutionPreset = ResolutionPreset.medium,
-    required this.onCameraReady,
+    required this.onControllerInitialized,
     this.onFrameChanged,
     required this.liveEdgeDetectionEnabled,
     this.autoCaptureConfig = const AutoCaptureConfig(),
@@ -129,7 +128,7 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
   Widget build(BuildContext context) {
     final showDebug = widget.debugStage != DebugStage.none;
 
-    return Row(
+    return Column(
       children: [
         Expanded(
           flex: showDebug ? 1 : 2,
@@ -139,7 +138,7 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
                 key: ValueKey(widget.camera),
                 camera: widget.camera,
                 resolutionPreset: widget.resolutionPreset,
-                onCameraReady: onCameraReady,
+                onControllerInitialized: _onControllerInitialized,
               ),
               if (widget.liveEdgeDetectionEnabled &&
                   _currentFrame != null &&
@@ -192,9 +191,9 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
     );
   }
 
-  void onCameraReady(CameraController controller, int width, int height) {
+  void _onControllerInitialized(CameraController controller) {
     _controller = controller;
-    widget.onCameraReady(controller, width, height);
+    widget.onControllerInitialized(controller);
     if (widget.liveEdgeDetectionEnabled) {
       _startImageStream(controller);
     }

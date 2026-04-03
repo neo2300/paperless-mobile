@@ -37,20 +37,7 @@ class DocumentScannerCubit extends Cubit<DocumentScannerState> {
     final scans = await allFiles
         .where((event) => event.path.endsWith(".jpeg"))
         .toList();
-    final validScans = <File>[];
-    for (final file in scans) {
-      final length = await file.length();
-      if (length == 0) {
-        await file.delete();
-        logger.fw(
-          'Previous scan ${file.path} was empty and has been deleted.',
-          className: runtimeType.toString(),
-          methodName: "initialize",
-        );
-        continue;
-      }
-      validScans.add(file);
-    }
+    final validScans = await _validateFiles(scans);
     logger.fd(
       "Restored ${validScans.length} scans.",
       className: runtimeType.toString(),
@@ -63,6 +50,22 @@ class DocumentScannerCubit extends Cubit<DocumentScannerState> {
               scans: validScans,
               status: LoadingStatus.loaded,
             ),
+    );
+  }
+
+  Future<void> addScansFromScanner(List<File> files) async {
+    final targetDirectory = FileService.instance.temporaryScansDirectory;
+    // We copy the files to the scans dir and remove the original copies.
+    await Future.wait([
+      for (final file in files)
+        file.rename('${targetDirectory.path}/${file.uri.pathSegments.last}'),
+    ]);
+    // Then, we synchronize state with the actual files in the scans directory.
+    final syncedScans = await _validateFiles(
+      targetDirectory.listSync().whereType<File>().toList(),
+    );
+    emit(
+      DocumentScannerState(status: LoadingStatus.loaded, scans: syncedScans),
     );
   }
 
@@ -122,5 +125,23 @@ class DocumentScannerCubit extends Cubit<DocumentScannerState> {
     } on Exception catch (e) {
       addError(TransientMessageError(message: e.toString()));
     }
+  }
+
+  Future<List<File>> _validateFiles(List<File> scans) async {
+    final validFiles = <File>[];
+    for (final file in scans) {
+      final length = await file.length();
+      if (length == 0) {
+        await file.delete();
+        logger.fw(
+          'Previous scan ${file.path} was empty and has been deleted.',
+          className: runtimeType.toString(),
+          methodName: "initialize",
+        );
+        continue;
+      }
+      validFiles.add(file);
+    }
+    return validFiles;
   }
 }

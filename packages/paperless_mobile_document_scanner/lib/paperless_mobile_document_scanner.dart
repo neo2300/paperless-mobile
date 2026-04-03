@@ -29,12 +29,12 @@ const _scanPreviewListHeight = 110.0;
 const _actionButtonRowHeight = 56.0;
 
 class PaperlessMobileDocumentScanner extends StatefulWidget {
-  /// Called when the user completes the scan session.
+  /// Called when the user finishes the scan session.
   /// Receives all accepted scans as a list of image files.
-  final ValueChanged<List<File>>? onFinished;
+  final ValueChanged<List<File>> onCancelled;
+  final ValueChanged<List<File>> onDone;
 
   /// Called when the user cancels the scan session.
-  final void Function(int scanCount) onCancelled;
   final bool liveDetectionInitiallyEnabled;
   final ResolutionPreset resolutionPreset;
 
@@ -44,16 +44,16 @@ class PaperlessMobileDocumentScanner extends StatefulWidget {
 
   const PaperlessMobileDocumentScanner({
     super.key,
-    this.onFinished,
-    required this.onCancelled,
     this.liveDetectionInitiallyEnabled = true,
     this.resolutionPreset = ResolutionPreset.high,
     this.autoCaptureConfig = const AutoCaptureConfig(
       enabled: true,
-      preStableDelay: Duration(milliseconds: 500),
+      preStableDelay: Duration(milliseconds: 300),
       stableDuration: Duration(milliseconds: 1000),
       minConsecutiveSimilarFrames: 4,
     ),
+    required this.onCancelled,
+    required this.onDone,
   });
 
   @override
@@ -414,7 +414,7 @@ class _PaperlessMobileDocumentScannerState
                 +
             bottomViewPadding;
         return Scaffold(
-          key: ValueKey(camera),
+          key: ValueKey([camera, _controller]),
           bottomNavigationBar: BottomAppBar(
             height: bottomBarHeight,
             child: Column(
@@ -497,7 +497,9 @@ class _PaperlessMobileDocumentScannerState
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         TextButton(
-                          onPressed: () => widget.onCancelled(_scans.length),
+                          onPressed: () => widget.onCancelled(
+                            _scans.map((s) => s.outputFile).toList(),
+                          ),
                           child: Text(
                             MaterialLocalizations.of(context).cancelButtonLabel,
                           ),
@@ -505,7 +507,7 @@ class _PaperlessMobileDocumentScannerState
                         if (_scans.isNotEmpty)
                           FilledButton.icon(
                             onPressed: () {
-                              widget.onFinished?.call(
+                              widget.onDone(
                                 _scans.map((s) => s.outputFile).toList(),
                               );
                             },
@@ -533,9 +535,7 @@ class _PaperlessMobileDocumentScannerState
               // Camera preview with live edge detection.
               DocumentScannerView(
                 key: ValueKey(_resolutionPreset),
-                onCameraReady: (controller, width, height) {
-                  _setController(controller);
-                },
+                onControllerInitialized: _setController,
                 camera: camera,
                 debugStage: kDebugMode ? _debugStage : DebugStage.none,
                 resolutionPreset: _resolutionPreset,
