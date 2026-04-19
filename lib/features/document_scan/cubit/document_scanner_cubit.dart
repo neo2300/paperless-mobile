@@ -11,10 +11,13 @@ import 'package:paperless_mobile/features/logging/data/logger.dart';
 import 'package:paperless_mobile/core/model/info_message_exception.dart';
 import 'package:paperless_mobile/core/service/file_service.dart';
 import 'package:paperless_mobile/features/notifications/services/local_notification_service.dart';
+import 'package:path/path.dart';
 import 'package:rxdart/rxdart.dart';
 
 part 'document_scanner_cubit.freezed.dart';
 part 'document_scanner_state.dart';
+
+const allowedExtensions = ['.jpeg', '.jpg', '.png'];
 
 class DocumentScannerCubit extends Cubit<DocumentScannerState> {
   final LocalNotificationService _notificationService;
@@ -33,9 +36,12 @@ class DocumentScannerCubit extends Cubit<DocumentScannerState> {
     if (!await tempDir.exists()) {
       await tempDir.create(recursive: true);
     }
-    final allFiles = tempDir.list().whereType<File>();
-    final scans = await allFiles
-        .where((event) => event.path.endsWith(".jpeg"))
+    final allFiles = await tempDir.list().whereType<File>().toList();
+    final scans = allFiles
+        .where(
+          (event) =>
+              allowedExtensions.contains(extension(event.path).toLowerCase()),
+        )
         .toList();
     final validScans = await _validateFiles(scans);
     logger.fd(

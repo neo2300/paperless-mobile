@@ -414,7 +414,6 @@ class _PaperlessMobileDocumentScannerState
                 +
             bottomViewPadding;
         return Scaffold(
-          key: ValueKey([camera, _controller]),
           bottomNavigationBar: BottomAppBar(
             height: bottomBarHeight,
             child: Column(
