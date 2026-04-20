@@ -168,8 +168,8 @@ Future<(DocumentFrame?, ui.Image?)> detectDocumentEdges(
   cv4.Mat resized;
   if (config.resizeThreshold > 0 && maxDim > config.resizeThreshold) {
     final approxScale = maxDim / config.resizeThreshold;
-    final newW = (originalWidth / approxScale).floor();
-    final newH = (originalHeight / approxScale).floor();
+    final newW = math.max(1, (originalWidth / approxScale).round());
+    final newH = math.max(1, (originalHeight / approxScale).round());
     resizeScaleX = originalWidth / newW;
     resizeScaleY = originalHeight / newH;
     resized = await cv4.resizeAsync(gray, (newW, newH));

@@ -2,7 +2,8 @@
 ///
 /// Two presets are provided:
 /// * [EdgeDetectionConfig.fast] — optimized for live camera preview
-///   (heavily downscaled, lower quality, higher speed).
+///   (moderately downscaled to keep overlays responsive without shrinking
+///   corners too aggressively).
 /// * [EdgeDetectionConfig.accurate] — optimized for a captured still image
 ///   (larger processing resolution, finer morphology kernels, tighter
 ///   approximation epsilon).
@@ -43,8 +44,19 @@ class EdgeDetectionConfig {
     this.minAreaFactor = 0.04,
   });
 
-  /// Fast preset: heavy downscaling for real-time camera stream processing.
-  static const fast = EdgeDetectionConfig(resizeThreshold: 200);
+  /// Fast preset: tuned for live preview.
+  ///
+  /// Compared with the still-image pipeline, this keeps substantially fewer
+  /// pixels for throughput, but avoids an extreme downscaling that
+  /// tended to pull corners slightly inward after scaling back up.
+  static const fast = EdgeDetectionConfig(
+    resizeThreshold: 320,
+    medianBlurKernel: 7,
+    approxEpsilonFactor: 0.018,
+    morphologyKernel: 3,
+    dilateKernel: 2,
+    minAreaFactor: 0.03,
+  );
 
   /// Accurate preset: processes at a higher resolution with finer parameters,
   /// suitable for a captured still image where speed is less critical.

@@ -12,6 +12,8 @@ import 'package:paperless_mobile_document_scanner/processing/frame_stability_tra
 import 'package:paperless_mobile_document_scanner/view/focusable_camera_view.dart';
 import 'package:paperless_mobile_document_scanner/view/widgets/auto_capture_overlay_painter.dart';
 import 'package:paperless_mobile_document_scanner/view/widgets/frame_overlay_painter.dart';
+import 'package:paperless_mobile_document_scanner/view/widgets/spirit_level_widget.dart';
+import 'package:vibration/vibration.dart';
 
 class DocumentScannerView extends StatefulWidget {
   final CameraDescription camera;
@@ -74,25 +76,26 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
   /// Rolling window of recent detection outcomes (`true` = frame found).
   final List<bool> _detectionHistory = [];
 
+  static const _autoCaptureVibrationSteps = 8;
+  static const _autoCaptureVibrationMinIntensity = 0;
+  static const _autoCaptureVibrationMaxIntensity = 50;
+
   DocumentFrame? _smoothedFrame;
-  // --- Auto-capture ---
+
   late FrameStabilityTracker _stabilityTracker;
   late AnimationController _autoCaptureAnimController;
   bool _autoCaptureTriggered = false;
-  DateTime _lastHapticTime = DateTime(0);
+  bool _isAutoCaptureVibrating = false;
 
   @override
   void initState() {
     super.initState();
     _runner.start();
     _stabilityTracker = FrameStabilityTracker(widget.autoCaptureConfig);
-    _autoCaptureAnimController =
-        AnimationController(
-            vsync: this,
-            duration: widget.autoCaptureConfig.stableDuration,
-          )
-          ..addListener(_onAutoCaptureAnimTick)
-          ..addStatusListener(_onAutoCaptureAnimStatus);
+    _autoCaptureAnimController = AnimationController(
+      vsync: this,
+      duration: widget.autoCaptureConfig.stableDuration,
+    )..addStatusListener(_onAutoCaptureAnimStatus);
   }
 
   @override
@@ -118,6 +121,7 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
 
   @override
   void dispose() {
+    _stopAutoCaptureVibration();
     _debugUiImage?.dispose();
     _runner.dispose();
     _autoCaptureAnimController.dispose();
@@ -144,11 +148,13 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
                   _currentFrame != null &&
                   _imageSize != null)
                 Positioned.fill(
-                  child: CustomPaint(
-                    painter: FrameOverlayPainter(
-                      frame: _currentFrame!,
-                      imageSize: _imageSize!,
-                      frameColor: Colors.white,
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: FrameOverlayPainter(
+                        frame: _currentFrame!,
+                        imageSize: _imageSize!,
+                        frameColor: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -157,22 +163,29 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
                   _currentFrame != null &&
                   _imageSize != null)
                 Positioned.fill(
-                  child: AnimatedBuilder(
-                    animation: _autoCaptureAnimController,
-                    builder: (context, _) {
-                      return CustomPaint(
-                        painter: AutoCaptureOverlayPainter(
-                          frame: _currentFrame!,
-                          imageSize: _imageSize!,
-                          progress: _autoCaptureAnimController.value,
-                          fillColor: Theme.of(
-                            context,
-                          ).colorScheme.secondaryContainer.withOpacity(0.25),
-                        ),
-                      );
-                    },
+                  child: IgnorePointer(
+                    child: AnimatedBuilder(
+                      animation: _autoCaptureAnimController,
+                      builder: (context, _) {
+                        return CustomPaint(
+                          painter: AutoCaptureOverlayPainter(
+                            frame: _currentFrame!,
+                            imageSize: _imageSize!,
+                            progress: _autoCaptureAnimController.value,
+                            fillColor: Theme.of(context)
+                                .colorScheme
+                                .secondaryContainer
+                                .withValues(alpha: 0.25),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
+              // Spirit level overlay.
+              const Positioned.fill(
+                child: IgnorePointer(child: SpiritLevelWidget()),
+              ),
             ],
           ),
         ),
@@ -319,12 +332,14 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
       return;
     }
 
-    if (_stabilityTracker.progress > 0 &&
-        !_autoCaptureAnimController.isAnimating) {
-      // Start the fill animation from wherever stability began.
-      _autoCaptureAnimController.forward(from: 0.0);
-    } else if (_stabilityTracker.progress <= 0 &&
-        _autoCaptureAnimController.isAnimating) {
+    if (_stabilityTracker.progress > 0) {
+      if (!_autoCaptureAnimController.isAnimating) {
+        // Start the fill animation from wherever stability began.
+        _autoCaptureAnimController.forward(from: 0.0);
+      }
+      _startAutoCaptureVibration();
+    } else if (_autoCaptureAnimController.isAnimating ||
+        _isAutoCaptureVibrating) {
       _resetAutoCapture();
     }
   }
@@ -333,32 +348,13 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
     _autoCaptureAnimController.reset();
     _stabilityTracker.reset();
     _autoCaptureTriggered = false;
-  }
-
-  void _onAutoCaptureAnimTick() {
-    final progress = _autoCaptureAnimController.value;
-    if (progress <= 0) return;
-
-    // Haptic interval decreases as progress increases:
-    // ~300ms at start → ~40ms near completion.
-    final intervalMs = (300 - 260 * progress).round().clamp(40, 300);
-    final now = DateTime.now();
-    if (now.difference(_lastHapticTime).inMilliseconds < intervalMs) return;
-    _lastHapticTime = now;
-
-    if (progress < 0.33) {
-      HapticFeedback.selectionClick();
-    } else if (progress < 0.66) {
-      HapticFeedback.lightImpact();
-    } else if (progress < 0.9) {
-      HapticFeedback.mediumImpact();
-    } else {
-      HapticFeedback.heavyImpact();
-    }
+    _stopAutoCaptureVibration();
   }
 
   void _onAutoCaptureAnimStatus(AnimationStatus status) {
     if (status == AnimationStatus.completed && !_autoCaptureTriggered) {
+      _stopAutoCaptureVibration();
+      HapticFeedback.heavyImpact();
       _autoCaptureTriggered = true;
       _stabilityTracker.markCaptured();
       final stableFrame = _stabilityTracker.stableFrame;
@@ -373,6 +369,64 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
     if (_detectionHistory.length > _stabilityWindowSize) {
       _detectionHistory.removeAt(0);
     }
+  }
+
+  void _startAutoCaptureVibration() {
+    if (_isAutoCaptureVibrating) {
+      return;
+    }
+
+    _isAutoCaptureVibrating = true;
+    final waveform = _buildAutoCaptureVibrationWaveform(
+      widget.autoCaptureConfig.stableDuration,
+    );
+    Vibration.vibrate(
+      pattern: waveform.pattern,
+      intensities: waveform.intensities,
+    );
+  }
+
+  ///
+  /// We basically know beforehand how long the vibration will last on success.
+  /// So the vibration pattern just assumes that the frame will be stable for the entire duration and
+  /// increases intensity over time.
+  ///
+  /// If the frame is considered unstable, the vibration is simply cancelled.
+  ///
+  ({List<int> pattern, List<int> intensities})
+  _buildAutoCaptureVibrationWaveform(Duration duration) {
+    final totalMs = duration.inMilliseconds;
+    final stepCount = totalMs <= 0 ? 1 : _autoCaptureVibrationSteps;
+    final baseStepMs = totalMs ~/ stepCount;
+    final remainderMs = totalMs % stepCount;
+
+    final pattern = <int>[0];
+    final intensities = <int>[0];
+
+    for (var index = 0; index < stepCount; index++) {
+      final stepDuration = baseStepMs + (index < remainderMs ? 1 : 0);
+      final progress = (index + 1) / stepCount;
+      final curvedProgress = progress * progress;
+      pattern.add(stepDuration);
+      intensities.add(
+        (_autoCaptureVibrationMinIntensity +
+                (_autoCaptureVibrationMaxIntensity -
+                        _autoCaptureVibrationMinIntensity) *
+                    curvedProgress)
+            .round(),
+      );
+    }
+
+    return (pattern: pattern, intensities: intensities);
+  }
+
+  void _stopAutoCaptureVibration() {
+    if (!_isAutoCaptureVibrating) {
+      return;
+    }
+
+    _isAutoCaptureVibrating = false;
+    Vibration.cancel();
   }
 
   bool get _isFrameStable {

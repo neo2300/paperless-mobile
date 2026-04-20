@@ -34,7 +34,7 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
     _focusAnimController =
         AnimationController(
           vsync: this,
-          duration: const Duration(milliseconds: 600),
+          duration: const Duration(milliseconds: 400),
         )..addStatusListener((status) {
           if (status == AnimationStatus.completed) {
             setState(() => _focusPosition = null);
