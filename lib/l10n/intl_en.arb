@@ -145,6 +145,10 @@
   "@authenticationFailedPleaseTryAgain": {},
   "auto": "Auto",
   "@auto": {},
+  "autoCapture": "Auto capture",
+  "@autoCapture": {
+    "description": "label displayed for the auto-capture option in the document scanner settings"
+  },
   "backToLogin": "Back to login",
   "before": "Before",
   "@before": {},
@@ -1130,11 +1134,22 @@
   "@undo": {},
   "unsupportedVersionTitle": "Unsupported API version",
   "unsupportedVersionWarning": "The API version reported by your paperless-ngx instance ({apiVersion}) is not officially supported by this version of the app. The latest supported API version is {latestSupportedApiVersion}.\n\nThis may occur if your server is running an older version of paperless-ngx or if compatibility with that version was removed in a recent app update.\n\nAs a result, some features may not work correctly, and the app may behave unpredictably or even crash.\n\nFor the best experience, update your paperless-ngx instance to a supported version or install an older version from GitHub or F-Droid.",
+  "@unsupportedVersionWarning": {
+    "placeholders": {
+      "apiVersion": {
+        "type": "int"
+      }
+    }
+  },
   "upload": "Upload",
   "@upload": {},
   "uploadADocumentFromThisDevice": "Upload a document from this device",
   "@uploadADocumentFromThisDevice": {
     "description": "Button label on scanner page"
+  },
+  "uploadAll": "Upload all",
+  "@uploadAll": {
+    "description": "Button label on scanner page when scans have been captured and are ready to be uploaded."
   },
   "uploadInferValuesHint": "If you specify values for these fields, your paperless instance will not automatically derive a value. If you want these values to be automatically populated by your server, leave the fields blank.",
   "@uploadInferValuesHint": {},
@@ -1197,5 +1212,18 @@
   "youHaveNoViewsOnYourDashboardYet": "You have not added any views to your dashboard yet.",
   "@youHaveNoViewsOnYourDashboardYet": {},
   "youreOffline": "You're offline.",
-  "@youreOffline": {}
+  "@youreOffline": {},
+  "autoCaptureDescription": "Automatically capture a photo when the frame is stable.",
+  "autoCaptureReEnableDescription": "Will resume when live detection is back on.",
+  "autoCaptureDisabledDescription": "Requires live detection to be enabled.",
+  "liveDetection": "Live detection",
+  "liveDetectionDescription": "Real time preview of the detected document area.",
+  "collapseScanSettingsTooltip": "Collapse scan assist",
+  "scanAssist": "Scan Assist",
+  "autoCaptureModeEnabled": "Auto capture enabled",
+  "liveDetectionEnabled": "Manual capture",
+  "autoCaptureDisabled": "Auto capture disabled",
+  "scanAssistDisabled": "Disabled",
+  "discardRemainingScans": "Discard remaining scans?",
+  "discardScannedDocuments": "Are you sure you want to discard the scanned documents?"
 }
