@@ -21,6 +21,11 @@ import 'package:paperless_mobile/features/scanner/view/widgets/resolution_switch
 import 'package:paperless_mobile/features/scanner/view/widgets/scanner_control_tray.dart';
 import 'package:paperless_mobile/features/scanner/view/widgets/scan_preview_list.dart';
 import 'package:paperless_mobile/features/scanner/view/widgets/shutter_button.dart';
+import 'package:paperless_mobile/features/scanner/view/pages/advanced_scanner_settings_page.dart';
+import 'package:paperless_mobile/core/store/bloc/global_settings_builder.dart';
+import 'package:paperless_mobile/core/store/slices/global_settings.dart';
+import 'package:paperless_mobile/features/scanner/models/scanner_parameters.dart';
+import 'package:paperless_mobile/core/extensions/context_extensions.dart';
 import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
 import 'package:path/path.dart' as p;
 
@@ -88,13 +93,12 @@ class PaperlessMobileDocumentScanner extends StatefulWidget {
 class _PaperlessMobileDocumentScannerState
     extends State<PaperlessMobileDocumentScanner> {
   late bool _liveDetectionEnabled;
-  late AutoCaptureConfig _autoCaptureConfig;
   late bool _autoCaptureEnabled;
   CameraController? _controller;
   DebugStage _debugStage = DebugStage.none;
-  late ResolutionPreset _resolutionPreset;
   bool _isTorchActive = false;
   bool _handlingSystemBack = false;
+  bool _isSettingsOpen = false;
 
   void _setController(CameraController? controller) {
     if (controller != _controller) {
@@ -134,22 +138,11 @@ class _PaperlessMobileDocumentScannerState
   @override
   void initState() {
     super.initState();
-    _resolutionPreset = widget.resolutionPreset;
-    _liveDetectionEnabled = widget.liveDetectionInitiallyEnabled;
-    _autoCaptureConfig = widget.autoCaptureConfig;
+    _liveDetectionEnabled = true;
     _autoCaptureEnabled = widget.autoCaptureConfig.enabled;
     _availableCameras = availableCameras();
     unawaited(_restoreInitialScans());
     SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  }
-
-  AutoCaptureConfig get _effectiveAutoCaptureConfig => _autoCaptureConfig
-      .copyWith(enabled: _liveDetectionEnabled && _autoCaptureEnabled);
-
-  void _setLiveDetectionEnabled(bool enabled) {
-    setState(() {
-      _liveDetectionEnabled = enabled;
-    });
   }
 
   void _setAutoCaptureEnabled(bool enabled) {
@@ -681,163 +674,209 @@ class _PaperlessMobileDocumentScannerState
 
   Widget _buildLiveDetection() {
     final bottomViewPadding = MediaQuery.of(context).viewPadding.bottom;
-    return FutureBuilder(
-      future: _availableCameras,
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (snapshot.hasError) {
-          final error = snapshot.error;
-          if (error is CameraException) {
-            final message = mapCameraErrorCode(error.code);
-            return Center(child: Text('$message: ${error.description}'));
-          }
-          return const Center(child: Text('Error loading cameras'));
-        }
-        final cameras = snapshot.data!;
-        if (cameras.isEmpty) {
-          return const Center(child: Text('No cameras found'));
-        }
-        final camera = cameras.firstWhere(
-          (camera) => camera.lensDirection == CameraLensDirection.back,
-          orElse: () => cameras.first,
+    return GlobalSettingsBuilder(
+      builder: (context, globalSettings) {
+        final params = globalSettings.scannerParameters;
+        final edgeDetectionConfig = params.toEdgeDetectionConfig();
+        final autoCaptureConfig = params.toAutoCaptureConfig(
+          enabled: _autoCaptureEnabled,
         );
-        const bottomBarVerticalPadding = 8.0;
-        final bottomBarHeight =
-            _shutterButtonSize +
-            _actionButtonRowHeight +
-            (_scans.isNotEmpty ? _scanPreviewListHeight : 0) +
-            2 *
-                bottomBarVerticalPadding // x2 since it's applied both above and below the shutter row
-                +
-            bottomViewPadding;
-        return Scaffold(
-          bottomNavigationBar: BottomAppBar(
-            height: bottomBarHeight,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Shutter + torch row.
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    vertical: bottomBarVerticalPadding,
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        onPressed: _onGalleryImportPressed,
-                        icon: Icon(Icons.add_photo_alternate, size: 32),
+        final resolutionPreset = params.resolutionPresetValue;
+
+        return FutureBuilder<List<CameraDescription>>(
+          future: _availableCameras,
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              final error = snapshot.error;
+              if (error is CameraException) {
+                final message = mapCameraErrorCode(error.code);
+                return Center(child: Text('$message: ${error.description}'));
+              }
+              return const Center(child: Text('Error loading cameras'));
+            }
+            final cameras = snapshot.data!;
+            if (cameras.isEmpty) {
+              return const Center(child: Text('No cameras found'));
+            }
+            final camera = cameras.firstWhere(
+              (camera) => camera.lensDirection == CameraLensDirection.back,
+              orElse: () => cameras.first,
+            );
+            const bottomBarVerticalPadding = 8.0;
+            final bottomBarHeight =
+                _shutterButtonSize +
+                _actionButtonRowHeight +
+                (_scans.isNotEmpty ? _scanPreviewListHeight : 0) +
+                2 *
+                    bottomBarVerticalPadding // x2 since it's applied both above and below the shutter row
+                    +
+                bottomViewPadding;
+            return Scaffold(
+              bottomNavigationBar: BottomAppBar(
+                height: bottomBarHeight,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Shutter + torch row.
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: bottomBarVerticalPadding,
                       ),
-                      ShutterButton(
-                        onPressed: _onShutterPressed,
-                        size: _shutterButtonSize,
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: _buildTorchButton(),
-                      ),
-                    ],
-                  ),
-                ),
-                // Cancel / Done buttons.
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  child: SizedBox(
-                    height: _actionButtonRowHeight,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        TextButton(
-                          onPressed: () => widget.onCancelled(_scanResults),
-                          child: Text(S.of(context)!.cancel),
-                        ),
-                        if (_scans.isNotEmpty)
-                          FilledButton.icon(
-                            onPressed: () {
-                              widget.onDone(_scanResults);
-                            },
-                            icon: const Icon(Icons.done_all),
-                            label: Text(
-                              '${S.of(context)!.done} (${_scans.length})',
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          IconButton(
+                            onPressed: _onGalleryImportPressed,
+                            icon: const Icon(
+                              Icons.add_photo_alternate,
+                              size: 32,
                             ),
                           ),
-                      ],
+                          ShutterButton(
+                            onPressed: _onShutterPressed,
+                            size: _shutterButtonSize,
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _buildTorchButton(),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Cancel / Done buttons.
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: SizedBox(
+                        height: _actionButtonRowHeight,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            TextButton(
+                              onPressed: () => widget.onCancelled(_scanResults),
+                              child: Text(S.of(context)!.cancel),
+                            ),
+                            if (_scans.isNotEmpty)
+                              FilledButton.icon(
+                                onPressed: () {
+                                  widget.onDone(_scanResults);
+                                },
+                                icon: const Icon(Icons.done_all),
+                                label: Text(
+                                  '${S.of(context)!.done} (${_scans.length})',
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    // Scan preview list.
+                    if (_scans.isNotEmpty)
+                      ScanPreviewList(
+                        scans: _scans,
+                        onDelete: _onScanDeleted,
+                        onTap: _onScanTapped,
+                        onReorder: _onScanReordered,
+                        height: _scanPreviewListHeight,
+                      ),
+                  ],
+                ),
+              ),
+              body: Stack(
+                children: [
+                  // Camera preview with live edge detection.
+                  DocumentScannerView(
+                    key: ValueKey(resolutionPreset),
+                    onControllerInitialized: _setController,
+                    camera: camera,
+                    debugStage: kDebugMode ? _debugStage : DebugStage.none,
+                    resolutionPreset: resolutionPreset,
+                    onFrameChanged: _onFrameChanged,
+                    liveEdgeDetectionEnabled:
+                        _liveDetectionEnabled && !_isSettingsOpen,
+                    autoCaptureConfig: autoCaptureConfig,
+                    edgeDetectionConfig: edgeDetectionConfig,
+                    onAutoCaptureTriggered: (stableFrame) {
+                      _autoCaptureFallbackFrame = stableFrame;
+                      _autoCaptureFallbackImageSize = _lastLiveImageSize;
+                      _onShutterPressed();
+                    },
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 16,
+                    child: SafeArea(
+                      top: false,
+                      child: Center(
+                        child: RepaintBoundary(
+                          child: ScannerControlTray(
+                            autoCaptureEnabled: _autoCaptureEnabled,
+                            onAutoCaptureChanged: _setAutoCaptureEnabled,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-                // Scan preview list.
-                if (_scans.isNotEmpty)
-                  ScanPreviewList(
-                    scans: _scans,
-                    onDelete: _onScanDeleted,
-                    onTap: _onScanTapped,
-                    onReorder: _onScanReordered,
-                    height: _scanPreviewListHeight,
-                  ),
-              ],
-            ),
-          ),
-          body: Stack(
-            children: [
-              // Camera preview with live edge detection.
-              DocumentScannerView(
-                key: ValueKey(_resolutionPreset),
-                onControllerInitialized: _setController,
-                camera: camera,
-                debugStage: kDebugMode ? _debugStage : DebugStage.none,
-                resolutionPreset: _resolutionPreset,
-                onFrameChanged: _onFrameChanged,
-                liveEdgeDetectionEnabled: _liveDetectionEnabled,
-                autoCaptureConfig: _effectiveAutoCaptureConfig,
-                onAutoCaptureTriggered: (stableFrame) {
-                  _autoCaptureFallbackFrame = stableFrame;
-                  _autoCaptureFallbackImageSize = _lastLiveImageSize;
-                  _onShutterPressed();
-                },
+                  _buildTopRightControls(context, resolutionPreset),
+                ],
               ),
-              Positioned(
-                right: 16,
-                bottom: 16,
-                child: SafeArea(
-                  top: false,
-                  child: RepaintBoundary(
-                    child: ScannerControlTray(
-                      liveDetectionEnabled: _liveDetectionEnabled,
-                      autoCaptureRequested: _autoCaptureEnabled,
-                      onLiveDetectionChanged: _setLiveDetectionEnabled,
-                      onAutoCaptureChanged: _setAutoCaptureEnabled,
-                    ),
-                  ),
-                ),
-              ),
-              if (kDebugMode) _buildDebugControls(),
-            ],
-          ),
+            );
+          },
         );
       },
     );
   }
 
-  Widget _buildDebugControls() {
+  Widget _buildTopRightControls(
+    BuildContext context,
+    ResolutionPreset resolutionPreset,
+  ) {
     return Positioned(
-      top: 8,
-      right: 8,
+      top: 16,
+      right: 16,
       child: SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            DebugStageSwitcher(
-              value: _debugStage,
-              onChanged: (stage) => setState(() => _debugStage = stage),
+            IconButton.filledTonal(
+              onPressed: () async {
+                setState(() => _isSettingsOpen = true);
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const AdvancedScannerSettingsPage(),
+                  ),
+                );
+                if (mounted) {
+                  setState(() => _isSettingsOpen = false);
+                }
+              },
+              icon: const Icon(Icons.tune),
+              tooltip: 'Advanced Scanner Settings',
             ),
-            const SizedBox(height: 8),
-            ResolutionSwitcher(
-              value: _resolutionPreset,
-              onChanged: (preset) => setState(() => _resolutionPreset = preset),
-            ),
+            if (kDebugMode) ...[
+              const SizedBox(height: 12),
+              DebugStageSwitcher(
+                value: _debugStage,
+                onChanged: (stage) => setState(() => _debugStage = stage),
+              ),
+              const SizedBox(height: 12),
+              ResolutionSwitcher(
+                value: resolutionPreset,
+                onChanged: (preset) {
+                  context.localStore.updateGlobalSettings(
+                    (state) => state.copyWith(
+                      scannerParameters: state.scannerParameters.copyWith(
+                        resolutionPreset: preset.name,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ),

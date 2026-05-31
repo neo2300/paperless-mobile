@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:paperless_mobile/features/scanner/models/auto_capture_config.dart';
+import 'package:paperless_mobile/features/scanner/models/edge_detection_config.dart';
 import 'package:paperless_mobile/features/scanner/models/debug_stage.dart';
 import 'package:paperless_mobile/features/scanner/models/document_frame.dart';
 import 'package:paperless_mobile/features/scanner/processing/detect_edges.dart';
@@ -32,6 +33,9 @@ class DocumentScannerView extends StatefulWidget {
   /// Configuration for auto-capture behaviour.
   final AutoCaptureConfig autoCaptureConfig;
 
+  /// Configuration for edge detection parameters.
+  final EdgeDetectionConfig edgeDetectionConfig;
+
   /// Called when the frame has been stable long enough and auto-capture fires.
   /// Passes the stable [DocumentFrame] that triggered the capture, which can
   /// be used as a reliable fallback if detection on the final image fails.
@@ -46,6 +50,7 @@ class DocumentScannerView extends StatefulWidget {
     this.onFrameChanged,
     required this.liveEdgeDetectionEnabled,
     this.autoCaptureConfig = const AutoCaptureConfig(),
+    this.edgeDetectionConfig = EdgeDetectionConfig.fast,
     required this.onAutoCaptureTriggered,
   });
 
@@ -247,6 +252,7 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
         width: prepared.width,
         height: prepared.height,
         rotationCompensation: prepared.rotation,
+        edgeDetectionConfig: widget.edgeDetectionConfig,
       );
 
       // null means skipped (still processing) — don't count.

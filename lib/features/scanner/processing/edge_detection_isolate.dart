@@ -6,6 +6,7 @@ import 'dart:ui';
 import 'package:opencv_dart/opencv_dart.dart' as cv4;
 import 'package:paperless_mobile/features/scanner/models/document_frame.dart';
 import 'package:paperless_mobile/features/scanner/processing/detect_edges.dart';
+import 'package:paperless_mobile/features/scanner/models/edge_detection_config.dart';
 
 /// Result from background edge detection.
 sealed class DetectionOutcome {}
@@ -51,6 +52,7 @@ class EdgeDetectionRunner {
     required int width,
     required int height,
     required int rotationCompensation,
+    required EdgeDetectionConfig edgeDetectionConfig,
   }) async {
     if (_isProcessing) return null;
     await _initCompleter.future;
@@ -65,6 +67,7 @@ class EdgeDetectionRunner {
         height,
         rotationCompensation,
         replyPort.sendPort,
+        edgeDetectionConfig,
       ]);
 
       final result = await replyPort.first;
@@ -108,6 +111,7 @@ class EdgeDetectionRunner {
       final int height = msg[2];
       final int rotationCompensation = msg[3];
       final SendPort replyPort = msg[4];
+      final EdgeDetectionConfig config = msg[5] as EdgeDetectionConfig;
 
       try {
         final result = await _processFrame(
@@ -115,6 +119,7 @@ class EdgeDetectionRunner {
           width,
           height,
           rotationCompensation,
+          config,
         );
         replyPort.send(result);
       } catch (_) {
@@ -128,6 +133,7 @@ class EdgeDetectionRunner {
     int width,
     int height,
     int rotationCompensation,
+    EdgeDetectionConfig config,
   ) async {
     cv4.Mat mat = cv4.Mat.fromList(
       height,
@@ -148,7 +154,7 @@ class EdgeDetectionRunner {
         break;
     }
 
-    final (frame, _) = await detectDocumentEdges(mat);
+    final (frame, _) = await detectDocumentEdges(mat, config: config);
     final imgW = mat.cols.toDouble();
     final imgH = mat.rows.toDouble();
     mat.dispose();

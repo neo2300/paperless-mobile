@@ -98,7 +98,6 @@ dependencies:
   synchronized: ^3.1.0
   extended_masked_text: ^3.0.1
   font_awesome_flutter: ^10.6.0
-  pdfx: ^2.9.2
   markdown: ^7.1.1
   path: ^1.9.1
   bloc: ^9.0.1
