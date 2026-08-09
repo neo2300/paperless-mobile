@@ -14,6 +14,7 @@ import 'package:paperless_mobile/features/scanner/models/scan_result.dart';
 import 'package:paperless_mobile/features/scanner/models/transient_scan_result.dart';
 import 'package:paperless_mobile/features/scanner/processing/detect_edges_from_file.dart';
 import 'package:paperless_mobile/features/scanner/processing/image_edit.dart';
+import 'package:paperless_mobile/features/scanner/utils/camera_selection.dart';
 import 'package:paperless_mobile/features/scanner/view/document_scanner_view.dart';
 import 'package:paperless_mobile/features/scanner/view/image_edit_view.dart';
 import 'package:paperless_mobile/features/scanner/view/widgets/debug_stage_switcher.dart';
@@ -97,18 +98,28 @@ class _PaperlessMobileDocumentScannerState
   CameraController? _controller;
   DebugStage _debugStage = DebugStage.none;
   bool _isTorchActive = false;
+  bool _isUpdatingTorch = false;
+  bool _isCapturing = false;
+  bool _isSwitchingCamera = false;
   bool _handlingSystemBack = false;
   bool _isSettingsOpen = false;
 
   void _setController(CameraController? controller) {
-    if (controller != _controller) {
-      _controller = controller;
-      _isTorchActive = false;
+    if (mounted && controller != _controller) {
+      setState(() {
+        _controller = controller;
+        _isTorchActive = false;
+        _isUpdatingTorch = false;
+        if (controller != null) {
+          _isSwitchingCamera = false;
+        }
+      });
     }
   }
 
   _ScanPhase _phase = _ScanPhase.liveDetection;
   Future<List<CameraDescription>>? _availableCameras;
+  String? _selectedCameraName;
   DocumentFrame? _lastLiveFrame;
   Size? _lastLiveImageSize;
 
@@ -151,6 +162,50 @@ class _PaperlessMobileDocumentScannerState
     });
   }
 
+  CameraDescription _resolveCamera(List<CameraDescription> cameras) {
+    final selectedCameraName = _selectedCameraName;
+    if (selectedCameraName != null) {
+      for (final camera in cameras) {
+        if (camera.name == selectedCameraName) {
+          return camera;
+        }
+      }
+    }
+    return selectDefaultCamera(cameras);
+  }
+
+  void _selectCamera(CameraDescription camera) {
+    if (_isSwitchingCamera ||
+        _isCapturing ||
+        _isUpdatingTorch ||
+        camera.name == _selectedCameraName ||
+        camera.name == _controller?.description.name) {
+      return;
+    }
+
+    setState(() {
+      _controller = null;
+      _selectedCameraName = camera.name;
+      _isSwitchingCamera = true;
+      _isTorchActive = false;
+      _isUpdatingTorch = false;
+      _lastLiveFrame = null;
+      _lastLiveImageSize = null;
+      _autoCaptureFallbackFrame = null;
+      _autoCaptureFallbackImageSize = null;
+    });
+  }
+
+  void _onCameraInitializationFailed() {
+    if (!mounted) return;
+    setState(() {
+      _controller = null;
+      _isSwitchingCamera = false;
+      _isTorchActive = false;
+      _isUpdatingTorch = false;
+    });
+  }
+
   @override
   void dispose() {
     // Null out the reference to the CameraController so that any in-flight
@@ -181,7 +236,13 @@ class _PaperlessMobileDocumentScannerState
 
   Future<void> _onShutterPressed() async {
     final controller = _controller;
-    if (controller == null || !controller.value.isInitialized) return;
+    if (_isCapturing ||
+        _isSwitchingCamera ||
+        controller == null ||
+        !controller.value.isInitialized) {
+      return;
+    }
+    _isCapturing = true;
 
     try {
       // Capture the image BEFORE switching phase, because changing phase
@@ -429,6 +490,7 @@ class _PaperlessMobileDocumentScannerState
   void _returnToLiveDetection() {
     setState(() {
       _phase = _ScanPhase.liveDetection;
+      _isCapturing = false;
       _capturedImageBytes = null;
       _capturedImageSize = null;
       _capturedFrame = null;
@@ -701,10 +763,8 @@ class _PaperlessMobileDocumentScannerState
             if (cameras.isEmpty) {
               return const Center(child: Text('No cameras found'));
             }
-            final camera = cameras.firstWhere(
-              (camera) => camera.lensDirection == CameraLensDirection.back,
-              orElse: () => cameras.first,
-            );
+            final rearCameras = backCameras(cameras);
+            final camera = _resolveCamera(cameras);
             const bottomBarVerticalPadding = 8.0;
             final bottomBarHeight =
                 _shutterButtonSize +
@@ -729,14 +789,24 @@ class _PaperlessMobileDocumentScannerState
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           IconButton(
-                            onPressed: _onGalleryImportPressed,
+                            onPressed:
+                                _isCapturing ||
+                                    _isSwitchingCamera ||
+                                    _isUpdatingTorch
+                                ? null
+                                : _onGalleryImportPressed,
                             icon: const Icon(
                               Icons.add_photo_alternate,
                               size: 32,
                             ),
                           ),
                           ShutterButton(
-                            onPressed: _onShutterPressed,
+                            onPressed:
+                                _isCapturing ||
+                                    _isSwitchingCamera ||
+                                    _isUpdatingTorch
+                                ? null
+                                : _onShutterPressed,
                             size: _shutterButtonSize,
                           ),
                           Padding(
@@ -788,8 +858,9 @@ class _PaperlessMobileDocumentScannerState
                 children: [
                   // Camera preview with live edge detection.
                   DocumentScannerView(
-                    key: ValueKey(resolutionPreset),
                     onControllerInitialized: _setController,
+                    onControllerInitializationFailed:
+                        _onCameraInitializationFailed,
                     camera: camera,
                     debugStage: kDebugMode ? _debugStage : DebugStage.none,
                     resolutionPreset: resolutionPreset,
@@ -820,7 +891,12 @@ class _PaperlessMobileDocumentScannerState
                       ),
                     ),
                   ),
-                  _buildTopRightControls(context, resolutionPreset),
+                  _buildTopRightControls(
+                    context,
+                    resolutionPreset,
+                    camera,
+                    rearCameras,
+                  ),
                 ],
               ),
             );
@@ -833,6 +909,8 @@ class _PaperlessMobileDocumentScannerState
   Widget _buildTopRightControls(
     BuildContext context,
     ResolutionPreset resolutionPreset,
+    CameraDescription selectedCamera,
+    List<CameraDescription> rearCameras,
   ) {
     return Positioned(
       top: 16,
@@ -842,18 +920,53 @@ class _PaperlessMobileDocumentScannerState
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            if (rearCameras.length > 1) ...[
+              PopupMenuButton<CameraDescription>(
+                enabled:
+                    !_isCapturing && !_isSwitchingCamera && !_isUpdatingTorch,
+                tooltip: 'Select camera',
+                icon: _isSwitchingCamera
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.cameraswitch),
+                onSelected: _selectCamera,
+                itemBuilder: (context) => [
+                  for (final (index, camera) in rearCameras.indexed)
+                    PopupMenuItem<CameraDescription>(
+                      value: camera,
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 28,
+                            child: camera == selectedCamera
+                                ? const Icon(Icons.check, size: 18)
+                                : null,
+                          ),
+                          Flexible(child: Text(cameraLabel(camera, index))),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
             IconButton.filledTonal(
-              onPressed: () async {
-                setState(() => _isSettingsOpen = true);
-                await Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => const AdvancedScannerSettingsPage(),
-                  ),
-                );
-                if (mounted) {
-                  setState(() => _isSettingsOpen = false);
-                }
-              },
+              onPressed: _isSwitchingCamera
+                  ? null
+                  : () async {
+                      setState(() => _isSettingsOpen = true);
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              const AdvancedScannerSettingsPage(),
+                        ),
+                      );
+                      if (mounted) {
+                        setState(() => _isSettingsOpen = false);
+                      }
+                    },
               icon: const Icon(Icons.tune),
               tooltip: 'Advanced Scanner Settings',
             ),
@@ -885,15 +998,37 @@ class _PaperlessMobileDocumentScannerState
 
   Widget _buildTorchButton() {
     return IconButton.filledTonal(
-      onPressed: () async {
-        final controller = _controller;
-        if (controller == null || !controller.value.isInitialized) return;
-        final wantTorch = !_isTorchActive;
-        await controller.setFlashMode(
-          wantTorch ? FlashMode.torch : FlashMode.off,
-        );
-        setState(() => _isTorchActive = wantTorch);
-      },
+      onPressed: _isCapturing || _isSwitchingCamera || _isUpdatingTorch
+          ? null
+          : () async {
+              final controller = _controller;
+              if (controller == null || !controller.value.isInitialized) return;
+              final wantTorch = !_isTorchActive;
+              setState(() => _isUpdatingTorch = true);
+              try {
+                await controller.setFlashMode(
+                  wantTorch ? FlashMode.torch : FlashMode.off,
+                );
+                if (mounted && identical(controller, _controller)) {
+                  setState(() {
+                    _isTorchActive = wantTorch;
+                    _isUpdatingTorch = false;
+                  });
+                }
+              } on CameraException catch (error) {
+                debugPrint('Could not update torch mode: $error');
+                if (mounted && identical(controller, _controller)) {
+                  setState(() {
+                    _isTorchActive = false;
+                    _isUpdatingTorch = false;
+                  });
+                }
+              } finally {
+                if (mounted && _isUpdatingTorch) {
+                  setState(() => _isUpdatingTorch = false);
+                }
+              }
+            },
       icon: Icon(
         _isTorchActive ? Icons.flashlight_off : Icons.flashlight_on,
         size: 32,

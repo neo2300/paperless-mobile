@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
@@ -7,11 +8,13 @@ class FocusableCameraView extends StatefulWidget {
   final CameraDescription camera;
   final ResolutionPreset resolutionPreset;
   final ValueChanged<CameraController> onControllerInitialized;
+  final VoidCallback? onControllerInitializationFailed;
   const FocusableCameraView({
     super.key,
     required this.camera,
     this.resolutionPreset = ResolutionPreset.medium,
     required this.onControllerInitialized,
+    this.onControllerInitializationFailed,
   });
 
   @override
@@ -23,6 +26,9 @@ const _focusIndicatorSize = 72.0;
 class _FocusableCameraViewState extends State<FocusableCameraView>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   CameraController? _controller;
+  Future<void> _controllerTransition = Future.value();
+  int _controllerGeneration = 0;
+  bool _isInactive = false;
 
   late final AnimationController _focusAnimController;
   Offset? _focusPosition;
@@ -40,37 +46,36 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
             setState(() => _focusPosition = null);
           }
         });
-    _initializeCameraController();
+    _scheduleControllerInitialization();
+  }
+
+  @override
+  void didUpdateWidget(covariant FocusableCameraView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.camera != widget.camera ||
+        oldWidget.resolutionPreset != widget.resolutionPreset) {
+      _scheduleControllerInitialization();
+    }
   }
 
   @override
   void dispose() {
+    _isInactive = true;
+    _controllerGeneration++;
     _focusAnimController.dispose();
     WidgetsBinding.instance.removeObserver(this);
-    _controller?.stopImageStream();
-    _controller?.dispose();
+    _enqueueControllerTransition(_disposeCameraController);
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    final cameraController = _controller;
-
     if (state == AppLifecycleState.inactive) {
-      // Nothing to tear down if the controller was never initialized.
-      if (cameraController == null || !cameraController.value.isInitialized) {
-        return;
-      }
-      if (cameraController.value.isStreamingImages) {
-        cameraController.stopImageStream();
-      }
-      cameraController.dispose();
-      _controller = null;
+      _isInactive = true;
+      _scheduleControllerDisposal();
     } else if (state == AppLifecycleState.resumed) {
-      // Re-initialize the controller if it was disposed during inactive.
-      if (cameraController == null) {
-        _initializeCameraController();
-      }
+      _isInactive = false;
+      _scheduleControllerInitialization();
     }
   }
 
@@ -142,9 +147,33 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
     );
   }
 
-  Future<void> _initializeCameraController() async {
-    CameraController cameraController;
-    _controller = CameraController(
+  void _scheduleControllerInitialization() {
+    final generation = ++_controllerGeneration;
+    _enqueueControllerTransition(() => _replaceCameraController(generation));
+  }
+
+  void _scheduleControllerDisposal() {
+    _controllerGeneration++;
+    _enqueueControllerTransition(_disposeCameraController);
+  }
+
+  void _enqueueControllerTransition(Future<void> Function() operation) {
+    _controllerTransition = _controllerTransition.then((_) async {
+      try {
+        await operation();
+      } catch (error, stackTrace) {
+        debugPrint('Camera controller transition failed: $error');
+        debugPrintStack(stackTrace: stackTrace);
+      }
+    });
+    unawaited(_controllerTransition);
+  }
+
+  Future<void> _replaceCameraController(int generation) async {
+    await _disposeCameraController();
+    if (!mounted || _isInactive || generation != _controllerGeneration) return;
+
+    final cameraController = CameraController(
       widget.camera,
       widget.resolutionPreset,
       enableAudio: false,
@@ -153,10 +182,11 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
           ? ImageFormatGroup.nv21
           : ImageFormatGroup.bgra8888,
     );
-    cameraController = _controller!;
-    // If the controller is updated then update the UI.
+    _controller = cameraController;
+    setState(() {});
+
     cameraController.addListener(() {
-      if (mounted) {
+      if (mounted && identical(cameraController, _controller)) {
         setState(() {});
       }
       if (cameraController.value.hasError) {
@@ -166,40 +196,96 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
 
     try {
       await cameraController.initialize();
+      if (!_isCurrentController(cameraController, generation)) {
+        await _disposeStaleController(cameraController);
+        return;
+      }
       await cameraController.setFlashMode(FlashMode.off);
+      if (!_isCurrentController(cameraController, generation)) {
+        await _disposeStaleController(cameraController);
+        return;
+      }
       widget.onControllerInitialized(cameraController);
-    } on CameraException catch (e) {
-      switch (e.code) {
-        case 'CameraAccessDenied':
-          debugPrint('You have denied camera access.');
-          break;
-        case 'CameraAccessDeniedWithoutPrompt':
-          // iOS only
-          debugPrint('Please go to Settings app to enable camera access.');
-          break;
-        case 'CameraAccessRestricted':
-          // iOS only
-          debugPrint('Camera access is restricted.');
-          break;
-        case 'AudioAccessDenied':
-          debugPrint('You have denied audio access.');
-          break;
-        case 'AudioAccessDeniedWithoutPrompt':
-          // iOS only
-          debugPrint('Please go to Settings app to enable audio access.');
-          break;
-        case 'AudioAccessRestricted':
-          // iOS only
-          debugPrint('Audio access is restricted.');
-          break;
-        default:
-          debugPrint('Unknown camera error: ${e.code}');
-          break;
+    } on CameraException catch (error) {
+      _logCameraException(error);
+      final shouldReportFailure =
+          mounted && generation == _controllerGeneration;
+      if (identical(_controller, cameraController)) {
+        _controller = null;
+      }
+      await cameraController.dispose();
+      if (shouldReportFailure &&
+          mounted &&
+          generation == _controllerGeneration) {
+        widget.onControllerInitializationFailed?.call();
       }
     }
 
+    if (mounted && generation == _controllerGeneration) {
+      setState(() {});
+    }
+  }
+
+  bool _isCurrentController(CameraController controller, int generation) {
+    return mounted &&
+        !_isInactive &&
+        generation == _controllerGeneration &&
+        identical(controller, _controller);
+  }
+
+  Future<void> _disposeStaleController(CameraController controller) async {
+    if (identical(_controller, controller)) {
+      _controller = null;
+    }
+    await controller.dispose();
+  }
+
+  Future<void> _disposeCameraController() async {
+    final controller = _controller;
+    _controller = null;
+    if (controller == null) return;
+
+    try {
+      if (controller.value.isStreamingImages) {
+        await controller.stopImageStream();
+      }
+    } on CameraException catch (error) {
+      debugPrint('Could not stop camera image stream: $error');
+    }
+
+    await controller.dispose();
     if (mounted) {
       setState(() {});
+    }
+  }
+
+  void _logCameraException(CameraException error) {
+    switch (error.code) {
+      case 'CameraAccessDenied':
+        debugPrint('You have denied camera access.');
+        break;
+      case 'CameraAccessDeniedWithoutPrompt':
+        // iOS only
+        debugPrint('Please go to Settings app to enable camera access.');
+        break;
+      case 'CameraAccessRestricted':
+        // iOS only
+        debugPrint('Camera access is restricted.');
+        break;
+      case 'AudioAccessDenied':
+        debugPrint('You have denied audio access.');
+        break;
+      case 'AudioAccessDeniedWithoutPrompt':
+        // iOS only
+        debugPrint('Please go to Settings app to enable audio access.');
+        break;
+      case 'AudioAccessRestricted':
+        // iOS only
+        debugPrint('Audio access is restricted.');
+        break;
+      default:
+        debugPrint('Unknown camera error: ${error.code}');
+        break;
     }
   }
 

@@ -21,6 +21,7 @@ class DocumentScannerView extends StatefulWidget {
   final DebugStage debugStage;
   final ResolutionPreset resolutionPreset;
   final ValueChanged<CameraController> onControllerInitialized;
+  final VoidCallback? onControllerInitializationFailed;
 
   /// Called whenever the detected frame or image size changes.
   /// Passes the current smoothed frame (or null) and the image size (or null).
@@ -47,6 +48,7 @@ class DocumentScannerView extends StatefulWidget {
     this.debugStage = DebugStage.none,
     this.resolutionPreset = ResolutionPreset.medium,
     required this.onControllerInitialized,
+    this.onControllerInitializationFailed,
     this.onFrameChanged,
     required this.liveEdgeDetectionEnabled,
     this.autoCaptureConfig = const AutoCaptureConfig(),
@@ -61,6 +63,7 @@ class DocumentScannerView extends StatefulWidget {
 class _DocumentScannerViewState extends State<DocumentScannerView>
     with SingleTickerProviderStateMixin {
   CameraController? _controller;
+  int _streamGeneration = 0;
   DocumentFrame? _currentFrame;
   Size? _imageSize;
   ui.Image? _debugUiImage;
@@ -106,6 +109,12 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
   @override
   void didUpdateWidget(covariant DocumentScannerView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.camera != widget.camera ||
+        oldWidget.resolutionPreset != widget.resolutionPreset) {
+      _controller = null;
+      _streamGeneration++;
+      _clearDetectionState();
+    }
     if (oldWidget.liveEdgeDetectionEnabled != widget.liveEdgeDetectionEnabled) {
       final controller = _controller;
       if (controller == null || !controller.value.isInitialized) return;
@@ -126,6 +135,8 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
 
   @override
   void dispose() {
+    _streamGeneration++;
+    _controller = null;
     _stopAutoCaptureVibration();
     _debugUiImage?.dispose();
     _runner.dispose();
@@ -144,10 +155,11 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
           child: Stack(
             children: [
               FocusableCameraView(
-                key: ValueKey(widget.camera),
                 camera: widget.camera,
                 resolutionPreset: widget.resolutionPreset,
                 onControllerInitialized: _onControllerInitialized,
+                onControllerInitializationFailed:
+                    widget.onControllerInitializationFailed,
               ),
               if (widget.liveEdgeDetectionEnabled &&
                   _currentFrame != null &&
@@ -219,6 +231,13 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
 
   void _startImageStream(CameraController controller) {
     if (controller.value.isStreamingImages) return;
+    final streamGeneration = ++_streamGeneration;
+
+    bool isCurrentStream() {
+      return mounted &&
+          streamGeneration == _streamGeneration &&
+          identical(controller, _controller);
+    }
 
     if (widget.debugStage != DebugStage.none) {
       // Debug mode: process on main isolate to produce debug images.
@@ -228,7 +247,13 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
           widget.camera.sensorOrientation,
           controller.value.deviceOrientation,
           widget.camera.lensDirection,
-          _onFrameReceived,
+          (frame, imageSize, debugImage) {
+            if (isCurrentStream()) {
+              _onFrameReceived(frame, imageSize, debugImage);
+            } else {
+              debugImage?.dispose();
+            }
+          },
           debugStage: widget.debugStage,
         ),
       );
@@ -255,6 +280,8 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
         edgeDetectionConfig: widget.edgeDetectionConfig,
       );
 
+      if (!isCurrentStream()) return;
+
       // null means skipped (still processing) — don't count.
       if (outcome == null) return;
 
@@ -267,15 +294,27 @@ class _DocumentScannerViewState extends State<DocumentScannerView>
     });
   }
 
-  void _stopImageStream(CameraController controller) {
-    if (!controller.value.isStreamingImages) return;
-    controller.stopImageStream();
-    setState(() {
-      _currentFrame = null;
-      _imageSize = null;
-      _smoothedFrame = null;
-      _detectionHistory.clear();
-    });
+  Future<void> _stopImageStream(CameraController controller) async {
+    _streamGeneration++;
+    if (controller.value.isStreamingImages) {
+      try {
+        await controller.stopImageStream();
+      } on CameraException catch (error) {
+        debugPrint('Could not stop camera image stream: $error');
+      }
+    }
+    if (!mounted) return;
+    setState(_clearDetectionState);
+    if (widget.liveEdgeDetectionEnabled && identical(controller, _controller)) {
+      _startImageStream(controller);
+    }
+  }
+
+  void _clearDetectionState() {
+    _currentFrame = null;
+    _imageSize = null;
+    _smoothedFrame = null;
+    _detectionHistory.clear();
     _resetAutoCapture();
     widget.onFrameChanged?.call(null, null);
   }
