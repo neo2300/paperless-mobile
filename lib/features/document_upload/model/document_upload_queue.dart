@@ -1,8 +1,21 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/widgets.dart';
 import 'package:paperless_mobile/features/document_upload/view/document_upload_preparation_page.dart';
+
+class PreparedUploadFile {
+  final File file;
+  final String extension;
+  final bool deleteAfterUpload;
+
+  const PreparedUploadFile({
+    required this.file,
+    required this.extension,
+    this.deleteAfterUpload = false,
+  });
+}
 
 class DocumentUploadQueueProgress {
   final int currentItem;
@@ -21,6 +34,8 @@ class DocumentUploadQueueProgress {
 class DocumentUploadQueueItem<T> {
   final T source;
   final FutureOr<Uint8List> Function() loadFileBytes;
+  final FutureOr<PreparedUploadFile> Function()? prepareUploadFile;
+  final File? previewFile;
   final String? title;
   final String? filename;
   final String? fileExtension;
@@ -29,6 +44,8 @@ class DocumentUploadQueueItem<T> {
   const DocumentUploadQueueItem({
     required this.source,
     required this.loadFileBytes,
+    this.prepareUploadFile,
+    this.previewFile,
     this.title,
     this.filename,
     this.fileExtension,

@@ -9,7 +9,10 @@ class RetryOnConnectionChangeInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (_shouldRetryOnHttpException(err)) {
+    // Multipart bodies are one-shot streams. Retrying the same FormData can
+    // resend an exhausted stream and leave a large upload in an invalid state.
+    if (_shouldRetryOnHttpException(err) &&
+        err.requestOptions.data is! FormData) {
       try {
         handler.resolve(
           await DioHttpRequestRetrier(dio: dio).requestRetry(err.requestOptions)

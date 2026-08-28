@@ -229,25 +229,15 @@ class _ImageEditViewState extends State<ImageEditView>
     setState(() => _processing = true);
 
     try {
-      // Always start from the cropped bytes to avoid compounding quality loss.
-      Uint8List result = _croppedBytes!;
-
-      if (_enhanced) {
-        result = await autoEnhance(result);
-      }
-
-      if (_quarterTurns % 4 != 0) {
-        result = await rotateImage(result, _quarterTurns);
-      }
-
-      switch (_colorFilter) {
-        case ScanColorFilter.greyscale:
-          result = await toGrayscale(result);
-        case ScanColorFilter.blackAndWhite:
-          result = await toBlackAndWhite(result, constant: _bwThreshold);
-        case ScanColorFilter.none:
-          break;
-      }
+      // Always start from the crop. The helper decodes once and makes one
+      // final encode so repeated controls do not compound JPEG artifacts.
+      final result = await applyDocumentEdits(
+        _croppedBytes!,
+        quarterTurns: _quarterTurns,
+        colorFilter: _colorFilter,
+        bwThreshold: _bwThreshold,
+        enhanced: _enhanced,
+      );
 
       if (mounted) {
         setState(() {

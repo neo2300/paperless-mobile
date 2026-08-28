@@ -260,6 +260,19 @@ class _PaperlessMobileDocumentScannerState
       setState(() => _phase = _ScanPhase.processing);
 
       final bytes = await xFile.readAsBytes();
+      if (kDebugMode) {
+        final decoded = await decodeImageFromList(bytes);
+        try {
+          debugPrint(
+            'CAMERA CAPTURE camera=${controller.description.name} '
+            'resolutionPreset=${widget.resolutionPreset.name} '
+            'still=${decoded.width}x${decoded.height} '
+            'sourceFileSize=${(bytes.length / (1024 * 1024)).toStringAsFixed(2)}MB',
+          );
+        } finally {
+          decoded.dispose();
+        }
+      }
 
       await _startStillImageEditing(
         bytes,
@@ -377,6 +390,12 @@ class _PaperlessMobileDocumentScannerState
     Size? coordinateFallbackImageSize,
   }) async {
     var detectedFrame = await detectEdgesFromImageBytes(imageBytes);
+    if (kDebugMode) {
+      debugPrint(
+        'Scan pipeline: edgeDetection image=${imageSize.width.round()}x${imageSize.height.round()} '
+        'frame=$detectedFrame',
+      );
+    }
 
     if (detectedFrame != null &&
         plausibilityFallbackFrame != null &&
@@ -419,7 +438,18 @@ class _PaperlessMobileDocumentScannerState
     if (_editingIndex != null) {
       // Re-edit: update the existing scan in place.
       final existing = _scans[_editingIndex!];
-      await existing.outputFile.writeAsBytes(result.editedBytes, flush: true);
+      final extension = _encodedImageExtension(result.editedBytes);
+      final target = await _writeEditedScanFile(
+        result.editedBytes,
+        sourceFileName: existing.originalFile.uri.pathSegments.last,
+        extension: extension,
+      );
+      if (target.path != existing.outputFile.path) {
+        await existing.outputFile.delete().catchError(
+          (_) => existing.outputFile,
+        );
+        existing.updateOutputFile(target);
+      }
       existing.cropFrame = result.cropFrame;
       existing.quarterTurns = result.quarterTurns;
       existing.colorFilter = result.colorFilter;
@@ -431,6 +461,7 @@ class _PaperlessMobileDocumentScannerState
       final scanFile = await _writeEditedScanFile(
         result.editedBytes,
         sourceFileName: p.basename(_capturedFilePath!),
+        extension: _encodedImageExtension(result.editedBytes),
       );
       _scans.add(
         TransientScanResult(
@@ -530,12 +561,23 @@ class _PaperlessMobileDocumentScannerState
   Future<File> _writeEditedScanFile(
     Uint8List bytes, {
     required String sourceFileName,
+    required String extension,
   }) async {
     return _writeImageFile(
       bytes,
       directory: await _editedDirectory(),
-      fileName: '${p.basenameWithoutExtension(sourceFileName)}.png',
+      fileName: '${p.basenameWithoutExtension(sourceFileName)}$extension',
     );
+  }
+
+  String _encodedImageExtension(Uint8List bytes) {
+    if (bytes.length >= 3 &&
+        bytes[0] == 0xFF &&
+        bytes[1] == 0xD8 &&
+        bytes[2] == 0xFF) {
+      return '.jpg';
+    }
+    return '.png';
   }
 
   Future<void> _restoreInitialScans() async {

@@ -22,7 +22,11 @@ class DocumentUploadQueueCoordinator {
       final result = await navigator.push<DocumentUploadResult?>(
         MaterialPageRoute(
           builder: (routeContext) => DocumentUploadPreparationPage(
-            fileBytes: item.loadFileBytes(),
+            fileBytes: item.prepareUploadFile == null
+                ? item.loadFileBytes()
+                : null,
+            prepareUploadFile: item.prepareUploadFile,
+            previewFile: item.previewFile,
             title: item.title,
             filename: item.filename,
             fileExtension: item.fileExtension,

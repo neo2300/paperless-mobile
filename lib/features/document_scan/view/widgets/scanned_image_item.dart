@@ -9,7 +9,6 @@ typedef DocumentActionCallback = void Function();
 typedef DocumentPageTapCallback = void Function(int pageIndex);
 
 class ScannedImageItem extends StatelessWidget {
-  static const double _itemHeight = 302;
   static const double _carouselHeight = 176;
 
   final DocumentScan documentScan;
@@ -34,38 +33,35 @@ class ScannedImageItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return SizedBox(
-      height: _itemHeight,
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      documentScan.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium,
-                    ),
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    documentScan.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium,
                   ),
-                  const SizedBox(width: 12),
-                  Text(
-                    '${documentScan.pageCount} page${documentScan.pageCount == 1 ? '' : 's'}',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              SizedBox(height: _carouselHeight, child: _buildCarousel(context)),
-              const SizedBox(height: 12),
-              _buildActions(context),
-            ],
-          ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  '${documentScan.pageCount} page${documentScan.pageCount == 1 ? '' : 's'}',
+                  style: theme.textTheme.bodySmall,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(height: _carouselHeight, child: _buildCarousel(context)),
+            const SizedBox(height: 12),
+            _buildActions(context),
+          ],
         ),
       ),
     );

@@ -12,6 +12,7 @@ import 'package:paperless_mobile/core/extensions/context_extensions.dart';
 import 'package:paperless_mobile/core/extensions/flutter_extensions.dart';
 import 'package:paperless_mobile/core/global/constants.dart';
 import 'package:paperless_mobile/core/model/info_message_exception.dart';
+import 'package:paperless_mobile/core/service/file_service.dart';
 import 'package:paperless_mobile/core/widgets/dialog_utils/dialog_cancel_button.dart';
 import 'package:paperless_mobile/core/widgets/dialog_utils/dialog_confirm_button.dart';
 import 'package:paperless_mobile/features/app_drawer/view/app_drawer.dart';
@@ -320,13 +321,17 @@ class _ScannerPageState extends State<ScannerPage>
     final forcePdf =
         context.localStore.state.globalSettings.enforceSinglePagePdfUpload;
     if (!context.mounted) return;
-    final uploadResult = await DocumentUploadRoute(
-      $extra: _assembleFileBytes(
-        scans,
-        forcePdf: forcePdf,
-      ).then((file) => file.bytes),
-      fileExtension: _assembledFileExtension(scans, forcePdf: forcePdf),
-    ).push<DocumentUploadResult>(context);
+    final uploadResult = await Navigator.of(context, rootNavigator: true)
+        .push<DocumentUploadResult>(
+          MaterialPageRoute(
+            builder: (_) => DocumentUploadPreparationPage(
+              prepareUploadFile: () =>
+                  _prepareUploadFile(scans, forcePdf: forcePdf),
+              previewFile: scans.first,
+              fileExtension: _assembledFileExtension(scans, forcePdf: forcePdf),
+            ),
+          ),
+        );
     if (uploadResult?.success ?? false) {
       if (!context.mounted) return;
       final cubit = context.read<DocumentScannerCubit>();
@@ -363,10 +368,12 @@ class _ScannerPageState extends State<ScannerPage>
         for (final documentScan in documentScans)
           DocumentUploadQueueItem(
             source: documentScan,
-            loadFileBytes: () => _assembleFileBytes(
-              documentScan.pageFiles,
-              forcePdf: forcePdf,
-            ).then((file) => file.bytes),
+            // Only used by legacy byte-only callers. Scanner uploads below
+            // use [prepareUploadFile] and never use these bytes as source.
+            loadFileBytes: documentScan.pageFiles.first.readAsBytes,
+            prepareUploadFile: () =>
+                _prepareUploadFile(documentScan.pageFiles, forcePdf: forcePdf),
+            previewFile: documentScan.coverFile,
             title: documentScan.name,
             filename: _formatUploadFileName(documentScan.name),
             fileExtension: _assembledFileExtension(
@@ -544,15 +551,45 @@ Future<Uint8List> _assemblePdfBytes(List<String> filePaths) async {
     final img = pw.MemoryImage(await File(filePath).readAsBytes());
     doc.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat(
-          img.width!.toDouble(),
-          img.height!.toDouble(),
-        ),
-        build: (context) => pw.Image(img),
+        pageFormat: img.width! > img.height!
+            ? PdfPageFormat.a4.landscape
+            : PdfPageFormat.a4,
+        margin: pw.EdgeInsets.zero,
+        build: (context) =>
+            pw.Center(child: pw.Image(img, fit: pw.BoxFit.contain)),
       ),
     );
   }
   return doc.save();
+}
+
+Future<PreparedUploadFile> _prepareUploadFile(
+  List<File> files, {
+  required bool forcePdf,
+}) async {
+  final extension = _assembledFileExtension(files, forcePdf: forcePdf);
+  if (extension != '.pdf') {
+    return PreparedUploadFile(file: files.first, extension: extension);
+  }
+  final bytes = await compute(_assemblePdfBytes, [
+    for (final file in files) file.path,
+  ]);
+  final file = await FileService.instance.allocateTemporaryFile(
+    PaperlessDirectoryType.temporary,
+    extension: 'pdf',
+    create: true,
+  );
+  try {
+    await file.writeAsBytes(bytes, flush: true);
+  } catch (_) {
+    await file.delete().catchError((_) => File(''));
+    rethrow;
+  }
+  return PreparedUploadFile(
+    file: file,
+    extension: '.pdf',
+    deleteAfterUpload: true,
+  );
 }
 
 String _formatUploadFileName(String source) {

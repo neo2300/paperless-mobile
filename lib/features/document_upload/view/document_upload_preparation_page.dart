@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
+import 'package:dio/dio.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
@@ -31,7 +33,9 @@ class DocumentUploadResult {
 }
 
 class DocumentUploadPreparationPage extends StatefulWidget {
-  final FutureOr<Uint8List> fileBytes;
+  final FutureOr<Uint8List>? fileBytes;
+  final FutureOr<PreparedUploadFile> Function()? prepareUploadFile;
+  final File? previewFile;
   final String? title;
   final String? filename;
   final String? fileExtension;
@@ -40,13 +44,15 @@ class DocumentUploadPreparationPage extends StatefulWidget {
 
   const DocumentUploadPreparationPage({
     super.key,
-    required this.fileBytes,
+    this.fileBytes,
+    this.prepareUploadFile,
+    this.previewFile,
     this.title,
     this.filename,
     this.fileExtension,
     this.instantUpload = false,
     this.uploadQueueProgress,
-  });
+  }) : assert(fileBytes != null || prepareUploadFile != null);
 
   @override
   State<DocumentUploadPreparationPage> createState() =>
@@ -63,6 +69,8 @@ class _DocumentUploadPreparationPageState
 
   Map<String, String> _errors = {};
   double? _uploadProgress;
+  _UploadPhase _uploadPhase = _UploadPhase.idle;
+  CancelToken? _cancelToken;
   late bool _syncTitleAndFilename;
 
   bool get _hasQueuedNextItem => widget.uploadQueueProgress?.hasNext ?? false;
@@ -89,15 +97,15 @@ class _DocumentUploadPreparationPageState
         visible: MediaQuery.of(context).viewInsets.bottom == 0,
         child: FloatingActionButton.extended(
           heroTag: "fab_document_upload",
-          onPressed: _uploadProgress == null ? _onSubmit : null,
-          label: _uploadProgress == null
+          onPressed: _uploadPhase == _UploadPhase.idle ? _onSubmit : null,
+          label: _uploadPhase == _UploadPhase.idle
               ? Text(
                   _hasQueuedNextItem
                       ? '${S.of(context)!.upload} (${S.of(context)!.continueLabel})'
                       : S.of(context)!.upload,
                 )
-              : Text(S.of(context)!.documentUploadUploading),
-          icon: _uploadProgress == null
+              : Text(_uploadPhase.label(context)),
+          icon: _uploadPhase == _UploadPhase.idle
               ? const Icon(Icons.upload)
               : IconLoadingWidget(progress: _uploadProgress).padded(4),
         ),
@@ -109,41 +117,30 @@ class _DocumentUploadPreparationPageState
             SliverOverlapAbsorber(
               handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
               sliver: SliverAppBar(
-                leading: const BackButton(),
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+                  onPressed: _uploadPhase == _UploadPhase.idle
+                      ? () => context.pop()
+                      : () => _cancelToken?.cancel('Cancelled by user'),
+                ),
                 pinned: true,
                 expandedHeight: 150,
                 flexibleSpace: FlexibleSpaceBar(
-                  background: FutureOrBuilder<Uint8List>(
-                    future: widget.fileBytes,
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const SizedBox.shrink();
-                      }
-                      return Stack(
-                        alignment: AlignmentGeometry.topCenter,
-                        children: [
-                          FileThumbnail(
-                            bytes: snapshot.data!,
-                            fit: BoxFit.fitWidth,
-                            width: MediaQuery.sizeOf(context).width,
-                          ),
-                          Align(
-                            alignment: Alignment.bottomCenter,
-                            child: Container(
-                              height: 72,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.bottomCenter,
-                                  end: Alignment.topCenter,
-                                  colors: [Colors.black87, Colors.transparent],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+                  background: widget.previewFile != null
+                      ? _buildPreview(context, file: widget.previewFile)
+                      : FutureOrBuilder<Uint8List>(
+                          future: widget.fileBytes,
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return const SizedBox.shrink();
+                            }
+                            return _buildPreview(
+                              context,
+                              bytes: snapshot.data!,
+                            );
+                          },
+                        ),
                   title: Text(S.of(context)!.prepareDocument),
                   collapseMode: CollapseMode.pin,
                 ),
@@ -330,7 +327,11 @@ class _DocumentUploadPreparationPageState
     if (!(_formKey.currentState?.saveAndValidate() ?? false)) {
       return;
     }
-    setState(() => _uploadProgress = 0);
+    setState(() {
+      _uploadPhase = _UploadPhase.preparing;
+      _uploadProgress = null;
+    });
+    PreparedUploadFile? preparedFile;
     try {
       final formValues = _formKey.currentState!.value;
 
@@ -341,26 +342,52 @@ class _DocumentUploadPreparationPageState
       final title = formValues['title'] as String;
 
       final asn = formValues['asn'] as int?;
-      final mutationState = await context.documentRepository
-          .createDocumentMutation(
-            await widget.fileBytes,
-            filename: _padWithExtension(
-              _formKey.currentState?.value[fkFileName],
-              widget.fileExtension,
-            ),
-            title: title,
-            documentType: docType,
-            correspondent: correspondent,
-            tags: tags?.mapOrNull(ids: (value) => value.include) ?? [],
-            createdAt: createdAt?.toDateTime(),
-            archiveSerialNumber: asn,
-            onProgressChanged: (progress) {
-              if (!mounted) return;
-              setState(() => _uploadProgress = progress);
-            },
-          )
-          .mutate();
+      final filename = _padWithExtension(
+        _formKey.currentState?.value[fkFileName],
+        widget.fileExtension,
+      );
+      preparedFile = widget.prepareUploadFile == null
+          ? null
+          : await widget.prepareUploadFile!();
+      if (!mounted) return;
+      _cancelToken = CancelToken();
+      setState(() {
+        _uploadPhase = _UploadPhase.uploading;
+        _uploadProgress = 0;
+      });
+      void onProgress(double progress) {
+        if (!mounted) return;
+        setState(() {
+          _uploadProgress = progress;
+          if (progress >= 1) _uploadPhase = _UploadPhase.waitingForServer;
+        });
+      }
 
+      final mutation = preparedFile == null
+          ? context.documentRepository.createDocumentMutation(
+              await widget.fileBytes!,
+              filename: filename,
+              title: title,
+              documentType: docType,
+              correspondent: correspondent,
+              tags: tags?.mapOrNull(ids: (value) => value.include) ?? [],
+              createdAt: createdAt?.toDateTime(),
+              archiveSerialNumber: asn,
+              onProgressChanged: onProgress,
+            )
+          : context.documentRepository.createDocumentFromFileMutation(
+              preparedFile.file,
+              filename: filename,
+              title: title,
+              documentType: docType,
+              correspondent: correspondent,
+              tags: tags?.mapOrNull(ids: (value) => value.include) ?? [],
+              createdAt: createdAt?.toDateTime(),
+              archiveSerialNumber: asn,
+              onProgressChanged: onProgress,
+              cancelToken: _cancelToken,
+            );
+      final mutationState = await mutation.mutate();
       final taskId = mutationState.data;
       if (mounted) {
         if (taskId != null) {
@@ -374,7 +401,10 @@ class _DocumentUploadPreparationPageState
       }
     } on PaperlessApiException catch (error) {
       if (mounted) {
-        setState(() => _uploadProgress = null);
+        setState(() {
+          _uploadProgress = null;
+          _uploadPhase = _UploadPhase.idle;
+        });
       }
       if (mounted) {
         showInfoMessage(
@@ -385,11 +415,15 @@ class _DocumentUploadPreparationPageState
     } on PaperlessFormValidationException catch (exception) {
       setState(() {
         _uploadProgress = null;
+        _uploadPhase = _UploadPhase.idle;
         _errors = exception.validationMessages;
       });
     } catch (error, stackTrace) {
       if (mounted) {
-        setState(() => _uploadProgress = null);
+        setState(() {
+          _uploadProgress = null;
+          _uploadPhase = _UploadPhase.idle;
+        });
       }
       logger.fe(
         "An unknown error occurred during document upload.",
@@ -405,7 +439,39 @@ class _DocumentUploadPreparationPageState
           stackTrace,
         );
       }
+    } finally {
+      _cancelToken = null;
+      if (preparedFile?.deleteAfterUpload ?? false) {
+        await preparedFile!.file.delete().catchError((_) => File(''));
+      }
     }
+  }
+
+  Widget _buildPreview(BuildContext context, {File? file, Uint8List? bytes}) {
+    return Stack(
+      alignment: AlignmentGeometry.topCenter,
+      children: [
+        FileThumbnail(
+          file: file,
+          bytes: bytes,
+          fit: BoxFit.fitWidth,
+          width: MediaQuery.sizeOf(context).width,
+        ),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: Container(
+            height: 72,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [Colors.black87, Colors.transparent],
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   String _padWithExtension(String source, [String? extension]) {
@@ -445,4 +511,16 @@ class _DocumentUploadPreparationPageState
   //     1,
   //   );
   // }
+}
+
+enum _UploadPhase { idle, preparing, uploading, waitingForServer }
+
+extension on _UploadPhase {
+  String label(BuildContext context) => switch (this) {
+    _UploadPhase.idle => S.of(context)!.upload,
+    _UploadPhase.preparing => S.of(context)!.prepareDocument,
+    _UploadPhase.uploading => S.of(context)!.documentUploadUploading,
+    _UploadPhase.waitingForServer =>
+      S.of(context)!.documentSuccessfullyUploadedProcessing,
+  };
 }

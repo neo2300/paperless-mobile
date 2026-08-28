@@ -1,6 +1,8 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cached_query_flutter/cached_query_flutter.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
 import 'package:paperless_mobile/core/extensions/document_extensions.dart';
@@ -207,6 +209,39 @@ class DocumentRepository with ChangeNotifierMixin {
           onProgressChanged: onProgressChanged,
         );
       },
+    );
+  }
+
+  Mutation<String?, void> createDocumentFromFileMutation(
+    File documentFile, {
+    required String filename,
+    String? title,
+    DateTime? createdAt,
+    int? documentType,
+    int? correspondent,
+    int? storagePath,
+    Iterable<int> customFields = const [],
+    Iterable<int> tags = const [],
+    int? archiveSerialNumber,
+    void Function(double progress)? onProgressChanged,
+    CancelToken? cancelToken,
+  }) {
+    return Mutation<String?, void>(
+      key: 'create_document/$filename',
+      mutationFn: (_) => _api.createFromFile(
+        documentFile,
+        filename: filename,
+        title: title,
+        createdAt: createdAt,
+        documentType: documentType,
+        correspondent: correspondent,
+        storagePath: storagePath,
+        customFields: customFields,
+        tags: tags,
+        archiveSerialNumber: archiveSerialNumber,
+        onProgressChanged: onProgressChanged,
+        cancelToken: cancelToken,
+      ),
     );
   }
 

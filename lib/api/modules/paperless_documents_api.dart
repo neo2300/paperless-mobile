@@ -1,7 +1,8 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:paperless_mobile/api/constants/api_date_format.dart';
 import 'package:paperless_mobile/api/extensions/extensions.dart';
@@ -20,6 +21,20 @@ abstract class PaperlessDocumentsApi {
     Iterable<int> tags = const [],
     int? archiveSerialNumber,
     void Function(double progress)? onProgressChanged,
+  });
+  Future<String> createFromFile(
+    File documentFile, {
+    required String filename,
+    String? title,
+    DateTime? createdAt,
+    int? documentType,
+    int? correspondent,
+    int? storagePath,
+    Iterable<int> customFields = const [],
+    Iterable<int> tags = const [],
+    int? archiveSerialNumber,
+    void Function(double progress)? onProgressChanged,
+    CancelToken? cancelToken,
   });
   Future<PaginatedResultList<Document>> getAll([DocumentFilter? options]);
   Future<Document> get(int id, {List<String>? fields});
@@ -82,6 +97,78 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
       ),
     );
 
+    _addUploadFields(
+      formData,
+      title: title,
+      createdAt: createdAt,
+      documentType: documentType,
+      correspondent: correspondent,
+      storagePath: storagePath,
+      customFields: customFields,
+      tags: tags,
+      archiveSerialNumber: archiveSerialNumber,
+    );
+
+    return _postUpload(
+      formData,
+      filename: filename,
+      onProgressChanged: onProgressChanged,
+    );
+  }
+
+  @override
+  Future<String> createFromFile(
+    File documentFile, {
+    required String filename,
+    String? title,
+    DateTime? createdAt,
+    int? documentType,
+    int? correspondent,
+    int? storagePath,
+    Iterable<int> customFields = const [],
+    Iterable<int> tags = const [],
+    int? archiveSerialNumber,
+    void Function(double progress)? onProgressChanged,
+    CancelToken? cancelToken,
+  }) async {
+    final formData = FormData();
+    formData.files.add(
+      MapEntry(
+        'document',
+        await MultipartFile.fromFile(documentFile.path, filename: filename),
+      ),
+    );
+    _addUploadFields(
+      formData,
+      title: title,
+      createdAt: createdAt,
+      documentType: documentType,
+      correspondent: correspondent,
+      storagePath: storagePath,
+      customFields: customFields,
+      tags: tags,
+      archiveSerialNumber: archiveSerialNumber,
+    );
+    return _postUpload(
+      formData,
+      filename: filename,
+      onProgressChanged: onProgressChanged,
+      cancelToken: cancelToken,
+      fileSize: await documentFile.length(),
+    );
+  }
+
+  void _addUploadFields(
+    FormData formData, {
+    String? title,
+    DateTime? createdAt,
+    int? documentType,
+    int? correspondent,
+    int? storagePath,
+    required Iterable<int> customFields,
+    required Iterable<int> tags,
+    int? archiveSerialNumber,
+  }) {
     formData.fields.addAll([
       if (title != null) MapEntry('title', title),
       if (storagePath != null)
@@ -100,18 +187,38 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
       for (final field in customFields)
         MapEntry('custom_fields', field.toString()),
     ]);
+  }
 
+  Future<String> _postUpload(
+    FormData formData, {
+    required String filename,
+    void Function(double progress)? onProgressChanged,
+    CancelToken? cancelToken,
+    int? fileSize,
+  }) async {
     try {
       final response = await client.post<String>(
         '/api/documents/post_document/',
         data: formData,
-        options: Options(sendTimeout: 60.seconds),
+        cancelToken: cancelToken,
+        options: Options(
+          connectTimeout: 30.seconds,
+          sendTimeout: const Duration(minutes: 5),
+          receiveTimeout: const Duration(minutes: 2),
+        ),
         onSendProgress: (count, total) {
-          onProgressChanged?.call(count.toDouble() / total.toDouble());
+          final size = total > 0 ? total : fileSize ?? 0;
+          onProgressChanged?.call(size == 0 ? 0 : count.toDouble() / size);
         },
       );
       return response.data!;
     } on DioException catch (exception) {
+      if (kDebugMode) {
+        debugPrint(
+          'Document upload failed type=${exception.type} '
+          'filename=$filename fileSize=$fileSize message=${exception.message}',
+        );
+      }
       throw exception.unravel(
         orElse: const PaperlessApiException(ErrorCode.documentUploadFailed),
       );

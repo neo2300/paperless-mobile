@@ -177,7 +177,6 @@ class _FocusableCameraViewState extends State<FocusableCameraView>
       widget.camera,
       widget.resolutionPreset,
       enableAudio: false,
-      fps: 30,
       imageFormatGroup: Platform.isAndroid
           ? ImageFormatGroup.nv21
           : ImageFormatGroup.bgra8888,

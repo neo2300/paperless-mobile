@@ -7,7 +7,7 @@ import 'package:paperless_mobile/features/scanner/models/scan_result.dart';
 
 class TransientScanResult {
   final File originalFile;
-  final File outputFile;
+  File outputFile;
   Uint8List thumbnailBytes;
   ScanResult _scanResult;
 
@@ -19,6 +19,13 @@ class TransientScanResult {
   }) : _scanResult = scanResult;
 
   ScanResult get scanResult => _scanResult;
+
+  void updateOutputFile(File file) {
+    outputFile = file;
+    _scanResult = _scanResult.copyWith(
+      editedFileName: file.uri.pathSegments.last,
+    );
+  }
 
   Size get originalImageSize => _scanResult.originalImageSize;
 
