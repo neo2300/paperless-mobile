@@ -1,0 +1,31 @@
+name: Build debug APK
+
+on:
+  workflow_dispatch:
+
+permissions: read-all
+
+jobs:
+  build-debug-apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Flutter
+        run: echo "FLUTTER_ROOT=${GITHUB_WORKSPACE}/flutter" >> "$GITHUB_ENV"
+
+      - name: Get packages and generate code
+        run: bash scripts/install_dependencies_with_submodule.sh
+
+      - name: Build debug APK
+        run: $FLUTTER_ROOT/flutter build apk --debug
+
+      - name: Upload debug APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: paperless-mobile-debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          if-no-files-found: error
