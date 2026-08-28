@@ -1,5 +1,8 @@
 name: Build the app
 on:
+  push:
+    branches:
+      - fix/camera-selection
   # Enable manual run
   workflow_dispatch:
     inputs:
