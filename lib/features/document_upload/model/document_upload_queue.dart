@@ -53,6 +53,33 @@ class DocumentUploadQueueItem<T> {
   });
 }
 
+/// The outcome of dispatching a single [DocumentUploadResult] via
+/// [dispatchDocumentUploadQueueResult].
+enum DocumentUploadQueueDispatchResult { uploaded, cancelled }
+
+/// Invokes [onUploaded] when [result] represents a successful upload, or
+/// [onCancelled] otherwise (including when [result] is `null`, i.e. the
+/// upload page was popped without completing an upload).
+///
+/// This is the single source of truth for the "only a successful result
+/// triggers `onItemUploaded`" behaviour used by
+/// `DocumentUploadQueueCoordinator.processQueue`, extracted as a small,
+/// callback-based dispatcher so it can be verified with a focused unit test
+/// without requiring the full provider tree needed to actually push and run
+/// the upload page.
+Future<DocumentUploadQueueDispatchResult> dispatchDocumentUploadQueueResult(
+  DocumentUploadResult? result, {
+  required Future<void> Function(DocumentUploadResult result) onUploaded,
+  required Future<void> Function() onCancelled,
+}) async {
+  if (result?.success ?? false) {
+    await onUploaded(result!);
+    return DocumentUploadQueueDispatchResult.uploaded;
+  }
+  await onCancelled();
+  return DocumentUploadQueueDispatchResult.cancelled;
+}
+
 enum DocumentUploadQueueCancellationDisposition {
   keepRemaining,
   discardRemaining,

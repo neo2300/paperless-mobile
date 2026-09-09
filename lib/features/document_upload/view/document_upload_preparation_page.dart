@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:cached_query_flutter/cached_query_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -15,6 +16,7 @@ import 'package:paperless_mobile/core/model/info_message_exception.dart';
 import 'package:paperless_mobile/core/widgets/icon_loading_widget.dart';
 import 'package:paperless_mobile/core/widgets/form_builder_fields/form_builder_localized_date_picker.dart';
 import 'package:paperless_mobile/core/widgets/future_or_builder.dart';
+import 'package:paperless_mobile/features/document_upload/model/document_upload_mutation_outcome.dart';
 import 'package:paperless_mobile/features/document_upload/model/document_upload_queue.dart';
 import 'package:paperless_mobile/features/labels/tags/view/widgets/tags_form_field.dart';
 import 'package:paperless_mobile/features/labels/view/widgets/single_label_form_field.dart';
@@ -388,16 +390,82 @@ class _DocumentUploadPreparationPageState
               cancelToken: _cancelToken,
             );
       final mutationState = await mutation.mutate();
-      final taskId = mutationState.data;
-      if (mounted) {
-        if (taskId != null) {
-          context.read<PendingTasksNotifier>().listenToTaskChanges(taskId);
-        }
-        showSnackBar(
-          context,
-          S.of(context)!.documentSuccessfullyUploadedProcessing,
-        );
-        context.pop(DocumentUploadResult(true, mutationState.data));
+      // Note: `Mutation.mutate()` does not rethrow errors that occur inside
+      // the mutation function. They are only surfaced via the returned
+      // `MutationState`, so they must be handled explicitly here instead of
+      // relying on the surrounding try/catch below.
+      // The base `MutationState` only exposes `isError`, `error` and `data`;
+      // the original stack trace is only available on the `MutationError`
+      // subtype, so it is narrowed here before being passed on.
+      final StackTrace? mutationStackTrace = switch (mutationState) {
+        MutationError(:final stackTrace) => stackTrace,
+        _ => null,
+      };
+      final outcome = classifyDocumentUploadMutationOutcome(
+        isError: mutationState.isError,
+        data: mutationState.data,
+        error: mutationState.error,
+        stackTrace: mutationStackTrace,
+      );
+      switch (outcome) {
+        case DocumentUploadMutationSuccess(:final taskId):
+          if (!mounted) break;
+          if (taskId != null) {
+            context.read<PendingTasksNotifier>().listenToTaskChanges(taskId);
+          }
+          showSnackBar(
+            context,
+            S.of(context)!.documentSuccessfullyUploadedProcessing,
+          );
+          context.pop(DocumentUploadResult(true, taskId));
+        case DocumentUploadMutationFormValidationError(:final exception):
+          if (mounted) {
+            setState(() {
+              _uploadProgress = null;
+              _uploadPhase = _UploadPhase.idle;
+              _errors = exception.validationMessages;
+            });
+          }
+        case DocumentUploadMutationPaperlessError(:final exception):
+          if (mounted) {
+            setState(() {
+              _uploadProgress = null;
+              _uploadPhase = _UploadPhase.idle;
+            });
+          }
+          if (mounted) {
+            showInfoMessage(
+              context,
+              InfoMessageException(
+                code: exception.code,
+                message: exception.details,
+              ),
+            );
+          }
+        case DocumentUploadMutationUnknownError(
+          :final error,
+          :final stackTrace,
+        ):
+          if (mounted) {
+            setState(() {
+              _uploadProgress = null;
+              _uploadPhase = _UploadPhase.idle;
+            });
+          }
+          logger.fe(
+            "An unknown error occurred during document upload.",
+            className: runtimeType.toString(),
+            methodName: "_onSubmit",
+            error: error,
+            stackTrace: stackTrace,
+          );
+          if (mounted) {
+            showErrorMessage(
+              context,
+              const PaperlessApiException.unknown(),
+              stackTrace,
+            );
+          }
       }
     } on PaperlessApiException catch (error) {
       if (mounted) {
@@ -413,11 +481,13 @@ class _DocumentUploadPreparationPageState
         );
       }
     } on PaperlessFormValidationException catch (exception) {
-      setState(() {
-        _uploadProgress = null;
-        _uploadPhase = _UploadPhase.idle;
-        _errors = exception.validationMessages;
-      });
+      if (mounted) {
+        setState(() {
+          _uploadProgress = null;
+          _uploadPhase = _UploadPhase.idle;
+          _errors = exception.validationMessages;
+        });
+      }
     } catch (error, stackTrace) {
       if (mounted) {
         setState(() {
