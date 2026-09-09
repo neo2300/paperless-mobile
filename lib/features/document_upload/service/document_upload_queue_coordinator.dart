@@ -39,11 +39,16 @@ class DocumentUploadQueueCoordinator {
         ),
       );
 
-      if (result?.success ?? false) {
-        if (!context.mounted) {
-          return;
-        }
-        await delegate.onItemUploaded(context, item, result!);
+      final dispatchResult = await dispatchDocumentUploadQueueResult(
+        result,
+        onUploaded: (uploaded) async {
+          if (!context.mounted) return;
+          await delegate.onItemUploaded(context, item, uploaded);
+        },
+        onCancelled: () async {},
+      );
+
+      if (dispatchResult == DocumentUploadQueueDispatchResult.uploaded) {
         if (!context.mounted) {
           return;
         }
