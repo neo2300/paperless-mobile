@@ -191,6 +191,7 @@ class DocumentRepository with ChangeNotifierMixin {
     Iterable<int> tags = const [],
     int? archiveSerialNumber,
     void Function(double progress)? onProgressChanged,
+    String? correlationId,
   }) {
     return Mutation<String?, void>(
       key: 'create_document/$filename',
@@ -207,6 +208,7 @@ class DocumentRepository with ChangeNotifierMixin {
           tags: tags,
           archiveSerialNumber: archiveSerialNumber,
           onProgressChanged: onProgressChanged,
+          correlationId: correlationId,
         );
       },
     );
@@ -225,6 +227,7 @@ class DocumentRepository with ChangeNotifierMixin {
     int? archiveSerialNumber,
     void Function(double progress)? onProgressChanged,
     CancelToken? cancelToken,
+    String? correlationId,
   }) {
     return Mutation<String?, void>(
       key: 'create_document/$filename',
@@ -241,6 +244,7 @@ class DocumentRepository with ChangeNotifierMixin {
         archiveSerialNumber: archiveSerialNumber,
         onProgressChanged: onProgressChanged,
         cancelToken: cancelToken,
+        correlationId: correlationId,
       ),
     );
   }

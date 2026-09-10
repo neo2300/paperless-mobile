@@ -18,6 +18,7 @@ import 'package:paperless_mobile/core/widgets/form_builder_fields/form_builder_l
 import 'package:paperless_mobile/core/widgets/future_or_builder.dart';
 import 'package:paperless_mobile/features/document_upload/model/document_upload_mutation_outcome.dart';
 import 'package:paperless_mobile/features/document_upload/model/document_upload_queue.dart';
+import 'package:paperless_mobile/features/document_upload/service/upload_correlation.dart';
 import 'package:paperless_mobile/features/labels/tags/view/widgets/tags_form_field.dart';
 import 'package:paperless_mobile/features/labels/view/widgets/single_label_form_field.dart';
 import 'package:paperless_mobile/features/logging/data/logger.dart';
@@ -36,7 +37,8 @@ class DocumentUploadResult {
 
 class DocumentUploadPreparationPage extends StatefulWidget {
   final FutureOr<Uint8List>? fileBytes;
-  final FutureOr<PreparedUploadFile> Function()? prepareUploadFile;
+  final FutureOr<PreparedUploadFile> Function(String correlationId)?
+  prepareUploadFile;
   final File? previewFile;
   final String? title;
   final String? filename;
@@ -79,6 +81,25 @@ class _DocumentUploadPreparationPageState
 
   bool get _showQueueProgress => widget.uploadQueueProgress?.isQueued ?? false;
 
+  /// Non-sensitive stage label for the current [_uploadPhase], used only to
+  /// distinguish "failed while preparing the file" from "failed while
+  /// talking to the server" in diagnostic logs.
+  String get _currentStageLabel =>
+      _uploadPhase == _UploadPhase.preparing ? 'preparation' : 'mutation';
+
+  /// Resets the upload phase/progress back to [_UploadPhase.idle] and
+  /// clears in-flight progress, consistently, after any failure — so a
+  /// retried submit never starts from a stale non-idle phase or leftover
+  /// progress value. Optionally also sets form validation [errors].
+  void _resetUploadState({Map<String, String>? errors}) {
+    if (!mounted) return;
+    setState(() {
+      _uploadProgress = null;
+      _uploadPhase = _UploadPhase.idle;
+      if (errors != null) _errors = errors;
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -88,6 +109,14 @@ class _DocumentUploadPreparationPageState
         _onSubmit();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    // Let the pending mutation finish its cancellation path so `_onSubmit`'s
+    // `finally` block can release any owned prepared file promptly.
+    _cancelToken?.cancel('Upload page disposed');
+    super.dispose();
   }
 
   @override
@@ -329,6 +358,13 @@ class _DocumentUploadPreparationPageState
     if (!(_formKey.currentState?.saveAndValidate() ?? false)) {
       return;
     }
+    // A previous attempt's snackbar (success or error) must never linger
+    // once a new submit starts — otherwise stale feedback can remain
+    // visible alongside (or instead of) whatever this new attempt
+    // eventually reports.
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    final correlationId = newUploadCorrelationId();
+    final stopwatch = Stopwatch()..start();
     setState(() {
       _uploadPhase = _UploadPhase.preparing;
       _uploadProgress = null;
@@ -348,9 +384,20 @@ class _DocumentUploadPreparationPageState
         _formKey.currentState?.value[fkFileName],
         widget.fileExtension,
       );
+      logger.fi(
+        'Upload[$correlationId]: preparation started',
+        className: runtimeType.toString(),
+        methodName: '_onSubmit',
+      );
       preparedFile = widget.prepareUploadFile == null
           ? null
-          : await widget.prepareUploadFile!();
+          : await widget.prepareUploadFile!(correlationId);
+      logger.fi(
+        'Upload[$correlationId]: preparation completed in '
+        '${stopwatch.elapsedMilliseconds}ms',
+        className: runtimeType.toString(),
+        methodName: '_onSubmit',
+      );
       if (!mounted) return;
       _cancelToken = CancelToken();
       setState(() {
@@ -376,6 +423,7 @@ class _DocumentUploadPreparationPageState
               createdAt: createdAt?.toDateTime(),
               archiveSerialNumber: asn,
               onProgressChanged: onProgress,
+              correlationId: correlationId,
             )
           : context.documentRepository.createDocumentFromFileMutation(
               preparedFile.file,
@@ -388,6 +436,7 @@ class _DocumentUploadPreparationPageState
               archiveSerialNumber: asn,
               onProgressChanged: onProgress,
               cancelToken: _cancelToken,
+              correlationId: correlationId,
             );
       final mutationState = await mutation.mutate();
       // Note: `Mutation.mutate()` does not rethrow errors that occur inside
@@ -419,20 +468,23 @@ class _DocumentUploadPreparationPageState
           );
           context.pop(DocumentUploadResult(true, taskId));
         case DocumentUploadMutationFormValidationError(:final exception):
-          if (mounted) {
-            setState(() {
-              _uploadProgress = null;
-              _uploadPhase = _UploadPhase.idle;
-              _errors = exception.validationMessages;
-            });
-          }
+          logger.fw(
+            'Upload[$correlationId]: mutation failed after '
+            '${stopwatch.elapsedMilliseconds}ms (stage=mutation, '
+            'reason=formValidation)',
+            className: runtimeType.toString(),
+            methodName: '_onSubmit',
+          );
+          _resetUploadState(errors: exception.validationMessages);
         case DocumentUploadMutationPaperlessError(:final exception):
-          if (mounted) {
-            setState(() {
-              _uploadProgress = null;
-              _uploadPhase = _UploadPhase.idle;
-            });
-          }
+          logger.fw(
+            'Upload[$correlationId]: mutation failed after '
+            '${stopwatch.elapsedMilliseconds}ms (stage=mutation, '
+            'errorCode=${exception.code})',
+            className: runtimeType.toString(),
+            methodName: '_onSubmit',
+          );
+          _resetUploadState();
           if (mounted) {
             showInfoMessage(
               context,
@@ -442,23 +494,27 @@ class _DocumentUploadPreparationPageState
               ),
             );
           }
+        case DocumentUploadMutationCancelled():
+          logger.fi(
+            'Upload[$correlationId]: cancelled by user',
+            className: runtimeType.toString(),
+            methodName: '_onSubmit',
+          );
+          _resetUploadState();
         case DocumentUploadMutationUnknownError(
           :final error,
           :final stackTrace,
         ):
-          if (mounted) {
-            setState(() {
-              _uploadProgress = null;
-              _uploadPhase = _UploadPhase.idle;
-            });
-          }
           logger.fe(
-            "An unknown error occurred during document upload.",
+            'Upload[$correlationId]: mutation failed after '
+            '${stopwatch.elapsedMilliseconds}ms (stage=mutation, '
+            'errorType=${error.runtimeType})',
             className: runtimeType.toString(),
-            methodName: "_onSubmit",
+            methodName: '_onSubmit',
             error: error,
             stackTrace: stackTrace,
           );
+          _resetUploadState();
           if (mounted) {
             showErrorMessage(
               context,
@@ -467,13 +523,16 @@ class _DocumentUploadPreparationPageState
             );
           }
       }
-    } on PaperlessApiException catch (error) {
-      if (mounted) {
-        setState(() {
-          _uploadProgress = null;
-          _uploadPhase = _UploadPhase.idle;
-        });
-      }
+    } on PaperlessApiException catch (error, stackTrace) {
+      logger.fw(
+        'Upload[$correlationId]: failed after '
+        '${stopwatch.elapsedMilliseconds}ms (stage=$_currentStageLabel, '
+        'errorCode=${error.code})',
+        className: runtimeType.toString(),
+        methodName: '_onSubmit',
+        stackTrace: stackTrace,
+      );
+      _resetUploadState();
       if (mounted) {
         showInfoMessage(
           context,
@@ -481,27 +540,28 @@ class _DocumentUploadPreparationPageState
         );
       }
     } on PaperlessFormValidationException catch (exception) {
-      if (mounted) {
-        setState(() {
-          _uploadProgress = null;
-          _uploadPhase = _UploadPhase.idle;
-          _errors = exception.validationMessages;
-        });
-      }
-    } catch (error, stackTrace) {
-      if (mounted) {
-        setState(() {
-          _uploadProgress = null;
-          _uploadPhase = _UploadPhase.idle;
-        });
-      }
-      logger.fe(
-        "An unknown error occurred during document upload.",
+      logger.fw(
+        'Upload[$correlationId]: failed after '
+        '${stopwatch.elapsedMilliseconds}ms (stage=$_currentStageLabel, '
+        'reason=formValidation)',
         className: runtimeType.toString(),
-        methodName: "_onSubmit",
-        error: error,
+        methodName: '_onSubmit',
+      );
+      _resetUploadState(errors: exception.validationMessages);
+    } catch (error, stackTrace) {
+      final stage = _currentStageLabel;
+      logger.fe(
+        'Upload[$correlationId]: failed after '
+        '${stopwatch.elapsedMilliseconds}ms (stage=$stage, '
+        'errorType=${error.runtimeType})',
+        className: runtimeType.toString(),
+        methodName: '_onSubmit',
+        // Preparation errors can include source/output paths in their
+        // messages. Generic mutation errors are retained when safe.
+        error: stage == 'mutation' ? error : null,
         stackTrace: stackTrace,
       );
+      _resetUploadState();
       if (mounted) {
         showErrorMessage(
           context,
@@ -511,9 +571,8 @@ class _DocumentUploadPreparationPageState
       }
     } finally {
       _cancelToken = null;
-      if (preparedFile?.deleteAfterUpload ?? false) {
-        await preparedFile!.file.delete().catchError((_) => File(''));
-      }
+      // Covers success, server/local failure, cancellation, and disposal.
+      await preparedFile?.deleteIfOwned();
     }
   }
 

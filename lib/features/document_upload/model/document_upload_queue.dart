@@ -15,6 +15,17 @@ class PreparedUploadFile {
     required this.extension,
     this.deleteAfterUpload = false,
   });
+
+  /// Deletes an upload-attempt-owned file without masking the upload outcome.
+  Future<void> deleteIfOwned() async {
+    if (!deleteAfterUpload) return;
+    try {
+      await file.delete();
+    } catch (_) {
+      // Best-effort cleanup: a missing file is already in the desired state,
+      // and another filesystem error must not replace the upload result.
+    }
+  }
 }
 
 class DocumentUploadQueueProgress {
@@ -34,7 +45,14 @@ class DocumentUploadQueueProgress {
 class DocumentUploadQueueItem<T> {
   final T source;
   final FutureOr<Uint8List> Function() loadFileBytes;
-  final FutureOr<PreparedUploadFile> Function()? prepareUploadFile;
+
+  /// Prepares the file to upload. Receives the correlation identifier
+  /// generated for this upload attempt (see `upload_correlation.dart`) so
+  /// implementations can tag their own non-sensitive diagnostic logs (e.g.
+  /// page count, PDF assembly duration/size) with the same identifier used
+  /// by the eventual HTTP request's logs.
+  final FutureOr<PreparedUploadFile> Function(String correlationId)?
+  prepareUploadFile;
   final File? previewFile;
   final String? title;
   final String? filename;

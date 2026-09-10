@@ -33,6 +33,13 @@ class GlobalSettings {
   final bool showOnboarding;
   final FileDownloadType defaultDownloadType;
   final FileDownloadType defaultShareType;
+
+  /// Deprecated: scanner uploads are now always assembled as a PDF
+  /// (including single-page scans), so this no longer has any effect on
+  /// scanner upload behavior. The field (and its settings toggle) has been
+  /// removed from the UI, but it is retained here — defaulting to `false`
+  /// — purely so that existing persisted [GlobalSettings] JSON continues
+  /// to (de)serialize without breaking previously stored user data.
   final bool enforceSinglePagePdfUpload;
   final bool skipDocumentPreprarationOnUpload;
   final bool disableAnimations;

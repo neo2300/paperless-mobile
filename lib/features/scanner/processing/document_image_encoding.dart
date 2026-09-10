@@ -4,11 +4,18 @@ import 'package:opencv_dart/opencv_dart.dart' as cv4;
 
 const int documentJpegQuality = 93;
 
-Uint8List encodeDocumentJpeg(cv4.Mat image) {
+/// Encodes [image] as a JPEG at [quality] (defaults to
+/// [documentJpegQuality], the quality used by every caller except the PDF
+/// page preparation pipeline in `document_pdf_builder.dart`, which instead
+/// drives an adaptive quality ladder — see `pdf_page_jpeg_encoding.dart`).
+Uint8List encodeDocumentJpeg(
+  cv4.Mat image, {
+  int quality = documentJpegQuality,
+}) {
   final (success, encoded) = cv4.imencode(
     '.jpg',
     image,
-    params: [cv4.IMWRITE_JPEG_QUALITY, documentJpegQuality].i32,
+    params: [cv4.IMWRITE_JPEG_QUALITY, quality].i32,
   );
   if (!success) throw StateError('Failed to encode document image as JPEG');
   return encoded;
