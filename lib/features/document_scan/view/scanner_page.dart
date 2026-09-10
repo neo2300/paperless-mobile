@@ -31,10 +31,9 @@ import 'package:paperless_mobile/helpers/message_helpers.dart';
 import 'package:paperless_mobile/helpers/permission_helpers.dart';
 import 'package:paperless_mobile/features/scanner/models/scan_result.dart';
 import 'package:paperless_mobile/features/scanner/paperless_mobile_document_scanner.dart';
+import 'package:paperless_mobile/features/scanner/processing/document_pdf_builder.dart';
 import 'package:paperless_mobile/routing/routes/scanner_route.dart';
 import 'package:path/path.dart' as p;
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:sliver_tools/sliver_tools.dart';
 
@@ -163,7 +162,7 @@ class _ScannerPageState extends State<ScannerPage>
     if (fileName != null) {
       if (!mounted) return;
       final cubit = context.read<DocumentScannerCubit>();
-      final file = await _assembleFileBytes(forcePdf: true, scans);
+      final file = await _assembleFileBytes(scans);
       try {
         if (Platform.isAndroid && androidInfo!.version.sdkInt <= 29) {
           final isGranted = await askForPermission(Permission.storage);
@@ -270,10 +269,7 @@ class _ScannerPageState extends State<ScannerPage>
     Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (context) => DocumentView(
-          bytes: _assembleFileBytes(
-            scans,
-            forcePdf: true,
-          ).then((file) => file.bytes),
+          bytes: _assembleFileBytes(scans).then((file) => file.bytes),
         ),
       ),
     );
@@ -318,17 +314,14 @@ class _ScannerPageState extends State<ScannerPage>
     List<File> scans, {
     DocumentScan? documentScan,
   }) async {
-    final forcePdf =
-        context.localStore.state.globalSettings.enforceSinglePagePdfUpload;
     if (!context.mounted) return;
     final uploadResult = await Navigator.of(context, rootNavigator: true)
         .push<DocumentUploadResult>(
           MaterialPageRoute(
             builder: (_) => DocumentUploadPreparationPage(
-              prepareUploadFile: () =>
-                  _prepareUploadFile(scans, forcePdf: forcePdf),
+              prepareUploadFile: () => _prepareUploadFile(scans),
               previewFile: scans.first,
-              fileExtension: _assembledFileExtension(scans, forcePdf: forcePdf),
+              fileExtension: _assembledFileExtension,
             ),
           ),
         );
@@ -360,8 +353,6 @@ class _ScannerPageState extends State<ScannerPage>
       return;
     }
 
-    final forcePdf =
-        context.localStore.state.globalSettings.enforceSinglePagePdfUpload;
     await DocumentUploadQueueCoordinator.processQueue<DocumentScan>(
       context,
       items: [
@@ -371,15 +362,11 @@ class _ScannerPageState extends State<ScannerPage>
             // Only used by legacy byte-only callers. Scanner uploads below
             // use [prepareUploadFile] and never use these bytes as source.
             loadFileBytes: documentScan.pageFiles.first.readAsBytes,
-            prepareUploadFile: () =>
-                _prepareUploadFile(documentScan.pageFiles, forcePdf: forcePdf),
+            prepareUploadFile: () => _prepareUploadFile(documentScan.pageFiles),
             previewFile: documentScan.coverFile,
             title: documentScan.name,
             filename: _formatUploadFileName(documentScan.name),
-            fileExtension: _assembledFileExtension(
-              documentScan.pageFiles,
-              forcePdf: forcePdf,
-            ),
+            fileExtension: _assembledFileExtension,
           ),
       ],
       delegate: const _DocumentScanUploadQueueDelegate(),
@@ -520,58 +507,25 @@ class _ScannerPageState extends State<ScannerPage>
   }
 
   ///
-  /// Returns the file bytes of either a single file or multiple images concatenated into a single pdf.
+  /// Assembles the given scanned page image files into a single PDF's
+  /// bytes. Scanner uploads are always a PDF, including a single page.
   ///
-  Future<AssembledFile> _assembleFileBytes(
-    final List<File> files, {
-    bool forcePdf = false,
-  }) async {
+  Future<AssembledFile> _assembleFileBytes(final List<File> files) async {
     assert(files.isNotEmpty);
-    final extension = _assembledFileExtension(files, forcePdf: forcePdf);
-    if (extension != '.pdf') {
-      return AssembledFile(extension, await files.first.readAsBytes());
-    }
-    final bytes = await compute(_assemblePdfBytes, [
+    final bytes = await compute(assembleDocumentPdfBytes, [
       for (final file in files) file.path,
     ]);
-    return AssembledFile(extension, bytes);
+    return AssembledFile(_assembledFileExtension, bytes);
   }
 }
 
-String _assembledFileExtension(List<File> files, {bool forcePdf = false}) {
-  if (files.length == 1 && !forcePdf) {
-    return p.extension(files.first.path);
-  }
-  return '.pdf';
-}
+/// Scanner uploads are always assembled as a PDF, including a single page,
+/// so this never branches on the page count (or on the now-unused
+/// `enforceSinglePagePdfUpload` setting).
+const String _assembledFileExtension = '.pdf';
 
-Future<Uint8List> _assemblePdfBytes(List<String> filePaths) async {
-  final doc = pw.Document();
-  for (final filePath in filePaths) {
-    final img = pw.MemoryImage(await File(filePath).readAsBytes());
-    doc.addPage(
-      pw.Page(
-        pageFormat: img.width! > img.height!
-            ? PdfPageFormat.a4.landscape
-            : PdfPageFormat.a4,
-        margin: pw.EdgeInsets.zero,
-        build: (context) =>
-            pw.Center(child: pw.Image(img, fit: pw.BoxFit.contain)),
-      ),
-    );
-  }
-  return doc.save();
-}
-
-Future<PreparedUploadFile> _prepareUploadFile(
-  List<File> files, {
-  required bool forcePdf,
-}) async {
-  final extension = _assembledFileExtension(files, forcePdf: forcePdf);
-  if (extension != '.pdf') {
-    return PreparedUploadFile(file: files.first, extension: extension);
-  }
-  final bytes = await compute(_assemblePdfBytes, [
+Future<PreparedUploadFile> _prepareUploadFile(List<File> files) async {
+  final bytes = await compute(assembleDocumentPdfBytes, [
     for (final file in files) file.path,
   ]);
   final file = await FileService.instance.allocateTemporaryFile(
