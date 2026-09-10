@@ -25,6 +25,7 @@ import 'package:paperless_mobile/features/document_upload/model/document_upload_
 import 'package:paperless_mobile/features/document_upload/service/document_upload_queue_coordinator.dart';
 import 'package:paperless_mobile/features/document_upload/view/document_upload_preparation_page.dart';
 import 'package:paperless_mobile/features/documents/view/pages/document_view.dart';
+import 'package:paperless_mobile/features/logging/data/logger.dart';
 import 'package:paperless_mobile/generated/l10n/app_localizations.dart';
 import 'package:paperless_mobile/helpers/connectivity_aware_action_wrapper.dart';
 import 'package:paperless_mobile/helpers/message_helpers.dart';
@@ -319,7 +320,8 @@ class _ScannerPageState extends State<ScannerPage>
         .push<DocumentUploadResult>(
           MaterialPageRoute(
             builder: (_) => DocumentUploadPreparationPage(
-              prepareUploadFile: () => _prepareUploadFile(scans),
+              prepareUploadFile: (correlationId) =>
+                  _prepareUploadFile(scans, correlationId),
               previewFile: scans.first,
               fileExtension: _assembledFileExtension,
             ),
@@ -362,7 +364,8 @@ class _ScannerPageState extends State<ScannerPage>
             // Only used by legacy byte-only callers. Scanner uploads below
             // use [prepareUploadFile] and never use these bytes as source.
             loadFileBytes: documentScan.pageFiles.first.readAsBytes,
-            prepareUploadFile: () => _prepareUploadFile(documentScan.pageFiles),
+            prepareUploadFile: (correlationId) =>
+                _prepareUploadFile(documentScan.pageFiles, correlationId),
             previewFile: documentScan.coverFile,
             title: documentScan.name,
             filename: _formatUploadFileName(documentScan.name),
@@ -524,20 +527,61 @@ class _ScannerPageState extends State<ScannerPage>
 /// `enforceSinglePagePdfUpload` setting).
 const String _assembledFileExtension = '.pdf';
 
-Future<PreparedUploadFile> _prepareUploadFile(List<File> files) async {
-  final bytes = await compute(assembleDocumentPdfBytes, [
-    for (final file in files) file.path,
-  ]);
+/// Allocates the temporary output file up front, then hands its path to
+/// [assembleAndWriteDocumentPdfToFile] to run (via `compute`, in a worker
+/// isolate) and write the assembled PDF bytes *directly* to that file from
+/// within the worker isolate — see that function's doc comment for why
+/// this avoids transferring the full PDF `Uint8List` back to this (UI)
+/// isolate, unlike the previous "assemble bytes here, then write them"
+/// approach. On any assembly/write failure the partial temp file is
+/// deleted before the error is rethrown.
+///
+/// Logs are intentionally limited to non-sensitive metadata (page count,
+/// timing, resulting byte length/page count) tagged with [correlationId]
+/// so they can be correlated with the subsequent multipart-upload logs in
+/// `paperless_documents_api.dart` without ever logging document bytes,
+/// paths, filenames, titles, tags, or OCR content.
+Future<PreparedUploadFile> _prepareUploadFile(
+  List<File> files,
+  String correlationId,
+) async {
   final file = await FileService.instance.allocateTemporaryFile(
     PaperlessDirectoryType.temporary,
     extension: 'pdf',
     create: true,
   );
+  final stopwatch = Stopwatch()..start();
+  logger.fi(
+    'Upload[$correlationId]: PDF assembly started (pageCount=${files.length})',
+    className: 'scanner_page',
+    methodName: '_prepareUploadFile',
+  );
   try {
-    await file.writeAsBytes(bytes, flush: true);
-  } catch (_) {
+    final result = await compute(assembleAndWriteDocumentPdfToFile, (
+      filePaths: [for (final pageFile in files) pageFile.path],
+      outputPath: file.path,
+    ));
+    logger.fi(
+      'Upload[$correlationId]: PDF assembly + temp write completed in '
+      '${stopwatch.elapsedMilliseconds}ms (pdfByteLength=${result.byteLength}, '
+      'pdfPageCount=${result.pageCount})',
+      className: 'scanner_page',
+      methodName: '_prepareUploadFile',
+    );
+  } catch (error, stackTrace) {
+    logger.fe(
+      'Upload[$correlationId]: PDF assembly failed after '
+      '${stopwatch.elapsedMilliseconds}ms (stage=assembly, '
+      'errorType=${error.runtimeType})',
+      className: 'scanner_page',
+      methodName: '_prepareUploadFile',
+      stackTrace: stackTrace,
+    );
     await file.delete().catchError((_) => File(''));
-    rethrow;
+    throw PaperlessApiException(
+      ErrorCode.documentUploadFailed,
+      details: error.runtimeType.toString(),
+    );
   }
   return PreparedUploadFile(
     file: file,

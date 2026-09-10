@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
 import 'package:paperless_mobile/features/document_upload/model/document_upload_mutation_outcome.dart';
@@ -66,6 +67,44 @@ void main() {
         same(exception),
       );
     });
+
+    test('classifies a cancelled DioException as cancelled', () {
+      final exception = DioException(
+        requestOptions: RequestOptions(path: '/api/documents/post_document/'),
+        type: DioExceptionType.cancel,
+      );
+
+      final outcome = classifyDocumentUploadMutationOutcome(
+        isError: true,
+        data: null,
+        error: exception,
+      );
+
+      expect(outcome, isA<DocumentUploadMutationCancelled>());
+    });
+
+    test(
+      'classifies a non-cancel DioException as unknown and preserves it',
+      () {
+        final exception = DioException(
+          requestOptions: RequestOptions(path: '/api/documents/post_document/'),
+          type: DioExceptionType.connectionTimeout,
+        );
+        final stackTrace = StackTrace.current;
+
+        final outcome = classifyDocumentUploadMutationOutcome(
+          isError: true,
+          data: null,
+          error: exception,
+          stackTrace: stackTrace,
+        );
+
+        expect(outcome, isA<DocumentUploadMutationUnknownError>());
+        final unknown = outcome as DocumentUploadMutationUnknownError;
+        expect(unknown.error, same(exception));
+        expect(unknown.stackTrace, same(stackTrace));
+      },
+    );
 
     test('classifies any other error as an unknown error and preserves it', () {
       final error = StateError('unexpected');

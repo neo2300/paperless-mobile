@@ -48,7 +48,10 @@ void main() {
         final target = plan.segments.single.targetSize;
         expect(
           target.width * target.height,
-          lessThanOrEqualTo(kMaxPdfPagePixelBudget),
+          // A tiny floating-point tolerance: `sqrt`-derived scale factors can
+          // land a `width * height` product a few ULPs above the exact
+          // budget for some source sizes; this is not a real overage.
+          lessThanOrEqualTo(kMaxPdfPagePixelBudget * (1 + 1e-9)),
         );
         expect(
           (target.width / target.height),

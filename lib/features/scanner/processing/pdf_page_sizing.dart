@@ -3,13 +3,15 @@ import 'dart:ui';
 
 /// Approximate maximum pixel budget for a single rasterized PDF page.
 ///
-/// This intentionally sits in the ~8.7–9.0 megapixel range. The commonly
-/// cited rationale is "A4 at roughly 300 DPI" (2481×3508 ≈ 8.7 MP), but that
-/// is size *rationale* only — this budget is not a physical DPI guarantee
-/// and pages are never resized to a physical paper size (see
-/// [pdf_page_format.dart] for how the *nominal* DPI is used only to derive
-/// PDF MediaBox metadata from the raster's own pixel size).
-const double kMaxPdfPagePixelBudget = 8.8e6;
+/// This intentionally sits at roughly 5.0 megapixels. The commonly cited
+/// rationale is "A4 at roughly 225–230 nominal PPI" (8.27×11.69in at
+/// ~227 PPI ≈ 5.0 MP), but that is size *rationale* only — this budget is
+/// not a physical DPI guarantee, pages are never resized (up or down) to a
+/// physical paper size, and a page is never upscaled to reach it (see
+/// [pdf_page_format.dart] for how a separate, unrelated *nominal* DPI
+/// constant is used only to derive PDF MediaBox metadata from the raster's
+/// own pixel size).
+const double kMaxPdfPagePixelBudget = 5.0e6;
 
 /// Aspect ratio (long edge / short edge) at or above which an over-budget
 /// page is considered "extreme" long/narrow (e.g. a receipt or banner) and

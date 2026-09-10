@@ -1,12 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:paperless_mobile/api/constants/api_date_format.dart';
 import 'package:paperless_mobile/api/extensions/extensions.dart';
 import 'package:paperless_mobile/api/models/models.dart';
+import 'package:paperless_mobile/features/logging/data/logger.dart';
 
 abstract class PaperlessDocumentsApi {
   Future<String> create(
@@ -21,6 +22,7 @@ abstract class PaperlessDocumentsApi {
     Iterable<int> tags = const [],
     int? archiveSerialNumber,
     void Function(double progress)? onProgressChanged,
+    String? correlationId,
   });
   Future<String> createFromFile(
     File documentFile, {
@@ -35,6 +37,7 @@ abstract class PaperlessDocumentsApi {
     int? archiveSerialNumber,
     void Function(double progress)? onProgressChanged,
     CancelToken? cancelToken,
+    String? correlationId,
   });
   Future<PaginatedResultList<Document>> getAll([DocumentFilter? options]);
   Future<Document> get(int id, {List<String>? fields});
@@ -88,6 +91,7 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
     Iterable<int> tags = const [],
     int? archiveSerialNumber,
     void Function(double progress)? onProgressChanged,
+    String? correlationId,
   }) async {
     final formData = FormData();
     formData.files.add(
@@ -111,8 +115,8 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
 
     return _postUpload(
       formData,
-      filename: filename,
       onProgressChanged: onProgressChanged,
+      correlationId: correlationId,
     );
   }
 
@@ -130,14 +134,46 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
     int? archiveSerialNumber,
     void Function(double progress)? onProgressChanged,
     CancelToken? cancelToken,
+    String? correlationId,
   }) async {
+    // `MultipartFile.fromFile` and `File.length()` can both throw a raw
+    // (unclassified) I/O error — most commonly because the caller's
+    // prepared temp file was unexpectedly missing or unreadable. Without
+    // this wrapping, such a failure would surface as a
+    // `DocumentUploadMutationUnknownError` (see
+    // `document_upload_mutation_outcome.dart`) instead of a classified
+    // `PaperlessApiException`, and — being thrown before the HTTP POST
+    // below — must never be confused with an actual server-side upload
+    // failure.
+    final int fileSize;
+    final MultipartFile multipartFile;
+    try {
+      logger.fi(
+        'Upload[${correlationId ?? 'n/a'}]: multipart file read started',
+        className: runtimeType.toString(),
+        methodName: 'createFromFile',
+      );
+      fileSize = await documentFile.length();
+      multipartFile = await MultipartFile.fromFile(
+        documentFile.path,
+        filename: filename,
+      );
+    } catch (error, stackTrace) {
+      logger.fe(
+        'Upload[${correlationId ?? 'n/a'}]: failed to read the prepared '
+        'file for upload (stage=fileRead, errorType=${error.runtimeType})',
+        className: runtimeType.toString(),
+        methodName: 'createFromFile',
+        stackTrace: stackTrace,
+      );
+      throw PaperlessApiException(
+        ErrorCode.documentUploadFailed,
+        details: error.runtimeType.toString(),
+      );
+    }
+
     final formData = FormData();
-    formData.files.add(
-      MapEntry(
-        'document',
-        await MultipartFile.fromFile(documentFile.path, filename: filename),
-      ),
-    );
+    formData.files.add(MapEntry('document', multipartFile));
     _addUploadFields(
       formData,
       title: title,
@@ -151,10 +187,10 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
     );
     return _postUpload(
       formData,
-      filename: filename,
       onProgressChanged: onProgressChanged,
       cancelToken: cancelToken,
-      fileSize: await documentFile.length(),
+      fileSize: fileSize,
+      correlationId: correlationId,
     );
   }
 
@@ -179,8 +215,6 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
         MapEntry('correspondent', jsonEncode(correspondent)),
       if (documentType != null)
         MapEntry('document_type', jsonEncode(documentType)),
-      if (storagePath != null)
-        MapEntry('storage_path', jsonEncode(storagePath)),
       if (archiveSerialNumber != null)
         MapEntry('archive_serial_number', jsonEncode(archiveSerialNumber)),
       for (final tag in tags) MapEntry('tags', tag.toString()),
@@ -191,11 +225,24 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
 
   Future<String> _postUpload(
     FormData formData, {
-    required String filename,
     void Function(double progress)? onProgressChanged,
     CancelToken? cancelToken,
     int? fileSize,
+    String? correlationId,
   }) async {
+    final logCorrelationId = correlationId ?? 'n/a';
+    // Non-sensitive only: never logs the filename, title, tags, document
+    // bytes/path, or any OCR content — just enough to tell, from the logs
+    // alone, whether the HTTP POST was ever actually reached, and if so
+    // whether/how it concluded. In particular, the *absence* of a
+    // consumer-visible task on the server must never be mistaken for "no
+    // request was sent" — these log lines are the source of truth for
+    // that instead.
+    logger.fi(
+      'Upload[$logCorrelationId]: HTTP POST started (fileSize=$fileSize)',
+      className: runtimeType.toString(),
+      methodName: '_postUpload',
+    );
     try {
       final response = await client.post<String>(
         '/api/documents/post_document/',
@@ -211,18 +258,52 @@ class PaperlessDocumentsApiImpl implements PaperlessDocumentsApi {
           onProgressChanged?.call(size == 0 ? 0 : count.toDouble() / size);
         },
       );
-      return response.data!;
-    } on DioException catch (exception) {
-      if (kDebugMode) {
-        debugPrint(
-          'Document upload failed type=${exception.type} '
-          'filename=$filename fileSize=$fileSize message=${exception.message}',
-        );
-      }
-      throw exception.unravel(
-        orElse: const PaperlessApiException(ErrorCode.documentUploadFailed),
+      logger.fi(
+        'Upload[$logCorrelationId]: HTTP POST completed '
+        '(status=${response.statusCode})',
+        className: runtimeType.toString(),
+        methodName: '_postUpload',
       );
+      final taskId = response.data;
+      if (taskId == null) {
+        throw const PaperlessApiException(ErrorCode.documentUploadFailed);
+      }
+      return taskId;
+    } on DioException catch (exception) {
+      logger.fe(
+        'Upload[$logCorrelationId]: HTTP POST failed (stage=network, '
+        'dioErrorType=${exception.type}, '
+        'status=${exception.response?.statusCode})',
+        className: runtimeType.toString(),
+        methodName: '_postUpload',
+        stackTrace: exception.stackTrace,
+      );
+      throw _classifyUploadDioException(exception);
     }
+  }
+
+  Object _classifyUploadDioException(DioException exception) {
+    if (exception.type == DioExceptionType.cancel) {
+      return exception;
+    }
+
+    final unraveled = exception.unravel();
+    if (unraveled is PaperlessApiException ||
+        unraveled is PaperlessFormValidationException) {
+      return unraveled;
+    }
+
+    if (exception.type == DioExceptionType.connectionTimeout ||
+        exception.type == DioExceptionType.sendTimeout ||
+        exception.type == DioExceptionType.receiveTimeout) {
+      return const PaperlessApiException(ErrorCode.requestTimedOut);
+    }
+    if (exception.type == DioExceptionType.connectionError ||
+        (exception.type == DioExceptionType.unknown &&
+            exception.error is SocketException)) {
+      return const PaperlessApiException(ErrorCode.serverUnreachable);
+    }
+    return const PaperlessApiException(ErrorCode.documentUploadFailed);
   }
 
   @override

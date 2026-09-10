@@ -7,6 +7,7 @@ import 'package:opencv_dart/opencv_dart.dart' as cv4;
 import 'package:pdf/widgets.dart' as pw;
 import 'package:paperless_mobile/features/scanner/processing/document_image_encoding.dart';
 import 'package:paperless_mobile/features/scanner/processing/pdf_page_format.dart';
+import 'package:paperless_mobile/features/scanner/processing/pdf_page_jpeg_encoding.dart';
 import 'package:paperless_mobile/features/scanner/processing/pdf_page_sizing.dart';
 import 'package:paperless_mobile/features/scanner/processing/pixel_crop.dart';
 import 'package:paperless_mobile/features/scanner/processing/white_balance.dart';
@@ -37,13 +38,61 @@ import 'package:paperless_mobile/features/scanner/processing/white_balance.dart'
 /// materializes the *entire* resulting PDF as a single `Uint8List` — the
 /// `pdf` package does not stream its output. This function only bounds the
 /// size of the *compressed input* to that call (via the per-page pixel
-/// budget in `pdf_page_sizing.dart` and the fixed [documentJpegQuality]),
-/// it cannot make `pw.Document.save()` itself stream.
+/// budget in `pdf_page_sizing.dart` and the adaptive JPEG quality ladder in
+/// `pdf_page_jpeg_encoding.dart`), it cannot make `pw.Document.save()`
+/// itself stream. See [assembleAndWriteDocumentPdfToFile] for the
+/// upload-path variant that at least avoids re-transmitting that resulting
+/// `Uint8List` across an isolate boundary.
 ///
 /// Throws an [ArgumentError] if [filePaths] is empty — there is no such
 /// thing as a zero-page PDF here, and silently producing an empty document
 /// would only hide a caller bug.
 Future<Uint8List> assembleDocumentPdfBytes(List<String> filePaths) async {
+  final (doc, _) = await _buildDocument(filePaths);
+  return doc.save();
+}
+
+/// Compute-compatible argument bundle for [assembleAndWriteDocumentPdfToFile].
+///
+/// A record of primitive/`String` fields, which is always safe to send
+/// across the isolate boundary `compute(...)` uses.
+typedef AssembleAndWritePdfRequest = ({
+  List<String> filePaths,
+  String outputPath,
+});
+
+/// Non-sensitive result of [assembleAndWriteDocumentPdfToFile]: the final
+/// PDF's byte length and how many rasterized pages it contains.
+/// Deliberately excludes the PDF bytes themselves, the source file paths,
+/// and any document metadata — safe to log verbatim.
+typedef AssembledPdfWriteResult = ({int byteLength, int pageCount});
+
+/// Same page-by-page assembly as [assembleDocumentPdfBytes], but intended
+/// for the upload path: run via `compute(request, assembleAndWriteDocumentPdfToFile)`
+/// so this executes in a worker isolate, and write the resulting PDF bytes
+/// directly to `request.outputPath` *from that same worker isolate*
+/// instead of also transferring the full `Uint8List` back to the caller.
+///
+/// `pw.Document.save()` still materializes the whole PDF as a single
+/// `Uint8List` internally — see [assembleDocumentPdfBytes]'s doc comment
+/// for that residual, acknowledged limitation — but that byte list is
+/// written to disk and discarded immediately, right here in the worker
+/// isolate. Only [AssembledPdfWriteResult] (two integers) is ever sent back
+/// across the isolate boundary, avoiding the additional full-document copy
+/// the previous "assemble bytes, then write them" upload path performed.
+Future<AssembledPdfWriteResult> assembleAndWriteDocumentPdfToFile(
+  AssembleAndWritePdfRequest request,
+) async {
+  final (doc, pageCount) = await _buildDocument(request.filePaths);
+  final bytes = await doc.save();
+  final outputFile = File(request.outputPath);
+  await outputFile.writeAsBytes(bytes, flush: true);
+  return (byteLength: bytes.length, pageCount: pageCount);
+}
+
+/// Shared page-assembly loop used by both [assembleDocumentPdfBytes] and
+/// [assembleAndWriteDocumentPdfToFile].
+Future<(pw.Document, int)> _buildDocument(List<String> filePaths) async {
   if (filePaths.isEmpty) {
     throw ArgumentError.value(
       filePaths,
@@ -52,6 +101,7 @@ Future<Uint8List> assembleDocumentPdfBytes(List<String> filePaths) async {
     );
   }
   final doc = pw.Document();
+  var pageCount = 0;
   for (final filePath in filePaths) {
     final pages = await preparePdfPagesForFile(filePath);
     for (final page in pages) {
@@ -63,9 +113,10 @@ Future<Uint8List> assembleDocumentPdfBytes(List<String> filePaths) async {
               pw.Image(pw.MemoryImage(page.bytes), fit: pw.BoxFit.fill),
         ),
       );
+      pageCount++;
     }
   }
-  return doc.save();
+  return (doc, pageCount);
 }
 
 /// One fully prepared raster, ready to become a single marginless PDF page.
@@ -78,10 +129,27 @@ class PreparedPdfPage {
   final int pixelWidth;
   final int pixelHeight;
 
+  /// The JPEG quality actually selected by the adaptive ladder in
+  /// `pdf_page_jpeg_encoding.dart`, or `null` when this page was PNG
+  /// (lossless) or reused verbatim (no JPEG encode was performed at all).
+  final int? selectedJpegQuality;
+
+  /// How many encode calls were performed to produce [bytes] (at most 4 for
+  /// the JPEG ladder, at most 2 for the lossless-PNG fallback, or 0 when
+  /// [sourceBytesReused] is `true`).
+  final int encodeAttempts;
+
+  /// Whether [bytes] are the original source file's bytes, reused verbatim
+  /// (no re-encode of any kind was performed).
+  final bool sourceBytesReused;
+
   const PreparedPdfPage({
     required this.bytes,
     required this.pixelWidth,
     required this.pixelHeight,
+    this.selectedJpegQuality,
+    this.encodeAttempts = 0,
+    this.sourceBytesReused = false,
   });
 }
 
@@ -89,13 +157,21 @@ class PreparedPdfPage {
 ///
 /// Applies, in order: pixel-budgeted (down-only) resizing or long-axis
 /// segmentation (see `pdf_page_sizing.dart`), then a conservative automatic
-/// white balance on color pages only (see `white_balance.dart`).
-/// Grayscale/black & white pages are always left photometrically
-/// unchanged. When a page already complies with the pixel budget and (for
-/// color pages) white balance made no correction, the original file bytes
-/// are reused verbatim instead of being re-encoded, to avoid an
-/// unnecessary lossy JPEG round-trip and to keep true black & white pages
-/// losslessly PNG-encoded.
+/// white balance on color pages only (see `white_balance.dart`), then a
+/// format-appropriate encode:
+///
+///  * A page that needs no resize/white-balance correction and whose
+///    original bytes are already small enough is reused verbatim (see
+///    [_encodePreparedPage] for the exact thresholds), avoiding an
+///    unnecessary re-encode entirely.
+///  * A page with an alpha channel, or a true grayscale/black & white PNG
+///    source, is always kept losslessly PNG-encoded (see
+///    [_encodeLosslessPngPage]) — colored pages are never auto-converted to
+///    grayscale, and a grayscale/B&W page is never lossily converted to
+///    JPEG to save space.
+///  * Every other page (color, or grayscale from a non-PNG source) is
+///    encoded through the bounded adaptive JPEG quality ladder in
+///    `pdf_page_jpeg_encoding.dart`.
 Future<List<PreparedPdfPage>> preparePdfPagesForFile(String filePath) async {
   final originalBytes = await File(filePath).readAsBytes();
   final isSourcePng = filePath.toLowerCase().endsWith('.png');
@@ -110,6 +186,11 @@ Future<List<PreparedPdfPage>> preparePdfPagesForFile(String filePath) async {
 
     final isColor = source.channels >= 3;
     final size = Size(source.cols.toDouble(), source.rows.toDouble());
+    // Captured once, from the untouched decoded source, before any
+    // segmentation/resizing — this is what keeps a long receipt's native
+    // short-edge resolution intact through every later fallback downscale,
+    // regardless of which segment is currently being processed.
+    final nativeShortEdgePixels = math.min(size.width, size.height);
     final plan = planPdfPageSizing(size);
 
     // Only fetched (and only once) when segmentation is actually needed;
@@ -144,8 +225,7 @@ Future<List<PreparedPdfPage>> preparePdfPagesForFile(String filePath) async {
         working = source;
       }
       // Whether `working`'s pixels have diverged from the original file's
-      // encoded bytes and therefore require a fresh (lossy, for color
-      // pages) encode.
+      // encoded bytes and therefore require a fresh re-encode.
       var needsReencode = plan.isSegmented;
       try {
         final beforeResize = (working.cols, working.rows);
@@ -185,23 +265,15 @@ Future<List<PreparedPdfPage>> preparePdfPagesForFile(String filePath) async {
           }
         }
 
-        final bytes = !needsReencode
-            ? originalBytes
-            : working.channels == 4
-            ? encodeDocumentPng(working)
-            : isColor
-            ? encodeDocumentJpeg(working)
-            : isSourcePng
-            ? encodeDocumentPng(working)
-            : encodeDocumentJpeg(working);
-
-        pages.add(
-          PreparedPdfPage(
-            bytes: bytes,
-            pixelWidth: working.cols,
-            pixelHeight: working.rows,
-          ),
+        final page = await _encodePreparedPage(
+          working: working,
+          originalBytes: originalBytes,
+          needsReencode: needsReencode,
+          isColor: isColor,
+          isSourcePng: isSourcePng,
+          nativeShortEdgePixels: nativeShortEdgePixels,
         );
+        pages.add(page);
       } finally {
         if (ownsWorking) {
           working.dispose();
@@ -211,6 +283,130 @@ Future<List<PreparedPdfPage>> preparePdfPagesForFile(String filePath) async {
     return pages;
   } finally {
     source.dispose();
+  }
+}
+
+/// Picks the format-appropriate encode path for one already resized/
+/// white-balanced [working] raster, and decides whether the original
+/// source bytes can be reused verbatim instead of re-encoding at all.
+///
+/// A page with an alpha channel, or a true grayscale/black & white PNG
+/// source, always goes through the lossless PNG path
+/// ([_encodeLosslessPngPage]); every other page goes through the adaptive
+/// JPEG ladder ([encodePdfPageJpegAdaptive]) in `pdf_page_jpeg_encoding.dart`.
+///
+/// The verbatim-reuse threshold differs between the two paths: the JPEG
+/// path reuses verbatim only up to the same soft byte target
+/// ([kPdfPageJpegSoftTargetBytes]) the adaptive ladder itself targets (so
+/// there is no size cliff between "reused" and "freshly encoded"), while
+/// the lossless PNG path — which has no quality knob to trade against size
+/// — reuses verbatim up to the more permissive advisory ceiling
+/// ([kPdfPageJpegAdvisoryCeilingBytes]).
+Future<PreparedPdfPage> _encodePreparedPage({
+  required cv4.Mat working,
+  required Uint8List originalBytes,
+  required bool needsReencode,
+  required bool isColor,
+  required bool isSourcePng,
+  required double nativeShortEdgePixels,
+}) async {
+  final isAlpha = working.channels == 4;
+  final isLosslessPngPage = isAlpha || (isSourcePng && !isColor);
+
+  if (isLosslessPngPage) {
+    return _encodeLosslessPngPage(
+      working: working,
+      originalBytes: originalBytes,
+      needsReencode: needsReencode,
+      nativeShortEdgePixels: nativeShortEdgePixels,
+    );
+  }
+
+  if (!needsReencode &&
+      originalBytes.lengthInBytes <= kPdfPageJpegSoftTargetBytes) {
+    return PreparedPdfPage(
+      bytes: originalBytes,
+      pixelWidth: working.cols,
+      pixelHeight: working.rows,
+      sourceBytesReused: true,
+    );
+  }
+
+  final result = await encodePdfPageJpegAdaptive(
+    working,
+    nativeShortEdgePixels: nativeShortEdgePixels,
+  );
+  return PreparedPdfPage(
+    bytes: result.bytes,
+    pixelWidth: result.pixelWidth,
+    pixelHeight: result.pixelHeight,
+    selectedJpegQuality: result.quality,
+    encodeAttempts: result.attempts,
+  );
+}
+
+/// Encodes (or reuses) a page that must stay losslessly PNG-encoded: one
+/// with an alpha channel, or a true grayscale/black & white PNG source.
+///
+/// If [needsReencode] is `false` and the original bytes already fit under
+/// [kPdfPageJpegAdvisoryCeilingBytes], they are reused verbatim. Otherwise
+/// the raster is PNG-encoded once; if that single encode's result still
+/// exceeds the advisory ceiling, exactly one further (down-only) fallback
+/// downscale — preserving native short edges through 1600px exactly and,
+/// above that threshold, never shrinking below the 1400px OCR floor used by
+/// the JPEG ladder (see `pdf_page_jpeg_encoding.dart`) — is applied and the
+/// page is
+/// PNG re-encoded a second (and final) time. The result is accepted
+/// regardless of whether it is still above the ceiling afterwards: there
+/// is no lossy fallback for a page that must remain losslessly encoded,
+/// and the resolution floor needed for OCR always wins over file size.
+Future<PreparedPdfPage> _encodeLosslessPngPage({
+  required cv4.Mat working,
+  required Uint8List originalBytes,
+  required bool needsReencode,
+  required double nativeShortEdgePixels,
+}) async {
+  if (!needsReencode &&
+      originalBytes.lengthInBytes <= kPdfPageJpegAdvisoryCeilingBytes) {
+    return PreparedPdfPage(
+      bytes: originalBytes,
+      pixelWidth: working.cols,
+      pixelHeight: working.rows,
+      sourceBytesReused: true,
+    );
+  }
+
+  var pngMat = working;
+  var ownsPngMat = false;
+  var bytes = encodeDocumentPng(pngMat);
+  var attempts = 1;
+  if (bytes.lengthInBytes > kPdfPageJpegAdvisoryCeilingBytes) {
+    final currentSize = Size(pngMat.cols.toDouble(), pngMat.rows.toDouble());
+    final fallbackSize = planPdfPageFallbackDownscale(
+      currentSize: currentSize,
+      nativeShortEdgePixels: nativeShortEdgePixels,
+    );
+    final targetPixelSize = flooredPdfPageJpegPixelSize(fallbackSize);
+    if (targetPixelSize != currentSize) {
+      final targetWidth = targetPixelSize.width.toInt();
+      final targetHeight = targetPixelSize.height.toInt();
+      pngMat = await cv4.resizeAsync(pngMat, (targetWidth, targetHeight));
+      ownsPngMat = true;
+      bytes = encodeDocumentPng(pngMat);
+      attempts = 2;
+    }
+  }
+  try {
+    return PreparedPdfPage(
+      bytes: bytes,
+      pixelWidth: pngMat.cols,
+      pixelHeight: pngMat.rows,
+      encodeAttempts: attempts,
+    );
+  } finally {
+    if (ownsPngMat) {
+      pngMat.dispose();
+    }
   }
 }
 

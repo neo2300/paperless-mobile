@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:paperless_mobile/api/paperless_api.dart';
 
 /// Pure representation of the result of the document creation mutation
@@ -50,6 +51,11 @@ class DocumentUploadMutationPaperlessError
   const DocumentUploadMutationPaperlessError(this.exception);
 }
 
+/// The mutation was cancelled by the user.
+class DocumentUploadMutationCancelled extends DocumentUploadMutationOutcome {
+  const DocumentUploadMutationCancelled();
+}
+
 /// The mutation failed with an error of an unexpected/unknown type.
 class DocumentUploadMutationUnknownError extends DocumentUploadMutationOutcome {
   final Object error;
@@ -77,6 +83,9 @@ DocumentUploadMutationOutcome classifyDocumentUploadMutationOutcome({
   }
   if (error is PaperlessApiException) {
     return DocumentUploadMutationPaperlessError(error);
+  }
+  if (error is DioException && error.type == DioExceptionType.cancel) {
+    return const DocumentUploadMutationCancelled();
   }
   return DocumentUploadMutationUnknownError(
     error ?? StateError('Upload mutation failed without an error object.'),
