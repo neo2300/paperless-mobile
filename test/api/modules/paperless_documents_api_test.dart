@@ -183,6 +183,25 @@ void main() {
     );
   });
 
+  test('classifies an HTTP 413 file upload as documentUploadFailed', () async {
+    final file = File('${tempDir.path}/too_large.pdf');
+    await file.writeAsBytes([1, 2, 3]);
+    api = PaperlessDocumentsApiImpl(
+      _dioWithResponse((_) async => ResponseBody.fromString('too large', 413)),
+    );
+
+    await expectLater(
+      api.createFromFile(file, filename: 'too_large.pdf'),
+      throwsA(
+        isA<PaperlessApiException>().having(
+          (error) => error.code,
+          'code',
+          ErrorCode.documentUploadFailed,
+        ),
+      ),
+    );
+  });
+
   for (final type in [
     DioExceptionType.connectionTimeout,
     DioExceptionType.sendTimeout,

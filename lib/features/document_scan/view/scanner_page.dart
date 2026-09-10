@@ -12,12 +12,12 @@ import 'package:paperless_mobile/core/extensions/context_extensions.dart';
 import 'package:paperless_mobile/core/extensions/flutter_extensions.dart';
 import 'package:paperless_mobile/core/global/constants.dart';
 import 'package:paperless_mobile/core/model/info_message_exception.dart';
-import 'package:paperless_mobile/core/service/file_service.dart';
 import 'package:paperless_mobile/core/widgets/dialog_utils/dialog_cancel_button.dart';
 import 'package:paperless_mobile/core/widgets/dialog_utils/dialog_confirm_button.dart';
 import 'package:paperless_mobile/features/app_drawer/view/app_drawer.dart';
 import 'package:paperless_mobile/features/document_scan/cubit/document_scanner_cubit.dart';
 import 'package:paperless_mobile/features/document_scan/model/document_scan.dart';
+import 'package:paperless_mobile/features/document_scan/service/scanner_upload_file.dart';
 import 'package:paperless_mobile/features/document_scan/view/widgets/export_scans_dialog.dart';
 import 'package:paperless_mobile/features/document_scan/view/widgets/scanned_image_item.dart';
 import 'package:paperless_mobile/features/document_search/view/sliver_search_bar.dart';
@@ -316,12 +316,13 @@ class _ScannerPageState extends State<ScannerPage>
     DocumentScan? documentScan,
   }) async {
     if (!context.mounted) return;
+    final userId = context.loggedInUser.appUserId;
     final uploadResult = await Navigator.of(context, rootNavigator: true)
         .push<DocumentUploadResult>(
           MaterialPageRoute(
             builder: (_) => DocumentUploadPreparationPage(
               prepareUploadFile: (correlationId) =>
-                  _prepareUploadFile(scans, correlationId),
+                  _prepareUploadFile(scans, correlationId, userId),
               previewFile: scans.first,
               fileExtension: _assembledFileExtension,
             ),
@@ -354,6 +355,7 @@ class _ScannerPageState extends State<ScannerPage>
     if (documentScans.isEmpty) {
       return;
     }
+    final userId = context.loggedInUser.appUserId;
 
     await DocumentUploadQueueCoordinator.processQueue<DocumentScan>(
       context,
@@ -364,8 +366,11 @@ class _ScannerPageState extends State<ScannerPage>
             // Only used by legacy byte-only callers. Scanner uploads below
             // use [prepareUploadFile] and never use these bytes as source.
             loadFileBytes: documentScan.pageFiles.first.readAsBytes,
-            prepareUploadFile: (correlationId) =>
-                _prepareUploadFile(documentScan.pageFiles, correlationId),
+            prepareUploadFile: (correlationId) => _prepareUploadFile(
+              documentScan.pageFiles,
+              correlationId,
+              userId,
+            ),
             previewFile: documentScan.coverFile,
             title: documentScan.name,
             filename: _formatUploadFileName(documentScan.name),
@@ -527,13 +532,16 @@ class _ScannerPageState extends State<ScannerPage>
 /// `enforceSinglePagePdfUpload` setting).
 const String _assembledFileExtension = '.pdf';
 
-/// Allocates the temporary output file up front, then hands its path to
+/// Allocates the transient output file in the current user's app-managed
+/// consumption directory, then hands its path to
 /// [assembleAndWriteDocumentPdfToFile] to run (via `compute`, in a worker
 /// isolate) and write the assembled PDF bytes *directly* to that file from
 /// within the worker isolate — see that function's doc comment for why
 /// this avoids transferring the full PDF `Uint8List` back to this (UI)
 /// isolate, unlike the previous "assemble bytes here, then write them"
-/// approach. On any assembly/write failure the partial temp file is
+/// approach. The upload directory is used instead of the OS-managed cache so
+/// the file remains a safe handoff to Dio's lazily consumed multipart stream.
+/// On any assembly/write failure the partial upload file is
 /// deleted before the error is rethrown.
 ///
 /// Logs are intentionally limited to non-sensitive metadata (page count,
@@ -544,12 +552,8 @@ const String _assembledFileExtension = '.pdf';
 Future<PreparedUploadFile> _prepareUploadFile(
   List<File> files,
   String correlationId,
+  String userId,
 ) async {
-  final file = await FileService.instance.allocateTemporaryFile(
-    PaperlessDirectoryType.temporary,
-    extension: 'pdf',
-    create: true,
-  );
   final stopwatch = Stopwatch()..start();
   logger.fi(
     'Upload[$correlationId]: PDF assembly started (pageCount=${files.length})',
@@ -557,16 +561,22 @@ Future<PreparedUploadFile> _prepareUploadFile(
     methodName: '_prepareUploadFile',
   );
   try {
-    final result = await compute(assembleAndWriteDocumentPdfToFile, (
-      filePaths: [for (final pageFile in files) pageFile.path],
-      outputPath: file.path,
-    ));
-    logger.fi(
-      'Upload[$correlationId]: PDF assembly + temp write completed in '
-      '${stopwatch.elapsedMilliseconds}ms (pdfByteLength=${result.byteLength}, '
-      'pdfPageCount=${result.pageCount})',
-      className: 'scanner_page',
-      methodName: '_prepareUploadFile',
+    return await createScannerUploadFile(
+      userId: userId,
+      write: (file) async {
+        final result = await compute(assembleAndWriteDocumentPdfToFile, (
+          filePaths: [for (final pageFile in files) pageFile.path],
+          outputPath: file.path,
+        ));
+        logger.fi(
+          'Upload[$correlationId]: PDF assembly + upload write completed in '
+          '${stopwatch.elapsedMilliseconds}ms '
+          '(pdfByteLength=${result.byteLength}, '
+          'pdfPageCount=${result.pageCount})',
+          className: 'scanner_page',
+          methodName: '_prepareUploadFile',
+        );
+      },
     );
   } catch (error, stackTrace) {
     logger.fe(
@@ -577,17 +587,11 @@ Future<PreparedUploadFile> _prepareUploadFile(
       methodName: '_prepareUploadFile',
       stackTrace: stackTrace,
     );
-    await file.delete().catchError((_) => File(''));
     throw PaperlessApiException(
       ErrorCode.documentUploadFailed,
       details: error.runtimeType.toString(),
     );
   }
-  return PreparedUploadFile(
-    file: file,
-    extension: '.pdf',
-    deleteAfterUpload: true,
-  );
 }
 
 String _formatUploadFileName(String source) {

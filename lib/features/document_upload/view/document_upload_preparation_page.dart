@@ -112,6 +112,14 @@ class _DocumentUploadPreparationPageState
   }
 
   @override
+  void dispose() {
+    // Let the pending mutation finish its cancellation path so `_onSubmit`'s
+    // `finally` block can release any owned prepared file promptly.
+    _cancelToken?.cancel('Upload page disposed');
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: false,
@@ -563,9 +571,8 @@ class _DocumentUploadPreparationPageState
       }
     } finally {
       _cancelToken = null;
-      if (preparedFile?.deleteAfterUpload ?? false) {
-        await preparedFile!.file.delete().catchError((_) => File(''));
-      }
+      // Covers success, server/local failure, cancellation, and disposal.
+      await preparedFile?.deleteIfOwned();
     }
   }
 

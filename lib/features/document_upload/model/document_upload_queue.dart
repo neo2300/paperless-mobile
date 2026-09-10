@@ -15,6 +15,17 @@ class PreparedUploadFile {
     required this.extension,
     this.deleteAfterUpload = false,
   });
+
+  /// Deletes an upload-attempt-owned file without masking the upload outcome.
+  Future<void> deleteIfOwned() async {
+    if (!deleteAfterUpload) return;
+    try {
+      await file.delete();
+    } catch (_) {
+      // Best-effort cleanup: a missing file is already in the desired state,
+      // and another filesystem error must not replace the upload result.
+    }
+  }
 }
 
 class DocumentUploadQueueProgress {
