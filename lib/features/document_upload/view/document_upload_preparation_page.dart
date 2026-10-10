@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:cached_query_flutter/cached_query_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_form_builder/flutter_form_builder.dart';
@@ -359,7 +360,6 @@ class _DocumentUploadPreparationPageState
         if (!mounted) return;
         setState(() {
           _uploadProgress = progress;
-          if (progress >= 1) _uploadPhase = _UploadPhase.waitingForServer;
         });
       }
 
@@ -388,6 +388,9 @@ class _DocumentUploadPreparationPageState
               cancelToken: _cancelToken,
             );
       final mutationState = await mutation.mutate();
+      if (mutationState case MutationError(:final error, :final stackTrace)) {
+        Error.throwWithStackTrace(error, stackTrace);
+      }
       final taskId = mutationState.data;
       if (mounted) {
         if (taskId != null) {
@@ -513,14 +516,12 @@ class _DocumentUploadPreparationPageState
   // }
 }
 
-enum _UploadPhase { idle, preparing, uploading, waitingForServer }
+enum _UploadPhase { idle, preparing, uploading }
 
 extension on _UploadPhase {
   String label(BuildContext context) => switch (this) {
     _UploadPhase.idle => S.of(context)!.upload,
     _UploadPhase.preparing => S.of(context)!.prepareDocument,
     _UploadPhase.uploading => S.of(context)!.documentUploadUploading,
-    _UploadPhase.waitingForServer =>
-      S.of(context)!.documentSuccessfullyUploadedProcessing,
   };
 }

@@ -193,7 +193,6 @@ class DocumentRepository with ChangeNotifierMixin {
     void Function(double progress)? onProgressChanged,
   }) {
     return Mutation<String?, void>(
-      key: 'create_document/$filename',
       mutationFn: (_) {
         return _api.create(
           documentBytes,
@@ -227,7 +226,6 @@ class DocumentRepository with ChangeNotifierMixin {
     CancelToken? cancelToken,
   }) {
     return Mutation<String?, void>(
-      key: 'create_document/$filename',
       mutationFn: (_) => _api.createFromFile(
         documentFile,
         filename: filename,
