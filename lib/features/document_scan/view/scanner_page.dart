@@ -31,6 +31,7 @@ import 'package:paperless_mobile/helpers/message_helpers.dart';
 import 'package:paperless_mobile/helpers/permission_helpers.dart';
 import 'package:paperless_mobile/features/scanner/models/scan_result.dart';
 import 'package:paperless_mobile/features/scanner/paperless_mobile_document_scanner.dart';
+import 'package:paperless_mobile/routing/navigation_keys.dart';
 import 'package:paperless_mobile/routing/routes/scanner_route.dart';
 import 'package:path/path.dart' as p;
 import 'package:pdf/pdf.dart';
@@ -321,17 +322,21 @@ class _ScannerPageState extends State<ScannerPage>
     final forcePdf =
         context.localStore.state.globalSettings.enforceSinglePagePdfUpload;
     if (!context.mounted) return;
-    final uploadResult = await Navigator.of(context, rootNavigator: true)
-        .push<DocumentUploadResult>(
-          MaterialPageRoute(
-            builder: (_) => DocumentUploadPreparationPage(
-              prepareUploadFile: () =>
-                  _prepareUploadFile(scans, forcePdf: forcePdf),
-              previewFile: scans.first,
-              fileExtension: _assembledFileExtension(scans, forcePdf: forcePdf),
-            ),
-          ),
-        );
+    // The root navigator sits above [HomeShellWidget], so routes pushed there
+    // cannot access account-scoped providers such as [LocalUserAccount].
+    // Keep the upload page inside the authenticated shell instead.
+    final navigator =
+        outerShellNavigatorKey.currentState ?? Navigator.of(context);
+    final uploadResult = await navigator.push<DocumentUploadResult>(
+      MaterialPageRoute(
+        builder: (_) => DocumentUploadPreparationPage(
+          prepareUploadFile: () =>
+              _prepareUploadFile(scans, forcePdf: forcePdf),
+          previewFile: scans.first,
+          fileExtension: _assembledFileExtension(scans, forcePdf: forcePdf),
+        ),
+      ),
+    );
     if (uploadResult?.success ?? false) {
       if (!context.mounted) return;
       final cubit = context.read<DocumentScannerCubit>();
